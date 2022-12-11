@@ -46,6 +46,8 @@ Route::group(['middleware' => 'auth', 'middleware' => 'expireDateCheck'],functio
     Route::resource('invoice-product','InvoiceProductVariationController')->middleware('admin:manager');
 //    Route::get('defected-product-list','ProductVariationController@defectedproduct');
 	Route::post('/shelf-migration','ShelfController@migration');
+    Route::get('single-shelf-product-view/{id}', 'ShelfController@singleProductShelfView');
+    Route::post('sidebar-humberger-btn-expand-collapse', 'SettingController@sidebarHumbergerBtnExpandCollapse');
 
 
 
@@ -53,6 +55,7 @@ Route::group(['middleware' => 'auth', 'middleware' => 'expireDateCheck'],functio
 	Route::get('/get-variation','ProductVariationController@getVariation');
 	Route::post('/attribute/delete','AttributeController@delete');
 	Route::post('/invoice-check','InvoiceController@invoiceCheck');
+    Route::get('/selected-products-print-qr', 'InvoiceController@selectedProductPrint');
 	Route::post('/get-quantity','InvoiceController@getQuantity');
 
     Route::get('order/list/','OrderController@index');
@@ -70,7 +73,8 @@ Route::group(['middleware' => 'auth', 'middleware' => 'expireDateCheck'],functio
 
     Route::get('invoice-edit/','InvoiceController@edit');
 //    Route::get('invoice-view/','InvoiceController@show');
-    Route::get('pending-receive','InvoiceController@show');
+    // Route::get('pending-receive','InvoiceController@show');
+    Route::get('awaiting-shelving','InvoiceController@show');
 	Route::post('product-draft/publish/{id}','ProductDraftController@publish');
     Route::post('/product-draft/publish/{id}',[
         'as' => 'product-draft.publish',
@@ -231,6 +235,7 @@ Route::group(['middleware' => 'expireDateCheck'],function() {
 
     Route::get('manual-order-list','OrderController@manualOrderList');
     Route::get('published-product','ProductDraftController@publishedProductList');
+    Route::get('filter-product-draft-view/{id}', 'ProductDraftController@shelfSkuToDraftPageView');
     Route::get('notification-page','NotificationPageController@index');
 
     Route::get('manual-order-update','OrderController@manualOrderUpdate');
@@ -284,6 +289,7 @@ Route::group(['middleware' => 'expireDateCheck'],function() {
     Route::post('save-setting','SettingController@saveSetting');
     Route::get('shipping-setting','SettingController@shippingFee');
     Route::post('shipping-data-input','SettingController@storeShippingFee');
+    Route::post('remove-shipping-fee', 'SettingController@removeShippingFee');
     Route::resource('settings','SettingController')->middleware('admin');
     Route::get('sync-order-from-ebay-clicked/{type?}','EbayOrderSyncController@syncOrderFromEbayClicked');
     Route::post('get-onbuy-variation','OnbuyController@getVariation');
@@ -420,6 +426,7 @@ Route::group(['middleware' => 'expireDateCheck'],function(){
     Route::get('eBay/end/product/search', 'EbayMasterProductController@eBayEndProductSearch'); //eBay active product column search
     Route::get('eBay/pending/product/search', 'EbayMasterProductController@eBayPendingProductSearch'); //eBay pending product column search
     Route::get('eBay/revise/product/search', 'EbayMasterProductController@reviseListColumnSearch'); //eBay revise product column search
+    Route::get('revise-product-list-generic-search', 'EbayMasterProductController@reviseProductListGenericSearch');
     Route::post('ebay-ended-product-check/{type?}', 'EbayMasterProductController@checkSingleEndedProduct'); //eBay revise product column search
     Route::post('invoice/history/column/search', 'InvoiceController@invoiceHistorySearch'); // Invoice history column search
     Route::post('invoice/number/search', 'InvoiceController@invoiceNoSKUSearch'); // Invoice history invoice number search
@@ -551,7 +558,6 @@ Route::group(['middleware' => 'expireDateCheck'],function(){
         foreach ($request->all() as $key => $value){
             if($key != '_token' && $key != 'search_route' && $request[$key] != null && $key != 'is_search'){
                 if(is_array($value)){
-                    // dd($value);
                     $arrVal = '';
                     foreach($value as $val){
                         $arrVal .= str_replace('&','wms-and',$val).'+~';
@@ -670,7 +676,7 @@ Route::group(['middleware' => 'expireDateCheck'],function(){
 // mobile app route
 Route::get('wms/app/download', 'AppDownloadController@download');
 Route::post('filter-order-export-csv','OrderController@filterOrderExportCsv');
-Route::get('reports','ProductDraftController@reports');
+Route::get('export-catalogue-reports','ProductDraftController@reports');
 Route::post('export-catalogue-csv','ProductDraftController@exportCatalogueCsv');
 
 Route::post('get-catalog', 'ProductDraftController@getCatalogue');
@@ -689,7 +695,7 @@ Route::post('update-item-attribute','ProductDraftController@updateItemAttribute'
 Route::get('remove-domain-from-url','ProductDraftController@removeDomainFromUrl');
 Route::post('create-royal-mail-order','OrderController@createRoyalMailOrder');
 Route::post('channels/change-channel-statue','ChannelController@changeChannelStatue');
-Route::get('get-item-attribute-term/{attrId}','ProductDraftController@getItemAttributeTerm');
+Route::get('get-item-attribute-term/{attrId}/{channelId?}','ProductDraftController@getItemAttributeTerm');
 Route::post('save-combined-order-setting','SettingController@saveCombinedOrderSettings');
 Route::post('reformate-add-product-image','ProductVariationController@reformateAddProductImage');
 Route::post('edit-order-address','OrderController@editOrderAddress');
@@ -700,6 +706,7 @@ Route::get('get-item-profile/{profileId}/{attributeId}','ProductDraftController2
 Route::get('modify-item-profile/{profileId}/{attributeId}','ProductDraftController2@modifyItemProfile');
 Route::post('delete-item-profile','ProductDraftController2@deleteItemProfile');
 Route::post('master-catalogue-by-sku-ajax','ProductDraftController@masterCatalogueBySkuAjax');
+Route::post('item-attribute-sortable','ProductDraftController@itemAttributeSortable');
 Route::post('search-item-profile',function (Request $request){  //Shelf column search
     $url = '';
     foreach ($request->all() as $key => $value){
@@ -718,13 +725,29 @@ Route::group(['prefix' => 'shipping'],function(){
         Route::post('create-dpd-order','ShippingController@createDpdOrder');
     });
 });
+Route::group(['prefix' => 'warehouse'],function() {
+    Route::get('all','WarehouseController@all');
+    Route::post('store','WarehouseController@store');
+    Route::get('edit/{id}','WarehouseController@edit');
+    Route::post('update','WarehouseController@update');
+    Route::post('delete','WarehouseController@delete');
+    Route::post('exist-warehouse-check','WarehouseController@existWarehouseCheck');
+    Route::get('check-shelf-product/{id}','WarehouseController@checkWarehouseShelfProduct');
+    Route::post('migrate-shelf-to-warehouse','WarehouseController@migrateShelfToWarehouse');
+});
+Route::post('shelf/exist-shelf-check','ShelfController@existShelfCheck');
+Route::post('shelf/assign-warehouse-to-shelf','ShelfController@assignWarehouseToShelf');
+Route::post('generate-csv-comparing-live-data','ProductDraftController2@generateCSVComparingLiveData');
+Route::post('single-variation-info','ProductVariationController@singleVariationInfo');
+Route::post('make-sku-bundle','ProductDraftController@makeSKUBundle');
+Route::post('modify-sku-bundle','ProductDraftController@modifySKUBundle');
 // Auth started
 Auth::routes();
 
 Route::get('dashboard','DashboardController@index')->middleware('admin:manager');
 
 //  global reports route
-Route::get('global_reports','reportController@globalReports');
+Route::get('inventory-reports','reportController@globalReports');
 Route::get('global_reports/unsold_catalogue_sku_report','reportController@unsoldCatalogueSku');
 Route::post('global_reports/download-sku-sold-report-csv','reportController@unsoldCatalogueSkuCsvDownload');
 Route::get('global_reports/catalogue-not-sell','reportController@catalogueNotSell');

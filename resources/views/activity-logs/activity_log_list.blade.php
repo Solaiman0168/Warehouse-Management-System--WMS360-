@@ -701,6 +701,11 @@
                                                                     @endforeach
                                                                 @else
                                                                     <option value="">Select Creator</option>
+                                                                    @if(isset($allCondition['action_by']) && ($allCondition['action_by'] == "Cron Job"))
+                                                                        <option value="Cron Job" selected>Cron Job</option>
+                                                                    @else
+                                                                        <option value="Cron Job">Cron Job</option>
+                                                                    @endif
                                                                     @foreach($all_user_name as $user_name)
                                                                     <!-- <option value="{{$user_name->id}}">{{$user_name->name}}</option> -->
                                                                         @if(isset($allCondition['action_by']) && ($allCondition['action_by'] == $user_name->name))

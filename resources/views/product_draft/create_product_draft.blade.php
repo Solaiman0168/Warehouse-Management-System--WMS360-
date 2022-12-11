@@ -166,9 +166,15 @@
                                         <select id="selectCondition" class="form-control select2" name="condition" required>
                                             <option selected="true" disabled="disabled">Select Condition</option>
                                             @isset($conditions)
-                                                @foreach($conditions as $condition)
-                                                    <option onclick="optionClick(this)" value="{{$condition->id ?? ''}}" {{$condition->default_select == 1 ? 'selected' : ''}}>{{$condition->condition_name ?? ''}}</option>
-                                                @endforeach
+                                                @if(count($conditions) == 1)
+                                                    @foreach($conditions as $condition)
+                                                        <option onclick="optionClick(this)" value="{{$condition->id ?? ''}}" selected>{{$condition->condition_name ?? ''}}</option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($conditions as $condition)
+                                                        <option onclick="optionClick(this)" value="{{$condition->id ?? ''}}" {{$condition->default_select == 1 ? 'selected' : ''}}>{{$condition->condition_name ?? ''}}</option>
+                                                    @endforeach
+                                                @endif
                                             @endisset
                                         </select>
                                     </div>
@@ -288,9 +294,15 @@
                                         <select id="selectBrand" class="form-control select2" name="brand_id" required>
                                             <option selected="true" disabled="disabled">Select Brand</option>
                                             @isset($brands)
-                                                @foreach($brands as $brand)
-                                                    <option onclick="optionClick(this)" value="{{$brand->id ?? ''}}">{{$brand->name ?? ''}}</option>
-                                                @endforeach
+                                                @if(count($brands) == 1)
+                                                    @foreach($brands as $brand)
+                                                        <option onclick="optionClick(this)" value="{{$brand->id ?? ''}}" selected>{{$brand->name ?? ''}}</option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($brands as $brand)
+                                                        <option onclick="optionClick(this)" value="{{$brand->id ?? ''}}">{{$brand->name ?? ''}}</option>
+                                                    @endforeach
+                                                @endif
                                             @endisset
                                         </select>
                                     </div>
@@ -304,9 +316,15 @@
                                         <select id="selectDepartment" class="form-control child-cat-select gender-choose" name="gender_id" required>
                                             <option hidden>Select Department</option>
                                             @isset($genders)
-                                                @foreach($genders as $gender)
-                                                    <option onclick="optionClick(this)" value="{{$gender->id ?? ''}}">{{$gender->name ?? ''}}</option>
-                                                @endforeach
+                                                @if(count($genders) == 1)
+                                                    @foreach($genders as $gender)
+                                                        <option onclick="optionClick(this)" value="{{$gender->id ?? ''}}" selected>{{$gender->name ?? ''}}</option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($genders as $gender)
+                                                        <option onclick="optionClick(this)" value="{{$gender->id ?? ''}}">{{$gender->name ?? ''}}</option>
+                                                    @endforeach
+                                                @endif
                                             @endisset
                                         </select>
                                     </div>
@@ -320,9 +338,15 @@
                                         <select id="selectWMSCategory" class="form-control child-cat-select category_select " name="category_id" required>
                                             <option value="">Select Category</option>
                                             @if (count($categories) > 0)
-                                                @foreach ($categories as $cat)
-                                                    <option onclick="optionClick(this)" value="{{$cat->id}}">{{$cat->category_name}}</option>
-                                                @endforeach
+                                                @if(count($categories) == 1)
+                                                    @foreach ($categories as $cat)
+                                                        <option onclick="optionClick(this)" value="{{$cat->id}}" selected>{{$cat->category_name}}</option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach ($categories as $cat)
+                                                        <option onclick="optionClick(this)" value="{{$cat->id}}">{{$cat->category_name}}</option>
+                                                    @endforeach
+                                                @endif
                                             @endif
                                         </select>
                                     </div>
@@ -353,7 +377,7 @@
                                                 </div>
                                                 <div id="wms-tooltip">
                                                     <span id="wms-tooltip-text" class="csv-text">Select product type via toggle button from Variable to Simple or vice versa.</span>
-                                                    <span><img class="wms-tooltip-image" src="https://www.woowms.com/wms-1004/assets/common-assets/tooltip_button.png"></span>
+                                                    <span><img class="wms-tooltip-image" src="{{asset('assets/common-assets/tooltip_button.png')}}"></span>
                                                 </div>
                                             </div>
 
@@ -472,7 +496,7 @@
                                                 <div class="low-quantity-label mt-4">
                                                     {{-- <label for="low_quantity" class="draft-low-quantity">Low Quantity</label> --}}
                                                     <div class="tab-input-label" style="display: none">Low Quantity</div>
-                                                    <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control @error('low_quantity') is-invalid @enderror" name="low_quantity" autocomplete="low_quantity" autofocus id="low_quantity" placeholder="Low Quantity">
+                                                    <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control @error('low_quantity') is-invalid @enderror" name="low_quantity" placeholder="Low Quantity">
                                                     @error('low_quantity')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
@@ -562,16 +586,17 @@
                                                 Price
                                             </a>
                                         </li>
-                                        <li class="tab">
+                                        <!-- <li class="tab">
                                             <a href="#item_specific" data-toggle="tab" aria-expanded="false">
                                                 Item Specific
                                             </a>
-                                        </li>
+                                        </li> -->
                                     </ul>
                                     <div class="tab-content catalogue-tabs-content">
                                         <div class="tab-pane active" id="price">
                                             <div class="draft-wrap">
                                                 <div class="wms-row">
+                                                    @if($woocommerceActive)
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="draft-regular-price" for="regular_price">Regular Price</label> --}}
                                                         <div class="tab-input-label" style="display: none">Regular Price</div>
@@ -582,7 +607,7 @@
                                                         </span>
                                                         @enderror
                                                     </div>
-
+                                                    @endif
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="draft-sales-price" for="sale_price">Sales Price</label> --}}
                                                         <div class="tab-input-label" style="display: none">Sales Price</div>
@@ -617,6 +642,7 @@
                                                         </span>
                                                         @enderror
                                                     </div>
+                                                    @if($onbuyActive)
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="input-field-design" for="base_price">Base Price</label> --}}
                                                         <div class="tab-input-label" style="display: none">Base Price</div>
@@ -627,6 +653,16 @@
                                                         </span>
                                                         @enderror
                                                     </div>
+                                                    <div class="tab-input-div mb-3">
+                                                        <div class="tab-input-label" style="display: none">Max Price</div>
+                                                        <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control @error('rrp') is-invalid @enderror" name="max_price" autocomplete="max_price" autofocus id="max_price" placeholder="Max Price">
+                                                        @error('base_price')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                        @enderror
+                                                    </div>
+                                                    @endif
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="input-field-design draft-active" for="vat">VAT Persentage</label> --}}
                                                         <div class="tab-input-label" style="display: none">VAT Percentage</div>
@@ -640,7 +676,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="tab-pane" id="item_specific">
+                                        <!-- <div class="tab-pane" id="item_specific">
                                             <div class="draft-wrap">
                                                 <div class="wms-row">
                                                     <div class="tab-input-div mb-3">
@@ -672,7 +708,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                                 <div class="catalogue-product-image">
@@ -1930,92 +1966,72 @@
                     },
                     success: function (response) {
                         if(response.type == 'success' && response.data != null){
-                            // var content = ''
                             var tabTitles = ''
                             var tabContent = ''
-                            if(response.data.category_attribute.length > 0){
-
-                                response.data.category_attribute.forEach(function(item){
-                                    if(item.attributes.length > 0){
-                                        console.log('category attribute item')
-                                        item.attributes.forEach(function(attr){
-                                            tabTitles += '<li class="tab">'
-                                            +'<a href="#'+attr.item_attribute_slug+'_'+attr.id+'" data-toggle="tab" aria-expanded="true">'+attr.item_attribute+'</a>'
-                                            +'</li>'
-                                            tabContent += '<div class="tab-pane item-attribute-tab-'+attr.id+'" data="'+attr.id+'" id="'+attr.item_attribute_slug+'_'+attr.id+'">'
-                                            +'<div class="draft-wrap">'
-                                            +'<div class="wms-row">'
-
-                                        // content += '<div class="card mt-3">'
-                                        //     +'<div class="card-header font-18">'+attr.item_attribute+'</div>'
-                                        //         +'<div class="card-body">'
-                                        //             +'<div class="draft-wrap">'
-                                        //                 +'<div class="wms-row">';
-                                                            if(attr.item_attribute_terms.length > 0){
-                                                                var profileList = ''
-                                                                if(response.itemProfileList.length > 0) {
-                                                                    profileList += '<div class="tab-input-div mb-3">'
-                                                                            +'<select class="form-control text-white item-profile-option" style="background: #5959ad">'
-                                                                    profileList += '<option value="">Select Profile</option>'
-                                                                    var i = 0
-                                                                    response.itemProfileList.forEach(function(profile){
-                                                                        if(profile.item_attribute_id == attr.id){
-                                                                            profileList += '<option value="'+profile.id+'">'+profile.profile_name+'</option>'
-                                                                            i++;
-                                                                        }
-                                                                    });
-                                                                    profileList += '</select><span class="text-danger"></span>'
-                                                                        +'</div>'
-                                                                }
-                                                                if(i > 0){
-                                                                    tabContent += profileList
-                                                                }
-                                                                attr.item_attribute_terms.forEach(function(term){
-                                                                    tabContent += '<div class="tab-input-div mb-3">'
-                                                                                    //+'<label for="'+term.item_attribute_term_slug+'" class="draft-height">'+term.item_attribute_term+'</label>'
-                                                                                    // +'<input type="text" class="form-control" name="item_attribute['+term.id+']" autocomplete="height" autofocus id="height" placeholder="'+term.item_attribute_term+'">'
-                                                                                    +'<div class="tab-input-label" style="display: none">'+term.item_attribute_term+'</div>'
-                                                                                    +'<input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="item_attribute['+term.id+']" id="'+term.item_attribute_term_slug+'" placeholder="'+term.item_attribute_term+'" autofocus>'
-                                                                                +'</div>'
-                                                                    // content += '<div>'
-                                                                    //     // +'<label for="height" class="draft-height">'+term.item_attribute_term+'</label>'
-                                                                    //     +'<input type="text" data-parsley-maxlength="30" class="form-control" name="item_attribute['+term.id+']" autocomplete="'+term.item_attribute_term_slug+'" autofocus id="'+term.item_attribute_term_slug+'" placeholder="'+term.item_attribute_term+'">'
-                                                                    // +'</div>';
-                                                                })
-
-                                                            }
-                                                            tabContent += '</div>'
+                            if(response.data.sortItemAttribue.length > 0){
+                                response.data.sortItemAttribue.forEach(function(sortAttr){
+                                    if(response.data.categoryInfo.category_attribute.length > 0){
+                                        response.data.categoryInfo.category_attribute.forEach(function(item){
+                                            if(item.attributes.length > 0){
+                                                console.log('category attribute item')
+                                                item.attributes.forEach(function(attr){
+                                                    if(attr.position == sortAttr.position) {
+                                                        tabTitles += '<li class="tab">'
+                                                        +'<a href="#'+attr.item_attribute_slug+'_'+attr.id+'" data-toggle="tab" aria-expanded="true">'+attr.item_attribute+'</a>'
+                                                        +'</li>'
+                                                        tabContent += '<div class="tab-pane item-attribute-tab-'+attr.id+'" data="'+attr.id+'" id="'+attr.item_attribute_slug+'_'+attr.id+'">'
+                                                        +'<div class="draft-wrap">'
+                                                        +'<div class="wms-row">'
+                                                        if(attr.item_attribute_terms.length > 0){
+                                                            var profileList = ''
+                                                            if(response.itemProfileList.length > 0) {
+                                                                profileList += '<div class="tab-input-div mb-3">'
+                                                                        +'<select class="form-control text-white item-profile-option" style="background: #5959ad">'
+                                                                profileList += '<option value="">Select Profile</option>'
+                                                                var i = 0
+                                                                response.itemProfileList.forEach(function(profile){
+                                                                    if(profile.item_attribute_id == attr.id){
+                                                                        profileList += '<option value="'+profile.id+'">'+profile.profile_name+'</option>'
+                                                                        i++;
+                                                                    }
+                                                                });
+                                                                profileList += '</select><span class="text-danger"></span>'
                                                                     +'</div>'
+                                                            }
+                                                            if(i > 0){
+                                                                tabContent += profileList
+                                                            }
+                                                            attr.item_attribute_terms.forEach(function(term){
+                                                            tabContent += '<div class="tab-input-div mb-3">'
+                                                                            +'<div class="tab-input-label" style="display: none">'+term.item_attribute_term+'</div>'
+                                                                            +'<input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="item_attribute['+term.id+']" id="'+term.item_attribute_term_slug+'" placeholder="'+term.item_attribute_term+'" autofocus>'
+                                                                        +'</div>'
+                                                            })
+
+                                                        }
+                                                        tabContent += '</div>'
                                                                 +'</div>'
-                                            //             content += '</div>'
-                                            //         +'</div>'
-                                            //      +'</div>'
-                                            // +'</div>';
-                                        })
+                                                            +'</div>'
+                                                    }
+                                                })
+                                            }
+                                        });
                                     }
-                                });
-
-
-                                // var content = '<option hidden>Select Category</option>';
-                                // response.genders.forEach(function(item){
-                                //     content += '<option value="'+item.id+'">'+item.category_name+'</option>';
-                                // });
-                                // $('.category_select').html(content);
+                                })
                             }
+                            
                             // $('.catalogue-tabs-sec ul > li:nth-child(3)').after(tabTitles) //This is also correct
-                            $('.add-catalogue-tab').find("li").slice(2).remove();
-                            $('.catalogue-tabs-content').find("div.tab-pane").slice(2).remove();
-                            $(tabTitles).insertAfter($('.catalogue-tabs-sec ul > li:nth-child(2)'))
-                            $(tabContent).insertAfter($('.catalogue-tabs-content div.tab-pane:nth-child(2)'))
+                            $('.add-catalogue-tab').find("li").slice(1).remove();
+                            $('.catalogue-tabs-content').find("div.tab-pane").slice(1).remove();
+                            $(tabTitles).insertAfter($('.catalogue-tabs-sec ul > li:nth-child(1)'))
+                            $(tabContent).insertAfter($('.catalogue-tabs-content div.tab-pane:nth-child(1)'))
                             //$('span.item-title-term-append-div').html(content);
-
                         }else{
                             swal.fire({
                                 title: 'No category found. Please assign category in a department',
                                 icon: 'warning'
                             });
                         }
-
                     },
                     complete: function () {
                         console.log('end send')
@@ -2047,7 +2063,9 @@
                         if(data.profile && data.profile.item_attribute_profile_term.length > 0) {
                             itemAttributeTabHtml.find('input').val('')
                             data.profile.item_attribute_profile_term.forEach(function(profileData){
-                                itemAttributeTabHtml.find('#'+profileData.item_attribute_term.item_attribute_term_slug).val(profileData.item_attribute_term_value)
+                                if(profileData.item_attribute_term != null){
+                                    itemAttributeTabHtml.find('#'+profileData.item_attribute_term.item_attribute_term_slug).val(profileData.item_attribute_term_value)
+                                }
                             })
                             $(this).closest('.tab-input-div').find('span').text('')
                         }else{

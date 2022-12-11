@@ -222,7 +222,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 low-catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
 
@@ -264,7 +264,7 @@
                                                 <input type="hidden" name="route_name" value="{{$decode_low_product->path}}">
                                             </div>
                                             <div class="submit-btn">
-                                                <button class="search-btn waves-effect waves-light" type="submit">Search</button>
+                                                <button class="search-btn waves-effect waves-light low-qty-search-btn" type="submit">Search</button>
                                             </div>
                                             <div style="float: right">
                                                 <a href="{{url('low-quantity-product-list/hidden')}}" class="btn btn-primary">Hidden Low Quantity</a>
@@ -316,7 +316,7 @@
                             <!--End table upper side content-->
 
                             <!--Start Table-->
-                            <table class="draft_search_result product-draft-table w-100 ">
+                            <table class="draft_search_result product-draft-table low-qty-table w-100 ">
                                 <!--start table head-->
                                 <thead>
                                 <form action="{{url('all-column-search')}}" method="post">
@@ -738,7 +738,16 @@
                 .then(data => {
                     if(data.type == 'success'){
                         $('tr.low-quantity-'+columnId).remove()
-                        Swal.fire('Success',data.msg,'success')
+                        // Swal.fire('Success',data.msg,'success')
+                        Swal.fire({
+                            title: 'Reset Successful',
+                            icon: 'success',
+                            position: 'top-end',
+                            toast: true,
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                        });
                     }else{
                         Swal.fire('Error',data.msg,'error')
                     }
@@ -772,6 +781,14 @@
         //     $form.find('input:text, select').val('')
         //     $form.find('input:checkbox').prop('checked',false)
         // }
+
+        var tr_row = $('.low-qty-table #search_reasult .variation_load_tr').length
+        if(tr_row == 0 || tr_row == 1 || tr_row == 2 || tr_row == 3){
+            $('.low-catalog .card-box').attr('style', 'padding-bottom: 270px !important')
+        }else if(tr_row > 3){
+            $('.low-catalog .card-box').removeAttr('style')
+        }
+
 
     </script>
 

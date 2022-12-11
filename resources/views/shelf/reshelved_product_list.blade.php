@@ -61,7 +61,7 @@
 
 
 
-                <div class="row m-t-20">
+                <div class="row m-t-20 order-content">
                     <div class="col-md-12">
                         <div class="card-box table-responsive shadow reshelved-product-card">
 
@@ -136,7 +136,7 @@
                             <!--End loader-->
 
                             <span class="search_result_show"></span> <!--message show-->
-                            <table class="reshelved-product-table w-100">
+                            <table class="reshelved-product-table order-table w-100">
                                 <thead>
                                 <form action="{{url('column-search')}}" method="post" id="reshelfListForm">
                                 @csrf
@@ -188,6 +188,7 @@
                                             <div>SKU</div>
                                         </div>
                                     </th>
+                                    <th class="text-center">QR</th>
                                     <th class="text-center filter-symbol">
                                         <div class="d-flex justify-content-center">
                                             <div class="btn-group">
@@ -309,6 +310,7 @@
                                 <tbody id="table-body">
                                 @isset($all_reshelved_product_list)
                                     @foreach($all_reshelved_product_list as $reshelved_product)
+
                                         <tr>
                                             <td class="text-center">
                                                 <div class="id_tooltip_container d-flex justify-content-center align-items-center">
@@ -318,7 +320,13 @@
                                                 {{--loader added --}}
                                                 <div id="product_variation_loading" class="variation_load" style="display: none;"></div>
                                             </td>
-                                            <td class="text-center">{{$reshelved_product->variation_info->sku ?? null}}</td>
+                                            {{-- <td class="text-center"><a href="{{route('product-draft.show',$product_draft->id)}}" target="_blank"> {{$reshelved_product->variation_info->sku ?? null}} </a></td> --}}
+                                            <td class="text-center"><a href="{{url('/filter-product-draft-view/'.$reshelved_product->variation_info->id ?? null)}}" target="_blank" onclick="selected_sku(this)"> {{$reshelved_product->variation_info->sku ?? null}} </a> </td>
+                                            <td class="text-center">
+                                                <a target="_blank" title="Click to print" href="{{url('print-barcode/'.$reshelved_product->variation_info->id ?? null)}}">
+                                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($reshelved_product->variation_info->sku ?? null); !!}
+                                                </a>
+                                            </td>
                                             <td class="text-center">{{$reshelved_product->quantity}}</td>
                                             <td class="text-center">{{$reshelved_product->user_info->name ?? ''}}</td>
                                             @if($reshelved_product->status == 1)
@@ -328,6 +336,7 @@
                                             @endif
 
                                         </tr>
+
                                     @endforeach
                                 @endisset
                                 </tbody>
@@ -458,6 +467,17 @@
             event.stopPropagation();
         });
 
+        function selected_sku(e){
+            $('.reshelved-product-table tr').removeClass('bg-highlight')
+            $(e).closest('tr').addClass('bg-highlight')
+        }
+
+        var tr_shelf_length = $('.reshelved-product-table tbody tr').length
+        if(tr_shelf_length == 0 || tr_shelf_length == 1 || tr_shelf_length == 2 || tr_shelf_length == 3){
+            $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+        }else if(tr_shelf_length > 3){
+            $('.order-content .card-box').removeAttr('style')
+        }
 
 
     </script>

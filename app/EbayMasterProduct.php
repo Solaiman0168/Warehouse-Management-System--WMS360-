@@ -16,6 +16,17 @@ class EbayMasterProduct extends Model
 
     protected $dates = ['created_at','updated_at','deleted_at'];
 
+    public function getMasterImagesAttribute($value) {
+        if($value && @unserialize($value) !== false) {
+            $newImages = [];
+            foreach(\Opis\Closure\unserialize($value) as $val) {
+                $newImages[] = (filter_var($val, FILTER_VALIDATE_URL) == FALSE) ? asset('/').ltrim($val,'/') : $val;
+            }
+            return serialize($newImages);
+        }
+        return $value;
+    }
+
     public function variationProducts(){
         return $this->hasMany('App\EbayVariationProduct','ebay_master_product_id','id');
     }

@@ -287,6 +287,24 @@
                             <li class="breadcrumb-item active" aria-current="page">Active product</li>
                         </ol>
                     </div>
+                    <div class="unmatched-csv-mb">
+                        <form action="{{asset('generate-csv-comparing-live-data')}}" method="post" enctype="multipart/form-data">
+                            @csrf
+                            <div class="upload-csv-in-unmatched-list">
+                                <div class="mr-1">
+                                    <a class="btn btn-default sample-csv-unmatched" href="{{asset('assets/sample-csv/sample.csv')}}"><i class="fa fa-download"></i> Sample CSV</a>
+                                </div>
+                                <div class="custom-file mr-1">
+                                    <input type="file" class="custom-file-input" name="csvFile" accept=".csv" required>
+                                    <input type="hidden" class="" name="channel_column" value="eBay Quantity">
+                                    <label class="custom-file-label unmatched-label" for="customFile">Upload CSV To Check Qty</label>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn upload-csv-unmatched-btn">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="screen-option-btn">
                         <button class="btn btn-link waves-effect waves-light" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                             Screen Options &nbsp; <i class="fa" aria-hidden="true"></i>
@@ -298,7 +316,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box ebay table-responsive shadow">
 
@@ -975,7 +993,7 @@
                                             <div id="product_variation_loading" class="variation_load" style="display: none;"></div>
 
                                             @if(isset( \Opis\Closure\unserialize($product_list->master_images)[0]))
-                                                <a href="{{\Opis\Closure\unserialize($product_list->master_images)[0]}}"  title="Click to expand" target="_blank"><img src="{{\Opis\Closure\unserialize($product_list->master_images)[0]}}" class="ebay-image zoom" alt="ebay-master-image"></a>
+                                                <a href="{{(filter_var(\Opis\Closure\unserialize($product_list->master_images)[0], FILTER_VALIDATE_URL) == FALSE) ? asset('/').\Opis\Closure\unserialize($product_list->master_images)[0] : \Opis\Closure\unserialize($product_list->master_images)[0]}}"  title="Click to expand" target="_blank"><img src="{{(filter_var(\Opis\Closure\unserialize($product_list->master_images)[0], FILTER_VALIDATE_URL) == FALSE) ? asset('/').\Opis\Closure\unserialize($product_list->master_images)[0] : \Opis\Closure\unserialize($product_list->master_images)[0]}}" class="ebay-image zoom" alt="ebay-master-image"></a>
                                             @else
                                                 <img src="{{asset('assets/common-assets/no_image.jpg')}}" class="ebay-image zoom" alt="ebay-master-image">
                                             @endif
@@ -1308,6 +1326,10 @@
                         take = response.take;
                         skip = parseInt(response.skip)+10;
                         ids = ids.concat(response.ids);
+
+                        var item = response.ids.length
+                        $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
                     }else{
                         $("#ajax_loader").hide();
                         alert('No Catalogue Found');
@@ -1350,6 +1372,9 @@
 
                             ids = ids.concat(response.ids);
 
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){

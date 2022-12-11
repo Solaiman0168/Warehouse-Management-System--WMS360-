@@ -10,7 +10,7 @@ class OnbuyMasterProduct extends Model
     use SoftDeletes;
 //    protected $table = ['onbuy_master_product'];
     protected $fillable = ['opc','product_id','woo_catalogue_id','master_category_id','master_brand_id','product_type','summary_points','published','product_name','queue_id','update_queue_id','description','videos','documents','default_image','additional_images',
-        'product_data','features','rrp','base_price','low_quantity','status'];
+        'product_data','features','rrp','base_price','low_quantity','draft_change_status','status'];
     protected $dates = ['deleted_at'];
 
     public function variation_product(){

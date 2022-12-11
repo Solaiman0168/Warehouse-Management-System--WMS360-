@@ -1,7 +1,7 @@
 @extends('master')
 
 @section('title')
-    Active Catalogue | WMS360
+    Shopify Pending | WMS360
 @endsection
 
 @section('content')
@@ -20,21 +20,6 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card-box screen-option-content" style="display: none">
-                            <div class="col-lg-4 col-md-8">
-                                <form action="{{URL::to('download-product-csv')}}" method="POST">
-                                    @csrf
-                                    <div class="d-flex align-items-center">
-                                        <div style="width: 100%">
-                                            <input type="text" name="catalogue_id"  class="form-control" placeholder="Catalogue ID Example: 7821,98214,54878" required>
-                                        </div>
-                                        <div>
-                                            <button type="submit" class="btn btn-default">Download CSV</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <hr class="mt-3" style="border-color: #48a3cc">
 
                             <!---------------------------ON OFF SWITCH BUTTON AREA------------------------>
                             <!--------------------------------------------------------------------------->
@@ -43,7 +28,7 @@
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="image" class="onoffswitch-checkbox" id="image" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['image']) && $setting['catalogue']['active_catalogue']['image'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['image']) && $setting['catalogue']['active_catalogue']['image'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="image" class="onoffswitch-checkbox" id="image" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['image']) && $setting['shopify']['shopify_pending_product']['image'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['image']) && $setting['shopify']['shopify_pending_product']['image'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="image">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -53,7 +38,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="id" class="onoffswitch-checkbox" id="id" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['id']) && $setting['catalogue']['active_catalogue']['id'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['id']) && $setting['catalogue']['active_catalogue']['id'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="id" class="onoffswitch-checkbox" id="id" tabindex="0"  @if(isset($setting['shopify']['shopify_pending_product']['id']) && $setting['shopify']['shopify_pending_product']['id'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['id']) && $setting['shopify']['shopify_pending_product']['id'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="id">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -63,17 +48,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2 mt-xs-10">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="channel" class="onoffswitch-checkbox" id="channel" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['channel']) && $setting['catalogue']['active_catalogue']['channel'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['channel']) && $setting['catalogue']['active_catalogue']['channel'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="channel">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Channel</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2 mt-xs-10">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="product-type" class="onoffswitch-checkbox" id="product-type" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['product-type']) && $setting['catalogue']['active_catalogue']['product-type'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['product-type']) && $setting['catalogue']['active_catalogue']['product-type'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="product-type" class="onoffswitch-checkbox" id="product-type" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['product-type']) && $setting['shopify']['shopify_pending_product']['product-type'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['product-type']) && $setting['shopify']['shopify_pending_product']['product-type'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="product-type">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -83,7 +58,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2 mt-xs-10">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="catalogue-name" class="onoffswitch-checkbox" id="catalogue-name" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['catalogue-name']) && $setting['catalogue']['active_catalogue']['catalogue-name'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['catalogue-name']) && $setting['catalogue']['active_catalogue']['catalogue-name'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="catalogue-name" class="onoffswitch-checkbox" id="catalogue-name" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['catalogue-name']) && $setting['shopify']['shopify_pending_product']['catalogue-name'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['catalogue-name']) && $setting['shopify']['shopify_pending_product']['catalogue-name'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="catalogue-name">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -93,7 +68,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="category" class="onoffswitch-checkbox" id="category" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['category']) && $setting['catalogue']['active_catalogue']['category'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['category']) && $setting['catalogue']['active_catalogue']['category'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="category" class="onoffswitch-checkbox" id="category" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['category']) && $setting['shopify']['shopify_pending_product']['category'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['category']) && $setting['shopify']['shopify_pending_product']['category'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="category">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -103,7 +78,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2 mt-xs-10">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="rrp" class="onoffswitch-checkbox" id="rrp" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['rrp']) && $setting['catalogue']['active_catalogue']['rrp'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['rrp']) && $setting['catalogue']['active_catalogue']['rrp'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="rrp" class="onoffswitch-checkbox" id="rrp" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['rrp']) && $setting['shopify']['shopify_pending_product']['rrp'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['rrp']) && $setting['shopify']['shopify_pending_product']['rrp'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="rrp">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -111,12 +86,9 @@
                                         </div>
                                         <div class="ml-1"><p>RRP</p></div>
                                     </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center mt-sm-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="base_price" class="onoffswitch-checkbox" id="base_price" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['base_price']) && $setting['catalogue']['active_catalogue']['base_price'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['base_price']) && $setting['catalogue']['active_catalogue']['base_price'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="base_price" class="onoffswitch-checkbox" id="base_price" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['base_price']) && $setting['shopify']['shopify_pending_product']['base_price'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['base_price']) && $setting['shopify']['shopify_pending_product']['base_price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="base_price">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -124,19 +96,11 @@
                                         </div>
                                         <div class="ml-1"><p>Base Price</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mt-sm-10">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="sold" class="onoffswitch-checkbox" id="sold" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['sold']) && $setting['catalogue']['active_catalogue']['sold'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['sold']) && $setting['catalogue']['active_catalogue']['sold'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="sold">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Sold</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="stock" class="onoffswitch-checkbox" id="stock" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['stock']) && $setting['catalogue']['active_catalogue']['stock'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['stock']) && $setting['catalogue']['active_catalogue']['stock'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="stock" class="onoffswitch-checkbox" id="stock" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['stock']) && $setting['shopify']['shopify_pending_product']['stock'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['stock']) && $setting['shopify']['shopify_pending_product']['stock'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="stock">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -144,9 +108,9 @@
                                         </div>
                                         <div class="ml-1"><p>Stock</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-sm-10 mt-2">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="product" class="onoffswitch-checkbox" id="product" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['product']) && $setting['catalogue']['active_catalogue']['product'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['product']) && $setting['catalogue']['active_catalogue']['product'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="product" class="onoffswitch-checkbox" id="product" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['product']) && $setting['shopify']['shopify_pending_product']['product'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['product']) && $setting['shopify']['shopify_pending_product']['product'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="product">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -156,7 +120,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="creator" class="onoffswitch-checkbox" id="creator" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['creator']) && $setting['catalogue']['active_catalogue']['creator'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['creator']) && $setting['catalogue']['active_catalogue']['creator'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="creator" class="onoffswitch-checkbox" id="creator" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['creator']) && $setting['shopify']['shopify_pending_product']['creator'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['creator']) && $setting['shopify']['shopify_pending_product']['creator'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="creator">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -166,7 +130,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="modifier" class="onoffswitch-checkbox" id="modifier" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['modifier']) && $setting['catalogue']['active_catalogue']['modifier'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['modifier']) && $setting['catalogue']['active_catalogue']['modifier'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="modifier" class="onoffswitch-checkbox" id="modifier" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['modifier']) && $setting['shopify']['shopify_pending_product']['modifier'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['modifier']) && $setting['shopify']['shopify_pending_product']['modifier'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="modifier">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -176,7 +140,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="sku" class="onoffswitch-checkbox" id="sku" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['sku']) && $setting['catalogue']['active_catalogue']['sku'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['sku']) && $setting['catalogue']['active_catalogue']['sku'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="sku" class="onoffswitch-checkbox" id="sku" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['sku']) && $setting['shopify']['shopify_pending_product']['sku'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['sku']) && $setting['shopify']['shopify_pending_product']['sku'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="sku">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -184,12 +148,9 @@
                                         </div>
                                         <div class="ml-1"><p>SKU</p></div>
                                     </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center mt-sm-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="qr" class="onoffswitch-checkbox" id="qr" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['qr']) && $setting['catalogue']['active_catalogue']['qr'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['qr']) && $setting['catalogue']['active_catalogue']['qr'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="qr" class="onoffswitch-checkbox" id="qr" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['qr']) && $setting['shopify']['shopify_pending_product']['qr'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['qr']) && $setting['shopify']['shopify_pending_product']['qr'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="qr">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -199,7 +160,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="variation" class="onoffswitch-checkbox" id="variation" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['variation']) && $setting['catalogue']['active_catalogue']['variation'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['variation']) && $setting['catalogue']['active_catalogue']['variation'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="variation" class="onoffswitch-checkbox" id="variation" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['variation']) && $setting['shopify']['shopify_pending_product']['variation'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['variation']) && $setting['shopify']['shopify_pending_product']['variation'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="variation">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -207,9 +168,12 @@
                                         </div>
                                         <div class="ml-1"><p>Variation</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mt-sm-10">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="ean" class="onoffswitch-checkbox" id="ean" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['ean']) && $setting['catalogue']['active_catalogue']['ean'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['ean']) && $setting['catalogue']['active_catalogue']['ean'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="ean" class="onoffswitch-checkbox" id="ean" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['ean']) && $setting['shopify']['shopify_pending_product']['ean'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['ean']) && $setting['shopify']['shopify_pending_product']['ean'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="ean">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -219,7 +183,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="regular-price" class="onoffswitch-checkbox" id="regular-price" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['regular-price']) && $setting['catalogue']['active_catalogue']['regular-price'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['regular-price']) && $setting['catalogue']['active_catalogue']['regular-price'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="regular-price" class="onoffswitch-checkbox" id="regular-price" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['regular-price']) && $setting['shopify']['shopify_pending_product']['regular-price'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['regular-price']) && $setting['shopify']['shopify_pending_product']['regular-price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="regular-price">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -229,7 +193,7 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="sales-price" class="onoffswitch-checkbox" id="sales-price" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['sales-price']) && $setting['catalogue']['active_catalogue']['sales-price'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['sales-price']) && $setting['catalogue']['active_catalogue']['sales-price'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="sales-price" class="onoffswitch-checkbox" id="sales-price" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['sales-price']) && $setting['shopify']['shopify_pending_product']['sales-price'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['sales-price']) && $setting['shopify']['shopify_pending_product']['sales-price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="sales-price">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -239,7 +203,17 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="available-qty" class="onoffswitch-checkbox" id="available-qty" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['available-qty']) && $setting['catalogue']['active_catalogue']['available-qty'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['available-qty']) && $setting['catalogue']['active_catalogue']['available-qty'] == 0) @else checked @endif>
+                                            <input type="checkbox" name="sold" class="onoffswitch-checkbox" id="sold" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['sold']) && $setting['shopify']['shopify_pending_product']['sold'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['sold']) && $setting['shopify']['shopify_pending_product']['sold'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="sold">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>Sold</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="available-qty" class="onoffswitch-checkbox" id="available-qty" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['available-qty']) && $setting['shopify']['shopify_pending_product']['available-qty'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['available-qty']) && $setting['shopify']['shopify_pending_product']['available-qty'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="available-qty">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
@@ -247,18 +221,18 @@
                                         </div>
                                         <div class="ml-1"><p>Available Qty</p></div>
                                     </div>
-{{--                                    @if($shelf_use == 1)--}}
-{{--                                        <div class="d-flex align-items-center mt-2">--}}
-{{--                                            <div class="onoffswitch">--}}
-{{--                                                <input type="checkbox" name="shelf-qty" class="onoffswitch-checkbox" id="shelf-qty" tabindex="0" @if(isset($setting['catalogue']['active_catalogue']['shelf-qty']) && $setting['catalogue']['active_catalogue']['shelf-qty'] == 1) checked @elseif(isset($setting['catalogue']['active_catalogue']['shelf-qty']) && $setting['catalogue']['active_catalogue']['shelf-qty'] == 0) @else checked @endif>--}}
-{{--                                                <label class="onoffswitch-label" for="shelf-qty">--}}
-{{--                                                    <span class="onoffswitch-inner"></span>--}}
-{{--                                                    <span class="onoffswitch-switch"></span>--}}
-{{--                                                </label>--}}
-{{--                                            </div>--}}
-{{--                                            <div class="ml-1"><p>Shelf Qty</p></div>--}}
-{{--                                        </div>--}}
-{{--                                    @endif--}}
+                                   @if($shelf_use == 1)
+                                       <div class="d-flex align-items-center mt-2">
+                                           <div class="onoffswitch">
+                                               <input type="checkbox" name="shelf-qty" class="onoffswitch-checkbox" id="shelf-qty" tabindex="0" @if(isset($setting['shopify']['shopify_pending_product']['shelf-qty']) && $setting['shopify']['shopify_pending_product']['shelf-qty'] == 1) checked @elseif(isset($setting['shopify']['shopify_pending_product']['shelf-qty']) && $setting['shopify']['shopify_pending_product']['shelf-qty'] == 0) @else checked @endif>
+                                               <label class="onoffswitch-label" for="shelf-qty">
+                                                   <span class="onoffswitch-inner"></span>
+                                                   <span class="onoffswitch-switch"></span>
+                                               </label>
+                                           </div>
+                                           <div class="ml-1"><p>Shelf Qty</p></div>
+                                       </div>
+                                   @endif
                                 </div>
                             </div>
 
@@ -268,8 +242,8 @@
 
 
                             <!----ON OFF SWITCH ARRAY KEY DECLARATION---->
-                            <input type="hidden" id="firstKey" value="catalogue">
-                            <input type="hidden" id="secondKey" value="active_catalogue">
+                            <input type="hidden" id="firstKey" value="shopify">
+                            <input type="hidden" id="secondKey" value="shopify_pending_product">
                             <!----END ON OFF SWITCH ARRAY KEY DECLARATION---->
 
 
@@ -313,7 +287,7 @@
                     <div class="d-flex justify-content-start align-items-center">
                         <ol class="breadcrumb page-breadcrumb">
                             <li class="breadcrumb-item">Shopify</li>
-                            <li class="breadcrumb-item active" aria-current="page">Pending Prod uct</li>
+                            <li class="breadcrumb-item active" aria-current="page">Pending Product</li>
                         </ol>
                     </div>
                     <div class="screen-option-btn">
@@ -327,7 +301,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
 
@@ -398,7 +372,7 @@
                                                         <label for="current-page-selector" class="screen-reader-text d-none">Current Page</label>
                                                         <input class="current-page" id="current-page-selector" type="text" name="paged" value="{{$product_drafts_info->current_page}}" size="3" aria-describedby="table-paging">
                                                         <span class="datatable-paging-text d-flex"> of <span class="total-pages">{{$product_drafts_info->last_page}}</span></span>
-                                                        <input type="hidden" name="route_name" value="completed-catalogue-list">
+                                                        <input type="hidden" name="route_name" value="shopify/shopify-pending-list">
                                                         <input type="hidden" name="query_params" value="{{$url}}">
                                                     </span>
                                                     @if($product_drafts->currentPage() !== $product_drafts->lastPage())
@@ -949,7 +923,7 @@
                                             <div class="d-flex justify-content-center">
                                                 <div>Actions</div>
                                                 @if(count($allCondition) > 0)
-                                                    <div><a title="Clear filters" class='btn btn-outline-info clear-params'><img src="{{asset('assets/common-assets/25.png')}}"></a></div>
+                                                    <div class="ml-1"><a title="Clear filters" class='btn btn-outline-info clear-params'><img src="{{asset('assets/common-assets/25.png')}}"></a></div>
                                                 @endif
                                             </div>
                                         </th>
@@ -1061,7 +1035,7 @@
                                                 </div>
                                             @endif
                                         </td>
-                                        <td class="actions draft-list" style="width: 6%">
+                                        <td class="actions draft-list" style="width: 6%; text-align: center !important">
                                             <!--start manage button area-->
                                             @if($product_draft->product_variations_count != 0)
                                                 <div class="align-items-center mr-2"> <a class="btn-size list-woocommerce-btn" href="{{url('shopify/catalogue/create/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="List On Shopify"><i class="fab fa-shopify" aria-hidden="true"></i></a></div>
@@ -1235,6 +1209,7 @@
             skip = 0;
             var category_id = $('#category_id').val();
             var status = $('#status').val();
+
             $.ajax({
                 type: 'POST',
                 url: '<?php echo e(url('/search-product-list').'?_token='.csrf_token()); ?>',
@@ -1246,6 +1221,7 @@
                     "skip": skip,
                     "take": take,
                     "ids": ids,
+                    "page_status": "shopify_pending",
                 },
                 beforeSend: function(){
 
@@ -1258,6 +1234,8 @@
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
 
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
 
                 },
                 complete:function(data){
@@ -1290,7 +1268,8 @@
                             "search_priority": searchPriority,
                             "skip": skip,
                             "take": take,
-                            'ids': ids
+                            'ids': ids,
+                            "page_status": "shopify_pending",
                         },
                         beforeSend: function(){
                             window.stop();
@@ -1306,6 +1285,9 @@
 
                             ids = ids.concat(response.ids);
 
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){
@@ -1768,6 +1750,39 @@
         }
 
 
+
+        $(document).ready(function(){
+        var tr_length = $('.order-table tbody tr').length
+        var tr_length_pro_draft = $('.product-draft-table tbody tr').length
+        var tr_length_onbuy = $('.onbuy-table tbody tr').length
+        var tr_length_ebay = $('.ebay-table tbody tr').length
+        var tr_length_amazon = $('.amazon-table tbody tr').length
+        if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length > 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_pro_draft == 0 || tr_length_pro_draft == 1 || tr_length_pro_draft == 2 || tr_length_pro_draft == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_pro_draft > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_onbuy == 0 || tr_length_onbuy == 1 || tr_length_onbuy == 2 || tr_length_onbuy == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_onbuy > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_ebay == 0 || tr_length_ebay == 1 || tr_length_ebay == 2 || tr_length_ebay == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_ebay > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_amazon == 0 || tr_length_amazon == 1 || tr_length_amazon == 2 || tr_length_amazon == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_amazon > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+    })
 
 
     </script>

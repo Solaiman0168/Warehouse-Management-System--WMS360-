@@ -152,7 +152,7 @@ trait Ebay
         return 'ebay-'.$id;
     }
     public function getItemSpecifics($category_id,$ebay_access_token,$category_tree_id = 0){
-        $url = 'https://api.ebay.com/commerce/taxonomy/v1/category_tree/'.$category_tree_id.'/get_item_aspects_fr_category?category_id='.$category_id;
+        $url = 'https://api.ebay.com/commerce/taxonomy/v1/category_tree/'.$category_tree_id.'/get_item_aspects_for_category?category_id='.$category_id;
         $headers = [
             'Authorization:Bearer '.$ebay_access_token,
             'Accept:application/json',

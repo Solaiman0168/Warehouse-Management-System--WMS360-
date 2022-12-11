@@ -327,7 +327,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
 
@@ -487,7 +487,7 @@
                             <!--End active catalaogue bulk delete and checkbox counter-->
 
                             <!--Start Table-->
-                            <table class="draft_search_result product-draft-table w-100 ">
+                            <table class="draft_search_result product-draft-table catalog-table w-100 ">
                                 <!--start table head-->
                                 <thead style="background-color: {{$setting->master_publish_catalogue->table_header_color ?? '#c5bdbd'}}; color: {{$setting->master_publish_catalogue->table_header_text_color ?? '#292424'}}">
                                 <form action="{{url('all-column-search')}}" method="post" id="reset-column-data">
@@ -536,9 +536,9 @@
                                                     <div class="dropdown-menu filter-content shadow" role="menu">
                                                         <p>Filter Value</p>
                                                         <!-- <input type="text" class="form-control input-text" name="search_value"> -->
-                                                        <select class="form-control b-r-0 select2" name="channel[]" id="channels" multiple>
+                                                        <select class="form-control b-r-0" id="channel-select2" name="channel[]" multiple>
 
-                                                            @foreach($channels as $key=> $channel)
+                                                            {{-- @foreach($channels as $key=> $channel)
                                                                 @if($key == "ebay")
                                                                     @if (Session::get('ebay') == 1)
                                                                     @foreach($channel as $key => $ebay)
@@ -562,6 +562,30 @@
                                                                         @endif
                                                                     @endforeach
                                                                     @endif
+                                                                @elseif(($key == "amazon") && (Session::get('amazon') == 1))
+                                                                    @foreach ($channel as $amazon_child_key => $child_channel)
+                                                                        @if(isset($allCondition['channel']))
+                                                                            @foreach($allCondition['channel'] as $ch)
+                                                                                @if($child_channel == $ch)
+                                                                                    <option value="{{$child_channel}}" selected>{{$child_channel}}</option>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        @else
+                                                                            <option value="{{$child_channel}}">{{$child_channel}}</option>
+                                                                        @endif
+                                                                    @endforeach
+                                                                @elseif(($key == "shopify") && (Session::get('shopify') == 1))
+                                                                    @foreach ($channel as $shopify_child_key => $child_channel)
+                                                                        @if(isset($allCondition['channel']))
+                                                                            @foreach($allCondition['channel'] as $ch)
+                                                                                @if($child_channel == $ch)
+                                                                                    <option value="{{$child_channel}}" selected>{{$child_channel}}</option>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        @else
+                                                                            <option value="{{$child_channel}}">{{$child_channel}}</option>
+                                                                        @endif
+                                                                    @endforeach
                                                                 @else
                                                                     @if ((($key == 'woocommerce') && (Session::get('woocommerce') == 1)) || (($key == 'onbuy') && (Session::get('onbuy') == 1)))
                                                                     @if(isset($allCondition['channel']))
@@ -584,7 +608,14 @@
                                                                     @endif
                                                                     @endif
                                                                 @endif
-                                                            @endforeach
+                                                            @endforeach --}}
+
+                                                            @if (count($channelWithAccount) > 0)
+                                                                @foreach ($channelWithAccount as $channel)
+                                                                    <option value="{{$channel}}" @if(isset($allCondition['channel']) && in_array($channel,$allCondition['channel'])) selected @endif>{{explode('/',$channel)[1] ?? ''}} ({{explode('/',$channel)[0] == 'checkout' ? 'woocommerce' : explode('/',$channel)[0]}})</option>
+                                                                @endforeach
+                                                            @endif
+
                                                         </select>
                                                         <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
                                                             <input id="channel_opt_out" type="checkbox" name="channel_opt_out" value="1" @isset($allCondition['channel_opt_out']) checked @endisset><label for="channel_opt_out">Opt Out</label>
@@ -1082,6 +1113,9 @@
 {{--                                @else--}}
 {{--                                    <h1>not empty</h1>--}}
 {{--                                @endif--}}
+                                {{-- @php 
+                                    dd(count($product_drafts));
+                                @endphp --}}
                                 @foreach($product_drafts as $key=> $product_draft)
 
                                     <tr class="variation_load_tr">
@@ -1116,13 +1150,13 @@
                                                 <div class="row mb-2">
                                                     @foreach($product_draft->ebayCatalogueInfo as $catalogueInfo)
                                                         @if($catalogueInfo->AccountInfo->account_name)
-                                                            <div class="col-md-4 mb-1">
-                                                                <a title="eBay({{$catalogueInfo->AccountInfo->account_name}})" href="{{'https://www.ebay.co.uk/itm/'.$catalogueInfo->item_id}}" target="_blank">
-                                                                    @if($catalogueInfo->product_status == "Active")
+                                                            @if($catalogueInfo->product_status == "Active")
+                                                                <div class="col-md-4 mr-1 mb-1">
+                                                                    <a title="eBay({{$catalogueInfo->AccountInfo->account_name}})" href="{{'https://www.ebay.co.uk/itm/'.$catalogueInfo->item_id}}" target="_blank">
+
                                                                         @if(isset($catalogueInfo->AccountInfo->logo))
                                                                         <img style="height: 30px; width: 30px;" src="{{$catalogueInfo->AccountInfo->logo}}">
                                                                         @else
-
                                                                             <span class="account_trim_name">
                                                                                 @php
                                                                                     $ac = $catalogueInfo->AccountInfo->account_name;
@@ -1132,7 +1166,6 @@
                                                                                     explode(' ', $ac)));
                                                                                 @endphp
                                                                             </span>
-
                                                                         @endif
 {{--                                                                    @elseif($catalogueInfo->product_status == "Completed")--}}
 {{--                                                                        @if($product_draft->ProductVariations[0]->stock == 0)--}}
@@ -1151,10 +1184,11 @@
 {{--                                                                            </span>--}}
 {{--                                                                            @endif--}}
 {{--                                                                        @endif--}}
-                                                                    @endif
 
-                                                                </a>
-                                                            </div>
+
+                                                                    </a>
+                                                                </div>
+                                                            @endif
                                                         @endif
                                                     @endforeach
                                                 </div>
@@ -1188,12 +1222,23 @@
                                             @endif
                                             @isset($product_draft->shopifyCatalogueInfo)
                                                     @foreach($product_draft->shopifyCatalogueInfo as $shopify)
-
-                                                        {{-- <h6>{{ $shopify->shopifyUserInfo->account_name ?? '' }}</h6> --}}
+                                                        @php
+                                                        if(@unserialize($shopify->product_type) !== FALSE) {
+                                                            $shopify_collection = \App\shopify\ShopifyCollection::where('shopify_collection_id', explode('/',\Opis\Closure\unserialize($shopify->product_type)[0] ?? '')[1] ?? null)->first();
+                                                            $shopify_variant = \App\shopify\ShopifyVariation::where('shopify_master_product_id', $shopify->id)->get();
+                                                        }
+                                                        @endphp
                                                         <div class="col-md-4">
-                                                            <a title="{{$shopify->shopifyUserInfo->account_name ?? ''}} ({{$shopify->shopifyUserInfo->account_name ?? ''}})" href="{{ $shopify->shopifyUserInfo->shop_url ?? '' }}" class="form-group" target="_blank">
-                                                                <img style="height: 30px; width: 30px; margin:10px;" src="{{$shopify->shopifyUserInfo->account_logo ?? ''}}" alt="{{$shopify->shopifyUserInfo->account_name ?? ''}} ({{$shopify->shopifyUserInfo->account_name ?? ''}})">
-                                                            </a>
+                                                            @if(isset($shopify_collection))
+                                                                <a title="Shopify({{$shopify->shopifyUserInfo->account_name ?? ''}})" href="{{ $shopify->shopifyUserInfo->shop_url.'/collections/'.strtolower(str_replace(' ','-',$shopify_collection->category_name)).'/products/'.strtolower(str_replace(' ','-',$shopify->title)).'?variant='.$shopify_variant[0]->shopify_variant_it }}" class="form-group" target="_blank">
+                                                                    <img style="height: 30px; width: 30px; margin:10px;" src="{{$shopify->shopifyUserInfo->account_logo ?? ''}}" alt="{{$shopify->shopifyUserInfo->account_name ?? ''}} ({{$shopify->shopifyUserInfo->account_name ?? ''}})">
+                                                                </a>
+                                                            @else
+                                                                <a title="Shopify({{$shopify->shopifyUserInfo->account_name ?? ''}})" href="{{ $shopify->shopifyUserInfo->shop_url ?? '' }}" class="form-group" target="_blank">
+                                                                    <img style="height: 30px; width: 30px; margin:10px;" src="{{$shopify->shopifyUserInfo->account_logo ?? ''}}" alt="{{$shopify->shopifyUserInfo->account_name ?? ''}} ({{$shopify->shopifyUserInfo->account_name ?? ''}})">
+                                                                </a>
+                                                            @endif
+                                                            
                                                         </div>
                                                     @endforeach
                                                 @endisset
@@ -1284,22 +1329,23 @@
                                                             @endif
                                                             <div class="align-items-center mr-2"> <a class="btn-size add-product-btn" href="{{url('catalogue/'.$product_draft->id.'/product')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Manage Variation"><i class="fas fa-chart-bar" aria-hidden="true"></i></a></div>
                                                             {{-- <div class="align-items-center"> <a class="btn-size add-terms-catalogue-btn" href="{{url('add-additional-terms-draft/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list"></i></a></div> --}}
-                                                            <div class="align-items-center" onclick="addTermsCatalog({{ $product_draft->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div>
-                                                        </div>
-                                                        <div class="action-2">
+                                                            {{-- <div class="align-items-center" onclick="addTermsCatalog({{ $product_draft->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div> --}}
                                                             @if (Session::get('woocommerce') == 1)
                                                             @if(!isset($product_draft->woocommerce_catalogue_info->master_catalogue_id))
                                                                 @if($product_draft->product_variations_count != 0)
-                                                                    <div class="align-items-center mr-2"> <a class="btn-size list-woocommerce-btn" href="{{url('woocommerce/catalogue/create/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="List On Woocommerce"><i class="fab fa-wordpress" aria-hidden="true"></i></a></div>
+                                                                    <div class="align-items-center"> <a class="btn-size list-woocommerce-btn" href="{{url('woocommerce/catalogue/create/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="List On Woocommerce"><i class="fab fa-wordpress" aria-hidden="true"></i></a></div>
                                                                 @endif
                                                             @endif
                                                             @endif
+                                                        </div>
+                                                        <div class="action-2">
                                                             @if (Session::get('shopify') == 1)
                                                             @if($product_draft->product_variations_count != 0)
                                                                     <div class="align-items-center mr-2"> <a class="btn-size list-woocommerce-btn" href="{{url('shopify/catalogue/create/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="List On Shopify"><i class="fab fa-shopify" aria-hidden="true"></i></a></div>
                                                             @endif
                                                             @endif
-                                                            <div class="align-items-center mr-2"><a class="btn-size catalogue-invoice-btn invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div>
+                                                            {{-- <div class="align-items-center mr-2"><a class="btn-size catalogue-invoice-btn invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div> --}}
+                                                            <div class="align-items-center cursor-pointer text-white mr-2" onclick="receive_invoice_modal(this,{{$product_draft->id}},null,null,null,null)"><a class="btn-size catalogue-invoice-btn invoice-btn" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div>
                                                             <div class="align-items-center mr-2"> <a class="btn-size duplicate-btn" href="{{url('duplicate-draft-catalogue/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Duplicate"><i class="fa fa-clone" aria-hidden="true"></i></a></div>
                                                             @if (Session::get('ebay') == 1)
                                                             @if($product_draft->product_variations_count != 0)
@@ -1307,11 +1353,11 @@
                                                             @endif
                                                             @endif
                                                             <div class="align-items-center">
-                                                                <form action="{{route('product-draft.destroy',$product_draft->id)}}" method="post" id="catalogueDelete{{$product_draft->id}}">
+                                                                {{-- <form action="{{route('product-draft.destroy',$product_draft->id)}}" method="post" id="catalogueDelete{{$product_draft->id}}">
                                                                     @csrf
-                                                                    @method('DELETE')
-                                                                    <button class="del-pub delete-btn" style="cursor: pointer" href="#" data-toggle="tooltip" data-placement="top" title="Delete" onclick="deleteConfirmationMessage('catalogue','catalogueDelete{{$product_draft->id}}');"><i class="fa fa-trash" aria-hidden="true"></i></button>
-                                                                </form>
+                                                                    @method('DELETE') --}}
+                                                                    <button class="del-pub delete-btn" style="cursor: pointer" href="#" data-toggle="tooltip" data-placement="top" title="Delete" onclick="deleteConfirmationMessage('catalogue',{{$product_draft->id}});"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                                                                {{-- </form> --}}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1499,6 +1545,7 @@
         // });
 
         $(".select2").select2();
+        $("#channel-select2").select2();
 
         var searchPriority = 0;
         var skip = 0;
@@ -1538,13 +1585,19 @@
                     "skip": skip,
                     "take": take,
                     "ids": ids,
+                    "page_status": "active",
                 },
                 beforeSend: function(){
 
                     $("#ajax_loader").show();
                 },
                 success: function(response){
-                    // console.log(response.ids);
+
+                    // console.log(response.setting)
+                    // console.log(response.page_status)
+                    // console.log(response.ids.length);
+                    // console.log(response.product_id)
+
                     if (response.ids.length === 0) {
                         $(document).ready(function() {
                             Swal.fire(
@@ -1554,12 +1607,21 @@
                             )
                         });
                     }
+
                     $('#search_reasult').html(response.html);
                     searchPriority = response.search_priority;
                     take = response.take;
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
 
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
+                    if(response.product_id){
+                        var url = "{{asset('filter-product-draft-view')}}"+"/"+response.product_id
+                        $('a.catalogue-link').removeAttr('href')
+                        $('a.catalogue-link').attr('href', url)
+                    }
 
                 },
                 complete:function(data){
@@ -1592,7 +1654,8 @@
                             "search_priority": searchPriority,
                             "skip": skip,
                             "take": take,
-                            'ids': ids
+                            'ids': ids,
+                            "page_status": "active",
                         },
                         beforeSend: function(){
                             window.stop();
@@ -1607,16 +1670,20 @@
                             //         )
                             //     });
                             // }
+
                             searchPriority = response.search_priority;
                             take = response.take;
                             skip = parseInt(response.skip)+10;
 
-                            $('tbody tr:last').after(response.html);
+                            $('tr.search-hidden-row:last').after(response.html);
                             // var div = document.getElementById('tbody');
                             // div.innerHTML +=response.html;
 
                             ids = ids.concat(response.ids);
 
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){
@@ -1989,8 +2056,8 @@
         }
 
         // Check uncheck active catalogue counter
-        const countCheckedAll = function() {
-            let countActiveCatalogue = $(".checkBoxClass:checked").length;
+        var countCheckedAll = function() {
+            var countActiveCatalogue = $(".checkBoxClass:checked").length;
             $(".checkbox-count").html( countActiveCatalogue + " active catalogue selected!" );
             console.log(countActiveCatalogue + ' active catalogue selected!');
         };
@@ -2045,6 +2112,7 @@
         // document.getElementById("creator_opt_out").value = getSavedValue("creator_opt_out");
         // document.getElementById("catalogueModifier").value = getSavedValue("catalogueModifier");
         // document.getElementById("modifier_opt_out").value = getSavedValue("modifier_opt_out");
+
         function saveValue(e){
             var id = e.id;  // get the sender's id to save it .
             var val = e.value; // get the value.
@@ -2134,6 +2202,7 @@
                 })
             }
         })
+
 
     </script>
 

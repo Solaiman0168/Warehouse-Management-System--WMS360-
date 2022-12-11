@@ -35,9 +35,12 @@ use SellingPartnerApi\Model\FbaInventory\InventoryDetails;
 use SellingPartnerApi\Model\ProductPricing\Price;
 use SellingPartnerApi\Model\SmallAndLight\FBAItem;
 use App\Channel;
+use App\Traits\Ebay;
+
 
 class EbayAccountController extends Controller
 {
+    use Ebay;
     public function __construct()
     {
         $this->middleware('auth');
@@ -368,9 +371,7 @@ class EbayAccountController extends Controller
     public function storeAuthorization(Request $request,$type){
         $path = null;
         $accountExistCheck = EbayAccount::where('account_name',$request->account_name)->where('country',$request->country)->first();
-        if($accountExistCheck){
-            return response()->json(['type'=>'error','msg'=>'Account Exist']);
-        }
+
         if ($request->hasFile('logo')){
             $logo = $request->logo;
             $filename = rand(100,1000).'.'. $logo->extension();
@@ -378,25 +379,45 @@ class EbayAccountController extends Controller
             $logo->move('./uploads/ebay-account-logo/',$filename);
         }
         //$result = EbayAccount::insert(['account_name'=> $request->account_name,'logo' => $path,'developer_id' => $request->developer_id,'feeder_quantity' => $request->feeder_quantity]);
-        $ebay_account = EbayAccount::updateOrCreate([
-            'account_name' => $request->account_name,'country' => $request->country
-        ],['developer_id' => $request->developer_id,'feeder_quantity' => $request->feeder_quantity,'country' => $request->country,
-            'location' => $request->location,'post_code' => $request->post_code]);
-        $ebay_account = new EbayAccount();
-        $ebay_account->account_name = $request->account_name;
-        $ebay_account->logo = $path;
-        $ebay_account->developer_id = $request->developer_id;
-        $ebay_account->feeder_quantity = $request->feeder_quantity;
-        $ebay_account->country= $request->country;
-        $ebay_account->location= $request->location;
-        $ebay_account->post_code= $request->post_code;
-        $ebay_account->save();
-        $account_site = EbayAccount::find($ebay_account->id);
-        $account_site->sites()->attach($request->site_id);
-        $developer_id = DeveloperAccount::get()->first();
+//        $ebay_account = EbayAccount::updateOrCreate([
+//            'account_name' => $request->account_name,'country' => $request->country
+//        ],['developer_id' => $request->developer_id,'feeder_quantity' => $request->feeder_quantity,'country' => $request->country,
+//            'location' => $request->location,'post_code' => $request->post_code]);
+//        $account_site = EbayAccount::find($ebay_account->id);
+//        $account_site->sites()->attach($request->site_id);
+//        $developer_id = DeveloperAccount::get()->first();
         if ($type == 'old'){
+            if($accountExistCheck){
+                return response()->json(['type'=>'error','msg'=>'Account Exist']);
+            }
+            $ebay_account = new EbayAccount();
+            $ebay_account->account_name = $request->account_name;
+            $ebay_account->logo = $path;
+            $ebay_account->developer_id = $request->developer_id;
+            $ebay_account->feeder_quantity = $request->feeder_quantity;
+            $ebay_account->country= $request->country;
+            $ebay_account->location= $request->location;
+            $ebay_account->post_code= $request->post_code;
+            $ebay_account->save();
+            $account_site = EbayAccount::find($ebay_account->id);
+            $account_site->sites()->attach($request->site_id);
+            $developer_id = DeveloperAccount::get()->first();
             return redirect('ebay-account-list')->with('success','account created successfully');
         }elseif ($type == 'new'){
+            if(!$accountExistCheck){
+                $ebay_account = new EbayAccount();
+                $ebay_account->account_name = $request->account_name;
+                $ebay_account->logo = $path;
+                $ebay_account->developer_id = $request->developer_id;
+                $ebay_account->feeder_quantity = $request->feeder_quantity;
+                $ebay_account->country= $request->country;
+                $ebay_account->location= $request->location;
+                $ebay_account->post_code= $request->post_code;
+                $ebay_account->save();
+                $account_site = EbayAccount::find($ebay_account->id);
+                $account_site->sites()->attach($request->site_id);
+                $developer_id = DeveloperAccount::get()->first();
+            }
             return ["sign_in_link" =>$developer_id->sign_in_link,"account_id" => $ebay_account->id];
         }
 
@@ -707,27 +728,7 @@ class EbayAccountController extends Controller
             return response()->json(['data' => 1,"content" => $output, 'lavel' => $request->level - 1]);
         }else {
 
-            $url = 'https://api.ebay.com/ws/api.dll';
-            $headers = [
-                'X-EBAY-API-SITEID:' . $request->site_id,
-                'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-                'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-                'X-EBAY-API-IAF-TOKEN:' . $token,
-            ];
-
-            $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>' . $request->category_id . '</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
-
-            $item_specifics = $this->curl($url, $headers, $body, 'POST');
-            $item_specifics = simplexml_load_string($item_specifics);
-            $item_specifics = json_decode(json_encode($item_specifics), true);
+            $item_specifics= $this->getItemSpecifics($request->category_id,$token,$request->site_id);
 
 //                if(isset($item_specifics['Recommendations']['NameRecommendation'])){
 //
@@ -890,27 +891,7 @@ class EbayAccountController extends Controller
             return response()->json(['data' => 1,"content" => $output, 'lavel' => $request->level - 1]);
         }else {
             return $categories['CategoryCount'];
-            $url = 'https://api.ebay.com/ws/api.dll';
-            $headers = [
-                'X-EBAY-API-SITEID:' . $request->site_id,
-                'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-                'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-                'X-EBAY-API-IAF-TOKEN:' . $token,
-            ];
-
-            $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>' . $request->category_id . '</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
-
-            $item_specifics = $this->curl($url, $headers, $body, 'POST');
-            $item_specifics = simplexml_load_string($item_specifics);
-            $item_specifics = json_decode(json_encode($item_specifics), true);
+            $item_specifics= $this->getItemSpecifics($request->category_id,$token,$request->site_id);
 
 //                if(isset($item_specifics['Recommendations']['NameRecommendation'])){
 //

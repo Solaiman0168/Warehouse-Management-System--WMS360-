@@ -1,7 +1,7 @@
 @extends('master')
 
 @section('title')
-    Shelf Wise Order | WMS360
+    Group Order | WMS360
 @endsection
 
 @section('content')
@@ -28,6 +28,7 @@
                             <a class="dropdown-item" href="{{asset('group-order?order_filter_type=group_by_sku')}}">SKU</a>
                             <a class="dropdown-item" href="{{asset('group-order?order_filter_type=group_by_catalogue')}}">Catalogue</a>
                             <a class="dropdown-item" href="{{asset('group-order?order_filter_type=order_by_shelf')}}">Shelf</a>
+                            <a class="dropdown-item" href="{{asset('group-order?order_filter_type=group_by_warehouse')}}">Warehouse</a>
                         </div>
                     </div>
                     <!-- <div class="btn-group">
@@ -73,6 +74,11 @@
                                         <a class="nav-link active" data-toggle="tab" href="#shelf_wise_order">Shelf</a>
                                     </li>
                                     @endif
+                                @endif
+                                @if($orderFilterType == 'group_by_warehouse')
+                                    <li class="nav-item text-center w-100">
+                                        <a class="nav-link active" data-toggle="tab" href="#group_by_warehouse">Warehouse</a>
+                                    </li>
                                 @endif
                             </ul>
                             <div class="container-fluid tab-content shelf-content product-content">
@@ -912,6 +918,365 @@
                                     </div>
                                     @endif
                                 @endif
+                                @if($orderFilterType == 'group_by_warehouse')
+                                    <div id="group_by_warehouse" class="tab-pane active m-b-20"><br>
+                                        <input type="hidden" class="order-filter-type" value="group_by_warehouse">
+                                        <div class="row collapsable-checkbox-content-div d-none">
+                                            <div class="col-md-4">
+                                                <div class="btn-group">
+                                                    <select class="form-control picker_id select2" name="picker_id" required>
+                                                    @if(($pickerInfo->users_list)->count() == 1)
+                                                        @foreach($pickerInfo->users_list as $picker)
+                                                            <option value="{{$picker->id}}">{{$picker->name}}</option>
+                                                        @endforeach
+                                                    @else
+                                                        <option selected="true" disabled="disabled">Select Picker</option>
+                                                        @foreach($pickerInfo->users_list as $picker)
+                                                            <option value="{{$picker->id}}">{{$picker->name}}</option>
+                                                        @endforeach
+                                                    @endif
+                                                    </select>
+                                                    <button type="button" class="btn btn-primary picker-assign"> Assign </button>
+                                                    <!-- <button type="button" class="btn btn-primary filter-order-export-csv ml-3" data="group-by-warehouse"> Export CSV </button> -->
+                                                </div>
+                                                <div class="checkbox-count font-16 ml-md-3 ml-sm-3 a-d-count"></div>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table id="post-code-wise-table-sort-list" class="table table-hover table-bordered">
+                                                <thead>
+                                                <form action="{{url('column-search')}}" method="post" id="shelfListForm">
+                                                @csrf
+                                                <input type="hidden" name="route_name" value="group-order">
+                                                <input type="hidden" name="order_filter_type" value="group_by_warehouse">
+                                                <tr>
+                                                    <th><p class="text-center">Select All</p><input type="checkbox" class="form-control selectAllCheckbox"></th>
+                                                    <th class="text-center">View</th>
+                                                    <th class="text-center">
+                                                        <div class="d-flex justify-content-center">
+                                                            <div class="btn-group">
+                                                                <a type="button" class="dropdown-toggle filter-btn" data-toggle="dropdown">
+                                                                    <i class="fa @isset($allCondition['warehouse_id'])text-warning @endisset" aria-hidden="true"></i>
+                                                                </a>
+                                                                <div class="dropdown-menu filter-content shadow" role="menu">
+                                                                    <p>Filter Value</p>
+                                                                    <select class="form-control b-r-0" name="warehouse_id" id="">
+                                                                        @isset($warehouseInfo)
+                                                                            <option value="">Select Warehouse</option>
+                                                                            @foreach($warehouseInfo as $warehouse)
+                                                                                @if(isset($allCondition['warehouse_id']) && ($allCondition['warehouse_id'] == $warehouse->id))
+                                                                                    <option value="{{$warehouse->id}}" selected>{{$warehouse->warehouse_name}}</option>
+                                                                                @else
+                                                                                    <option value="{{$warehouse->id}}">{{$warehouse->warehouse_name}}</option>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        @endisset
+                                                                    </select>
+                                                                    <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
+                                                                        <input id="opt-out1" type="checkbox" name="warehouse_id_opt_out" value="1"  @isset($allCondition['warehouse_id_opt_out']) checked @endisset><label for="opt-out1">Opt Out</label>
+                                                                    </div>
+                                                                    @if(isset($allCondition['warehouse_id']))
+                                                                        <div class="individual_clr">
+                                                                            <button title="Clear filters" type="button" class='btn btn-outline-info clear-params'><i class="fas fa-times"></i></button>
+                                                                        </div>
+                                                                    @endif
+                                                                    <button type="submit" class="btn btn-primary filter-apply-btn float-right">Apply <i class="fa fa-arrow-circle-right ml-1"></i></button>
+                                                                </div>
+                                                            </div>
+                                                            <div>Warehouse Name</div>
+                                                        </div>
+                                                    </th>
+                                                    <th class="text-center">Total Order</th>
+                                                </tr>
+                                                </form>
+                                                </thead>
+                                                <tbody id="group-by-warehouse-tbody">
+                                                @foreach($order_info as $warehouse_id => $customer_order)
+                                                    <tr class="filter-order-row-{{$warehouse_id}}">
+                                                        <td><input type="checkbox" class="form-control table-row-checkbox" name="warehouse_id" id="" value="{{implode(',',$customer_order['order_numbers'])}}"></td>
+                                                        <td class="text-center">
+                                                            <a href="#">
+                                                                <button class="btn btn-success" data-toggle="modal" data-target="#myModal{{$warehouse_id}}"><i class="fa fa-eye"></i></button>
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span title="Click to Copy" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{{$customer_order['warehouse_info']->warehouse_name ?? ''}}</span>
+                                                            <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="progress" style="height: 20px !important">
+                                                            @php
+                                                                $pickedPercentage = ($customer_order['total_order'] == 0) ? 0 : round(100 / $customer_order['total_order'] * $customer_order['picked_order']);
+                                                                $unpickedPercentage = 100 - $pickedPercentage;
+                                                            @endphp
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{$pickedPercentage}}%; font-size: 12px" aria-valuenow="{{$pickedPercentage}}" aria-valuemin="0" aria-valuemax="100">{{$pickedPercentage}}%</div>
+                                                                <div class="progress-bar bg-secondary" role="progressbar" style="width: {{$unpickedPercentage}}%; font-size: 12px" aria-valuenow="{{$unpickedPercentage}}" aria-valuemin="0" aria-valuemax="100">{{$unpickedPercentage}}%</div>
+                                                            </div>
+                                                            <span>
+                                                                <small class="text-success">{{$customer_order['picked_order']}} picked </small> and
+                                                                <small class="text-primary">{{$customer_order['assigned_order']}} assigned </small>of {{$customer_order['total_order']}} orders
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <div class="modal fade" id="myModal{{$warehouse_id}}">
+                                                        <div class="modal-dialog modal-lg custom-modal">
+                                                            <div class="modal-content">
+                                                                <!-- Modal Header -->
+                                                                <div class="modal-header">
+                                                                    <h4 class="modal-title">Order Details</h4>
+                                                                    <button type="button" class="close custom-modal-close-btn" data-dismiss="modal">&times;</button>
+                                                                </div>
+                                                                <!--End Modal Header -->
+                                                                <!--Modal body start-->
+                                                                @if(count($customer_order['order_info']) > 0)
+                                                                @foreach($customer_order['order_info'] as $c_order)
+                                                                    <div class="modal-body" id="modal-body">
+                                                                        <div>
+                                                                        <h5 style="display:inline;">Order No: #{!! \App\Traits\CommonFunction::dynamicOrderLink($c_order->created_via,$c_order) !!}</h5>
+                                                                        </div>
+                                                                        <span class="font-16">Order Date: {{date('d-m-Y H:i:s',strtotime($c_order->date_created))}},</span>
+                                                                        <span class="text-purple font-16"> Status: {{$c_order->status}}</span>
+                                                                            <div class="body-part-one" style="border: 1px solid #ccc">
+                                                                                <div class="row m-t-10">
+                                                                                    <div class="col-2 text-center">
+                                                                                        <h6> Image </h6>
+                                                                                        <hr class="order-hr" width="60%">
+                                                                                    </div>
+                                                                                    <div class="col-3 text-center">
+                                                                                        <h6> Name </h6>
+                                                                                        <hr class="order-hr" width="90%">
+                                                                                    </div>
+                                                                                    <div class="col-2 text-center">
+                                                                                        <h6>SKU</h6>
+                                                                                        <hr class="order-hr" width="60%">
+                                                                                    </div>
+                                                                                    @if($shelfUse == 1)
+                                                                                        <div class="col-2 text-center">
+                                                                                            <h6>Shelf</h6>
+                                                                                            <hr class="order-hr" width="60%">
+                                                                                        </div>
+                                                                                    @endif
+                                                                                    <div class="col-1 text-center">
+                                                                                        <h6> Quantity </h6>
+                                                                                        <hr class="order-hr" width="60%">
+                                                                                    </div>
+                                                                                    <div class="col-2 text-center">
+                                                                                        <h6> Price </h6>
+                                                                                        <hr class="order-hr" width="60%">
+                                                                                    </div>
+                                                                                </div>
+                                                                                @foreach($c_order->product_variations as $product)
+                                                                                    <div class="row pt-2">
+                                                                                        <div class="col-2 text-center">
+                                                                                            @if(isset($product->image))
+                                                                                                <a href="{{$product->image}}" target="_blank"><img src="{{$product->image}}" width="50px" height="50px"></a>
+                                                                                            @else
+                                                                                                <a href="{{(filter_var($product->master_single_image->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$product->master_single_image->image_url : $product->master_single_image->image_url}}" target="_blank">
+                                                                                                    <img src="{{(filter_var($product->master_single_image->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$product->master_single_image->image_url : $product->master_single_image->image_url}}" width="50px" height="50px">
+                                                                                                </a>
+                                                                                            @endif
+                                                                                        </div>
+                                                                                        <div class="col-3 text-center">
+                                                                                            <h7> {{$product->pivot->name}} </h7>
+                                                                                        </div>
+                                                                                        <div class="col-2 text-center">
+                                                                                            <h7>
+                                                                                                <span title="Click to Copy" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{{$product->sku}}</span>
+                                                                                                <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
+                                                                                            </h7>
+                                                                                        </div>
+                                                                                        @if($shelfUse == 1)
+                                                                                            <div class="col-2 text-center">
+                                                                                                @foreach($product->shelf_quantity as $shelf)
+                                                                                                    <h7 class="label label-default mr-1"> {{$shelf->shelf_name}} -> {{$shelf->pivot->quantity}} </h7>
+                                                                                                @endforeach
+                                                                                            </div>
+                                                                                        @endif
+                                                                                        <div class="col-1 text-center">
+                                                                                            <h7> {{$product->pivot->quantity}} </h7>
+                                                                                        </div>
+                                                                                        <div class="col-2 text-center">
+                                                                                            <h7> {{$product->pivot->price}} </h7>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                @endforeach
+                                                                                <div class="row m-b-20 m-t-10">
+                                                                                    <div class="col-9">
+                                                                                    </div>
+                                                                                    <div class="col-1 d-flex justify-content-center">
+                                                                                        <h7 class="font-weight-bold"> Total</h7>
+                                                                                    </div>
+                                                                                    <div class="col-2 text-center">
+                                                                                        <h7 class="font-weight-bold"> {{$c_order->total_price}}</h7>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <!--- Shipping Billing --->
+                                                                            <div style="border: 1px solid #ccc" class="m-t-20">
+                                                                                <div class="shipping-billing">
+                                                                                    <div class="shipping">
+                                                                                        <div class="d-block mb-5">
+                                                                                            <h6>Shipping</h6>
+                                                                                            <hr class="m-t-5 float-left" width="50%">
+                                                                                        </div>
+                                                                                        <div class="shipping-content">
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Name </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_user_name}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Phone </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_phone}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Address Line 1 </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_address_line_1}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Address Line 2 </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_address_line_2}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Address Line 3 </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_address_line_3}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> City </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_city}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> County </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_county}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Post code </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_post_code}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-2">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Country </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->shipping_country}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="billing">
+                                                                                        <div class="d-block mb-5">
+                                                                                            <h6> Billing </h6>
+                                                                                            <hr class="m-t-5 float-left" width="50%">
+                                                                                        </div>
+                                                                                        <div class="billing-content">
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Name </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_name}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Email </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_email}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Phone </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_phone}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> City </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_city}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> State </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_state}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-1">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Zip Code </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_zip_code}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="d-flex justify-content-start mb-2">
+                                                                                                <div class="content-left">
+                                                                                                    <h7> Country </h7>
+                                                                                                </div>
+                                                                                                <div class="content-right">
+                                                                                                    <h7> : {{$c_order->customer_country}} </h7>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div> <!--Billing and shipping -->
+                                                                        </div>
+                                                                    @endforeach
+                                                                    @endif
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>  <!-- // The Modal -->
+                                                @endforeach
+                                                <tr style="height:60px"></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
 
                         </div>
@@ -1069,17 +1434,25 @@
                       "multiple_order" : order_number,
                       "order_filter_type" : orderFilterType
                   },
+                  beforeSend: function() {
+                    $('#ajax_loader').show()
+                  },
                   success: function (response) {
                       if(response.type == 'success') {
                             Swal.fire('Success',response.message,'success')
                             order_number.forEach((orderId) => {
-                                console.log(orderId)
                                 $('tbody tr.filter-order-row-'+orderId).remove()
                             })
                             $(".checkbox-count").html('');
                       }else{
                             Swal.fire('Oops!',response.message,'error')
                       }
+                  },
+                  error: function(error) {
+                    Swal.fire('Oops!', 'Something went wrong', 'error');
+                  },
+                  complete: function() {
+                    $('#ajax_loader').hide()
                   }
               });
           });

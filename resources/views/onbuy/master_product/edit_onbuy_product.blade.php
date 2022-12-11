@@ -103,6 +103,18 @@
                                     <div class="row m-t-10 d-flex align-items-center">
                                         <div class="col-md-2">
                                             <label class="required">Master Product Name</label>
+                                            <div class="ebay-edit-title-switch-btn">
+                                                <div class="onoffswitch mb-sm-10 res-onoff-btn">
+                                                    @php
+                                                    $title_flag = \Opis\Closure\unserialize($single_master_product_info->draft_change_status)['title_flag'] ?? 0;
+                                                    @endphp
+                                                    <input type="checkbox" value="{{$title_flag}}" name="title_flag" class="onoffswitch-checkbox"  id="title_flag" tabindex="1" @if ($title_flag == '1')  checked @else unchecked @endif>
+                                                    <label class="onoffswitch-label" for="catalogue-name">
+                                                        <span onclick="onOff('title_flag')" class="onoffswitch-inner"></span>
+                                                        <span onclick="onOff('title_flag')" class="ebay-onoffswitch-switch"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="col-md-10">
                                             <input type="text" class="form-control" name="m_product_name" value="{{$single_master_product_info->product_name}}">
@@ -369,6 +381,17 @@
                 $("#remove_m_product_data_field").remove();
             });
         });
+        function onOff(id){
+            var value_clicked = $('#'+id).val();
+            if(value_clicked == 1){
+                document.getElementById(id).value = 0;
+                document.getElementById(id).checked = false;
+            }
+            else{
+                document.getElementById(id).value = 1;
+                document.getElementById(id).checked = true;
+            }
+        }
     </script>
 
 @endsection

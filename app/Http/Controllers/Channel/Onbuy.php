@@ -63,7 +63,7 @@ class Onbuy implements EChannel
                     "Content-Type: application/json"
                 ),
             ));
-            $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Onbuy',1,$onbuy_variation_result->updated_sku ?? $onbuy_variation_result->sku,$update_info,null,Auth::user()->name ?? 'Quantity Sync',$beforeQuantity,$quantity,Carbon::now(),1,0);
+            $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Onbuy',1,$onbuy_variation_result->updated_sku ?? $onbuy_variation_result->sku,$update_info,null,Auth::user()->name ?? 'Cron Job',$beforeQuantity,$quantity,Carbon::now(),1,0);
             $response = curl_exec($curl);
             curl_close($curl);
             $data = json_decode($response);
@@ -78,7 +78,7 @@ class Onbuy implements EChannel
             }
             //$updateResponse = $this->updateResponse('response_data',$logInsertData->id,$response,1);
         }catch (Exception $exception){
-            $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Onbuy',1,$onbuy_variation_result->updated_sku ?? $onbuy_variation_result->sku,$update_info,$exception,Auth::user()->name,$beforeQuantity,$quantity,Carbon::now(),0,0);
+            $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Onbuy',1,$onbuy_variation_result->updated_sku ?? $onbuy_variation_result->sku,$update_info,$exception,Auth::user()->name ?? 'Cron Job',$beforeQuantity,$quantity,Carbon::now(),0,0);
         }
 
     }

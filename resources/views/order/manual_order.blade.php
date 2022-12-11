@@ -1062,6 +1062,7 @@
                                 icon: 'error',
                                 title: 'No Item Found!'
                             })
+                            return false
                         }else{
                             var id = response.product_id;
                             var verify_qty = response.actual_qty;
@@ -1506,6 +1507,8 @@
                             if(qtyRowCount != ''){
                                 $('button.key-submit').removeAttr('disabled','disabled');
                             }
+
+                            return false
                         }
 
                     }

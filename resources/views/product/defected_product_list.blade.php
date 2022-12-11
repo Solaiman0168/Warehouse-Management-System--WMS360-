@@ -152,14 +152,17 @@
                                                     @foreach($declareDefectProductList as $declare_defected_product)
                                                         <tr id="action-row-{{$declare_defected_product->id}}">
                                                             <td class="text-center">
-                                                                <a href="{{$declare_defected_product->variationInfo->image ?? ((filter_var($declare_defected_product->variationInfo->product_draft->single_image_info->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$declare_defected_product->variationInfo->product_draft->single_image_info->image_url : $declare_defected_product->variationInfo->product_draft->single_image_info->image_url)}}" target="_blank">
-                                                                    <img class="rounded" src="{{$declare_defected_product->variationInfo->image ?? ((filter_var($declare_defected_product->variationInfo->product_draft->single_image_info->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$declare_defected_product->variationInfo->product_draft->single_image_info->image_url : $declare_defected_product->variationInfo->product_draft->single_image_info->image_url)}}" height="60" width="60" alt="Defected Product Image">
+                                                                @php
+                                                                $masterImageUrl = $declare_defected_product->variationInfo->product_draft->single_image_info->image_url ?? '';
+                                                                @endphp
+                                                                <a href="{{$declare_defected_product->variationInfo->image ?? ((filter_var($masterImageUrl, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$masterImageUrl : $masterImageUrl)}}" target="_blank">
+                                                                    <img class="rounded" src="{{$declare_defected_product->variationInfo->image ?? ((filter_var($masterImageUrl, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$masterImageUrl : $masterImageUrl)}}" height="60" width="60" alt="Defected Product Image">
                                                                 </a>
                                                             </td>
-                                                            <td class="text-center">{{$declare_defected_product->variationInfo->product_draft->name}}</td>
+                                                            <td class="text-center">{{$declare_defected_product->variationInfo->product_draft->name ?? ''}}</td>
                                                             <td class="text-center">{{$declare_defected_product->variationInfo->sku ?? ''}}</td>
                                                             @php
-                                                                $attributeArr = unserialize($declare_defected_product->variationInfo->attribute);
+                                                                $attributeArr = unserialize($declare_defected_product->variationInfo->attribute ?? '');
                                                                 $attribute = '';
                                                                 if(is_array($attributeArr)){
                                                                     foreach($attributeArr as $attr){

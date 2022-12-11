@@ -31,9 +31,10 @@
                                             <a href="{{$product['product_url']}}" class="btn btn-success" target="_blank">See On Onbuy</a>
                                             <!-- <a href="{{url('onbuy/add-exist-ean-listing/?catalogue_id='.'95826'.'&exist_ean='.$opc.'&exist_opc='.$product['opc'].'&product_id='.$product['product_id'].'&profile_id=1')}}"
                                             class="btn btn-primary change_status">Add Listing</a> -->
-                                            <button type="button" class="btn btn-primary add-listing" id="{{$opc}}" data-toggle="modal" data-target=".bd-example-modal-xl">
+                                            <!-- <button type="button" class="btn btn-primary add-listing" id="{{$opc}}" data-toggle="modal" data-target=".bd-example-modal-xl">
                                                 Add Listing
-                                            </button>
+                                            </button> -->
+                                            <button type="button" class="btn btn-primary add-listing" id="{{$opc}}">Add Listing</button>
                                         </div>
                                     </div>
                                 </div>
@@ -88,6 +89,13 @@
         {
             customConfig: 'config.js',
             toolbar: 'simple'
+        })
+
+        $(document).ready(function(){
+            $('.add-listing').click(function(){
+                $('div.catalogue-content table tbody').html('')
+                $('#exampleModalScrollable').modal('show')
+            })
         })
 
 </script>

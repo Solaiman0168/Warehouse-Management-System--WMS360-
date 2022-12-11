@@ -80,8 +80,14 @@
     });
 </script>
 
+@php
+    $navabr_humberger_btn_value = \App\NavbarHumbergerExpandCollapse::where('user_id', Auth::user()->id)->first();
+@endphp
+
 <!-- Begin page -->
-<div id="wrapper">
+@if(isset($navabr_humberger_btn_value))
+<div id="wrapper" class="forced @if($navabr_humberger_btn_value->expand_collapse_value == 0) enlarged @endif">
+@endif
 
     <!-- Top Bar Start -->
     <div class="topbar">
@@ -236,10 +242,15 @@
                 </li>
 
             </ul>
-
+            
             <ul class="list-inline menu-left mb-0">
                 <li class="float-left">
-                    <button class="button-menu-mobile open-left waves-light waves-effect">
+                    <button class="button-menu-mobile open-left waves-light waves-effect" onclick="sidebar_humberger_btn()">
+                        @if(isset($navabr_humberger_btn_value))
+                            <input type="hidden" id="sidebar-humberger-btn" value="{{$navabr_humberger_btn_value->expand_collapse_value}}">
+                        @else 
+                            <input type="hidden" id="sidebar-humberger-btn" value="1">
+                        @endif
                         <i class="dripicons-menu"></i>
                     </button>
                 </li>
@@ -326,8 +337,8 @@
                                         <li><a href="{{url('condition')}}">Condition</a></li>
                                     </ul>
                                 </li>
-                                <li><a href="{{url('reports')}}"> Reports </a></li>
-                                <li><a href="{{url('global_reports')}}"> WMS Reports </a></li>
+                                {{-- <li><a href="{{url('reports')}}"> Reports </a></li> --}}
+                                {{-- <li><a href="{{url('global_reports')}}"> WMS Reports </a></li> --}}
                                 <li><a href="{{url('item-attribute')}}">Item Attribute </a></li>
                                 <li><a href="{{url('item-profiles')}}">Item Profiles </a></li>
                                 <!-- <li><a href="{{url('channels')}}">Channels </a></li> -->
@@ -521,7 +532,8 @@
 
                                 @endif
                                 @if($shelf_use == 1)
-                                    <li><a href="{{url('pending-receive')}}"> Awaiting Shelving </a></li>
+                                    {{-- <li><a href="{{url('pending-receive')}}"> Awaiting Shelving </a></li> --}}
+                                    <li><a href="{{url('awaiting-shelving')}}"> Awaiting Shelving </a></li>
                                 @endif
                                 @if (Auth::check() && !empty(array_intersect(['1','2'],explode(',',Auth::user()->role))))
                                     <li><a href="{{url('invoice')}}"> Invoice History </a></li>
@@ -532,6 +544,14 @@
                             <!-- <li><a href="{{url('defect-reason/na/all')}}">Defect Reason</a></li> -->
                                 <li><a href="{{url('unmatched-inventory-list')}}">Unmatched Product</a></li>
                                 <li><a href="{{url('change-shelf-quantity-log')}}"> Shelf Qty Change Log </a></li>
+                                <li class="has_sub">
+                                    <a id="tab_tab" href="javascript:void(0);" class="waves-effect"><span>Report</span> <span class="menu-arrow"></span></a>
+                                    <ul class="list-unstyled">
+                                        {{--                                <li><a href="{{url('woowms-category/create')}}"> Add Category </a></li>--}}
+                                        <li><a href="{{url('export-catalogue-reports')}}"> Export Catalogue Reports </a></li>
+                                        <li><a href="{{url('inventory-reports')}}"> Inventory Reports </a></li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                     @endif
@@ -617,12 +637,13 @@
                     @if($shelf_use == 1)
                         @if (Auth::check() && !empty(array_intersect(['1','2','3','4'],explode(',',Auth::user()->role))))
                             <li class="has_sub">
-                                <a href="javascript:void(0);" class="waves-effect"><i class="ti-bag"></i><span> Shelf </span> <span class="menu-arrow"></span></a>
+                                <a href="javascript:void(0);" class="waves-effect"><i class="fas fa-warehouse"></i></i><span> Warehouse </span> <span class="menu-arrow"></span></a>
                                 <ul class="list-unstyled">
                                     @if (Auth::check() && !empty(array_intersect(['1','2'],explode(',',Auth::user()->role))))
                                         {{--                            <li><a href="{{url('shelf/create')}}"> Add Shelf </a></li>--}}
                                     @endif
                                     @if (Auth::check() && !empty(array_intersect(['1','2','3','4'],explode(',',Auth::user()->role))))
+                                        <li><a href="{{url('warehouse/all')}}"> Warehouse List </a></li>
                                         <li><a href="{{url('shelf')}}"> Shelf List </a></li>
                                     @endif
                                     @if (Auth::check() && !empty(array_intersect(['1','2'],explode(',',Auth::user()->role))))
@@ -650,7 +671,7 @@
                             <a href="javascript:void(0);" class="waves-effect"><i class="ti-panel" aria-hidden="true"></i><span> Setting  </span> <span class="menu-arrow"></span></a>
                             <ul class="list-unstyled">
                                 <li><a href="{{url('invoice-setting')}}"> Invoice Setting </a></li>
-                                <li><a href="{{url('shipping-setting')}}"> shipping Setting </a></li>
+                                <li><a href="{{url('shipping-setting')}}"> Shipping Setting </a></li>
                                 @if (Auth::check() && in_array('1',explode(',',Auth::user()->role)))
                                 <li><a href="{{url('settings')}}"> Wms Settings </a></li>
                                 @endif
@@ -966,10 +987,10 @@
         }
     }
 
-    function deleteConfirmationMessage(message,formId){
+    function deleteConfirmationMessage(catalogue,id){
         event.preventDefault();
         Swal.fire({
-            title: 'Are you sure to delete this ' + message + '?',
+            title: 'Are you sure to delete this ' + catalogue + '?',
             text: "If you delete, all it's associates information will also be deletle",
             icon: 'warning',
             showCancelButton: true,
@@ -978,7 +999,28 @@
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                $('#' + formId).submit();
+                // $('#' + formId).submit();
+                var url = "{{url('product-draft')}}"+'/'+id
+                var token = "{{ csrf_token() }}"
+                $.ajax({
+                    url: url,
+                    type: "DELETE",
+                    data: {
+                        "_token": token,
+                    },
+                    success: function(response){
+                        // console.log(response.success)
+                        if(response.message){
+                            Swal.fire(response.message,'','success')
+                        }
+                        if(response.catalog_not_found){
+                            Swal.fire(response.catalog_not_found,'','error')
+                        }
+                        if(response.error){
+                            Swal.fire(response.error,'','error')
+                        }
+                    }
+                })
             }
         })
     }
@@ -1059,6 +1101,22 @@
                     })
                     $('#product_variation_loading').hide()
                     //history.pushState({}, "", url)
+                    var tr_row_catalog = $('.catalog-table #search_reasult .search-tr').length
+                    var tr_row = $('.draft_search_result #woocomtdody .search-tr').length
+                    var tr_row_onbuy = $('.onbuy-table tbody .search-tr').length
+                    var tr_row_ebay = $('.ebay-table tbody .search-tr').length
+                    if(tr_row > 3){
+                        $('.catalog .card-box').removeClass('table-column-filter-issue')
+                    }
+                    if(tr_row_catalog > 3){
+                        $('.catalog .card-box').removeClass('table-column-filter-issue')
+                    }
+                    if(tr_row_onbuy > 3){
+                        $('.catalog .card-box').removeClass('table-column-filter-issue')
+                    }
+                    if(tr_row_ebay > 3){
+                        $('.catalog .card-box').removeClass('table-column-filter-issue')
+                    }
                 },
                 complete: function(){
                     $('#product_variation_loading').hide()
@@ -1067,7 +1125,7 @@
             $(this).closest("div").remove()
         })
 
-    });
+    }); 
 
 
 
@@ -1481,36 +1539,768 @@
         })
 
 
-function convertFormToJSON(form) {
-    const array = $(form).serializeArray(); // Encodes the set of form elements as an array of names and values.
-    const json = {};
-    $.each(array, function () {
-        json[this.name] = this.value || "";
-    });
-    return json;
-}
+    function convertFormToJSON(form) {
+        const array = $(form).serializeArray(); // Encodes the set of form elements as an array of names and values.
+        const json = {};
+        $.each(array, function () {
+            json[this.name] = this.value || "";
+        });
+        return json;
+    }
+
+    $(document).ready(function(){
+        var tr_length = $('.order-table tbody tr').length
+        var tr_length_pro_draft = $('.product-draft-table tbody tr').length
+        var tr_length_onbuy = $('.onbuy-table tbody tr').length
+        var tr_length_ebay = $('.ebay-table tbody tr').length
+        var tr_length_amazon = $('.amazon-table tbody tr').length
+        // alert(tr_length_supplier)
+        if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length > 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_pro_draft == 0 || tr_length_pro_draft == 1 || tr_length_pro_draft == 2 || tr_length_pro_draft == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_pro_draft > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_onbuy == 0 || tr_length_onbuy == 1 || tr_length_onbuy == 2 || tr_length_onbuy == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_onbuy > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_ebay == 0 || tr_length_ebay == 1 || tr_length_ebay == 2 || tr_length_ebay == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_ebay > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_amazon == 0 || tr_length_amazon == 1 || tr_length_amazon == 2 || tr_length_amazon == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_amazon > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+
+        $('table.receive-invoice-modal-table tbody').on('click','.create-royal-mail-order',function(){
+            var orderNumber = $(this).attr('data')
+            if((orderNumber == '') || (orderNumber == 'undefined') || (orderNumber == null)){
+                Swal.fire('Oops!','Order Number Not Found','error')
+                return false
+            }
+            var url = "{{url('create-royal-mail-order')}}"
+            var token = "{{csrf_token()}}"
+            var html = '<div class="form-group">'
+                            +'<label class="required">Weight In Grams</label>'
+                            +'<input type="text" class="form-control" id="weight_in_gram" placeholder="Enter The Parcel Weight" required>'
+                        +'</div>'
+                        +'<div class="form-group">'
+                            +'<label class="required">Package Format</label>'
+                            +'<select class="form-control" id="package_format" required>'
+                            +'<option value="">Select Package</option>'
+                            +'<option value="letter">Letter</option>'
+                            +'<option value="largeLetter">LargeLetter</option>'
+                            +'<option value="smallParcel">SmallParcel</option>'
+                            +'<option value="mediumParcel">MediumParcel</option>'
+                            +'<option value="parcel">Parcel</option>'
+                            +'<option value="documents">Documents</option>'
+                            +'<option value="undefined">Undefined</option>'
+                            +'</select>'
+                        +'</div>'
+                        +'<div class="form-group">'
+                            +'<label>Special Instruction</label>'
+                            +'<input type="text" class="form-control" id="special_instruction" placeholder="Enter Special Instruction">'
+                        +'</div>'
+            Swal.fire({
+                title: 'Create Order In Royal Mail',
+                html: html,
+                showCancelButton: true,
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes',
+                showLoaderOnConfirm: true,
+                preConfirm: function(){
+                    var packageWeight = Swal.getPopup().querySelector('#weight_in_gram').value
+                    var packageFormat = Swal.getPopup().querySelector('#package_format').value
+                    var specialInstruction = Swal.getPopup().querySelector('#special_instruction').value
+                    console.log(packageWeight,packageFormat)
+                    if((packageWeight == '') || (packageFormat == '')){
+                        Swal.showValidationMessage(`Enter Valid Value`)
+                        return false
+                    }
+                    var dataObj = {
+                        orderNumber: orderNumber,
+                        packageWeight: packageWeight,
+                        packageFormat: packageFormat,
+                        specialInstruction: specialInstruction,
+                    }
+                    return fetch(url,{
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        method: 'post',
+                        body: JSON.stringify(dataObj)
+                    })
+                    .then(response => {
+                        if(!response.ok){
+                            throw new Error(response.statusText)
+                        }
+                        return response.json()
+                    })
+                    .then(data => {
+                        if(data.type == 'success'){
+                            Swal.fire('Success',data.msg,'success')
+                        }else{
+                            Swal.fire('Oops!',data.msg,'error')
+                        }
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(`Request Failed: ${error}`)
+                    })
+                }
+            })
+        })
+    })
+
+    function sidebar_humberger_btn(){
+        var input_value = $('#sidebar-humberger-btn').val()
+        if(input_value == 1){
+            $('#sidebar-humberger-btn').val(0)
+            var input_value = $('#sidebar-humberger-btn').val()
+        }else{
+            $('#sidebar-humberger-btn').val(1)
+            var input_value = $('#sidebar-humberger-btn').val()
+        }
+        console.log(input_value);
+        $.ajax({
+            url: "{{asset('sidebar-humberger-btn-expand-collapse')}}",
+            type: "post",
+            data: {
+                "_token" : "{{csrf_token()}}",
+                "sidebar_humberger_btn_value" : input_value
+            },
+            success: function(response){
+                console.log(response.data)
+            }
+        })
+    }
+
+    // From dispatched order cancel order modal then get response this modal.
+    $(document).ready(function(){
+        var returnProductText = $('div#returnOrderSuccessMsg').text()
+        if(returnProductText != ''){
+            Swal.fire({
+            icon: 'success',
+            title: 'Return product added successfully. Do you want to restock this product?',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Restock',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('div#receive-invoice-modal').show()
+                }
+            })
+        }
+    })
+
+    $('button.remove-more-invoice').on('click',function(){
+        var trCount = $('tr.invoice-row').length
+        if(trCount != 1){
+            $(this).closest('tr').remove()
+        }
+    })
+
+    // From manage variation, this modal has used for only new product.
+    $(document).ready(function(){
+        var NewProductText = $('div#new_product_success').text()
+        var product_draft_id = $('input[name="product_draft_id"]').val()
+        if(NewProductText != ''){
+            Swal.fire({
+            icon: 'success',
+            title: 'New product added successfully. Do you want to receive invoice this product?',
+            showCancelButton: true,
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Receive',
+            showLoaderOnConfirm: true,
+            preConfirm:function(){
+                return new Promise(function(resolve){
+                    receive_invoice_modal(null,product_draft_id,null,null,null,null)
+                })
+            },
+            allowOutsideClick: false
+            })
+        }
+    })
+
+
+    // parameters: id(catalogue ID), order_id(order ID), type(return or not), return_id(Return Order ID), variation_id(Product variation ID)
+    function receive_invoice_modal(e,id,order_id,type,return_id,variation_id){
+        $('tr.bg-highlight').removeClass('bg-highlight')
+        $('div.single-variation-invoice-receive').removeClass('bg-highlight')
+        if (type == 'return'){
+            if(variation_id == null){
+                var url = "{{url('catalogue-product-invoice-receive')}}"+'/'+id+'/'+order_id+'/'+type+'/'+return_id
+            }else{
+                var url = "{{url('catalogue-product-invoice-receive')}}"+'/'+id+'/'+order_id+'/'+type+'/'+return_id+'/'+variation_id
+            } 
+        }else{
+            if(order_id == null){
+                var url = "{{url('catalogue-product-invoice-receive')}}"+'/'+id 
+            }else{
+                var url = "{{url('catalogue-product-invoice-receive')}}"+'/'+id+'/'+order_id //here order_id is a product variation id 
+            }
+        }
+        $.ajax({
+            type: "get",
+            url: url,
+            beforeSend: function(){
+                $("#ajax_loader").show()
+            },
+            success: function(response){
+                // console.log(response.invoice_part)
+                $(e).closest('tr').addClass('bg-highlight')
+                $(e).closest('div.single-variation-invoice-receive').addClass('bg-highlight')
+                $('table.order-table').after(response.invoice_part)
+                $('table.catalog-table').after(response.invoice_part)
+                $('table.add-pro-table').after(response.invoice_part)
+                swal.close()
+                $('#receive-invoice-modal').show()
+                $('select.shelver_user_id').first().on('change',function(){
+                    var getFirstSelectedValue = $(this).val()
+                    $('select.shelver_user_id option').each(function(){
+                        if(this.value == getFirstSelectedValue){
+                            $(this).attr('selected','selected')
+                        }
+                    })
+                })
+
+                $("table.receive-invoice-modal-table tbody").on('change','.product-unit-cost',function () {
+                    var product_variation_id = $(this).val();
+                    var row_count_string = $(this).attr('id').split('product_variation_id_');
+                    var row_count = row_count_string[1];
+                    var return_order_id = $('#return_order_id').val();
+                    var tr = $(this).closest('tr')
+                    var trNumber = $('table.receive-invoice-modal-table tbody tr').index(tr)
+                    var variationIds = []
+                    var variationIds = putSelectedVariationIdToArray(variationIds)
+
+                    showHideDropdownSku(variationIds)
+
+                    if(product_variation_id == ''){
+                        $('#variation-show_'+row_count).html('No Variation');
+                        return false;
+                    }
+                    $.ajax({
+                        type: "POST",
+                        url: "{{url('/get-quantity')}}",
+                        data: {
+                            "_token" : "{{csrf_token()}}",
+                            "product_variation_id" : product_variation_id,
+                            "order_id" : return_order_id
+                        },
+                        success: function (data) {
+                            $('#variation-show_'+row_count).html(data.variation);
+                            $('#quantity'+row_count).val(data.quantity);
+                            $('#qr_'+row_count).append(data.qr_code);
+                            let exitCost = $('#price'+row_count).val()
+                            $('#price'+row_count).val(exitCost != '' ? exitCost : data.cost_price);
+                            addMoreButtonShowHide()
+                            selectAllButtonShowHide()
+                        },
+                        error: function (jqXHR, exception) {
+
+                        }
+                    })
+
+                });
+
+                $('button.receive-all-product').on('click',function(){
+                    var firstShelverDiv = $('.invoice-row').first().find('.shelver_user_id')
+                    var firstShelverContent = firstShelverDiv.html()
+                    var firstShelverId = firstShelverDiv.val()
+                    var shelver = ''
+                    if(firstShelverId == ''){
+                        var content = '<select id="shelver_user_id" class="form-control shelver_user_id" name="shelver_user_id[]" required>'+firstShelverContent+'</div>'
+                        Swal.fire({
+                            title: 'Choose Shelver',
+                            html: content,
+                            showCancelButton: true,
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes',
+                            showLoaderOnConfirm: true,
+                            preConfirm: () => {
+                                var shelver = Swal.getPopup().querySelector('#shelver_user_id').value
+                                if(shelver == ''){
+                                    Swal.showValidationMessage(`Select Shelver`)
+                                    return false
+                                }
+                                $('td.shelver-td .shelver_user_id > option').each(function(){
+                                    if(this.value == shelver){
+                                        $(this).attr('selected','selected')
+                                    }
+                                })
+                                bulkReceiveRow(shelver)
+                            }
+                        })
+                        return false
+                    }else{
+                        bulkReceiveRow(firstShelverId)
+                    }
+                })
+
+                $(".product_type").on('change',function () {
+                    var product_type = $(this).val();
+                    var row_count_string = $(this).attr('id').split('product_type_');
+                    var row_count = row_count_string[1];
+                    if(product_type == 0){
+                        $('#shelver_user_id'+row_count).attr("required", false);
+                        $('#shelver_user_id'+row_count).hide();
+                        return false;
+                    }else{
+                        $('#shelver_user_id'+row_count).show();
+                        $('#shelver_user_id'+row_count).attr("required", true);
+                        return false;
+                    }
+                });
+
+                // var cost_price = $('#cost_price').val();
+                // document.getElementById('price').value = cost_price;
+
+                $('.add-more-invoice').on('click', function () {
+                    var firstShelverTd = $('.invoice-row').first()
+                    var firstShelverDiv = firstShelverTd.find('.shelver_user_id')
+                    var firstShelverId = firstShelverDiv.val()
+                    if(firstShelverId == ''){
+                        firstShelverDiv.addClass('border border-danger')
+                        firstShelverTd.find('.shelver-td span').removeClass('hide').addClass('d-block')
+                        return false
+                    }else{
+                        firstShelverDiv.removeClass('border border-danger')
+                        firstShelverTd.find('.shelver-td span').removeClass('d-block').addClass('hide')
+                    }
+                    addMoreButtonShowHide()
+                    $('.invoice-row').first().clone(true).appendTo('table.receive-invoice-modal-table tbody').each(function () {
+                        var add_card_id = $('table.receive-invoice-modal-table tbody tr').length;
+                        $(this).find('.product-unit-cost').attr("id","product_variation_id_"+add_card_id);
+                        $(this).find('.variation_show').attr("id","variation-show_"+add_card_id);
+                        $(this).find('input.quantity').attr("id","quantity"+add_card_id);
+                        $(this).find('input.unit-price').attr("id","price"+add_card_id);
+                        $(this).find('td.qr').attr("id","qr_"+add_card_id)
+                        $(this).find('select.shelver_user_id').attr("id","shelver_user_id"+add_card_id);
+                        $(this).find('.product_type').attr("id","product_type_"+add_card_id);
+                        $('#quantity'+add_card_id).val(null);
+                        $('#price'+add_card_id).val(null);
+                        $('#variation-show_'+add_card_id).html('No Variation');
+                        $('#qr_'+add_card_id).text(null)
+                        var shelver_id = $('#shelver_user_id1 option:selected').val();
+                        var value_check = '#shelver_user_id'+add_card_id;
+                        $('#shelver_user_id'+add_card_id).show();
+                        $('#shelver_user_id'+add_card_id).attr("required", true);
+                        $(value_check+" option").each(function(){
+                            if($(this).val()==shelver_id){
+                                $(this).attr("selected","selected");
+                            }
+                        });
+
+                    })
+                });
+                $('table.receive-invoice-modal-table tbody').on('click','.remove-more-invoice', function () {
+                    let value = $('table.receive-invoice-modal-table tbody tr').length;
+                    var variationIds = []
+                    if(value > 1) {
+                        $(this).closest('tr').remove()
+                        var variationIds = mapSelectedVariationIdToArray(variationIds)
+                        var count = 1
+                        $('table.receive-invoice-modal-table tbody tr').each(function(i, data){
+                            $(this).find('.product-unit-cost').attr('id','product_variation_id_'+count)
+                            $(this).find('.variation_show').attr("id","variation-show_"+count);
+                            $(this).find('input.quantity').attr("id","quantity"+count);
+                            $(this).find('input.unit-price').attr("id","price"+count);
+                            $(this).find('select.shelver_user_id').attr("id","shelver_user_id"+count);
+                            $(this).find('.product_type').attr("id","product_type_"+count);
+                            var shelver_id = $('#shelver_user_id1 option:selected').val();
+                            var value_check = '#shelver_user_id'+count;
+
+                            $(this).find(".product-unit-cost > option").each(function(i){
+                                if(variationIds.includes($(this).val()) == true){
+                                    $(this).css('display','none')
+                                }else{
+                                    $(this).css('display','block')
+                                }
+                            })
+                            count++
+                        })
+                    }else{
+                        return false;
+                    }
+                    addMoreButtonShowHide()
+                    selectAllButtonShowHide()
+                });
+
+                $(".searchbox").val($("#listBox1 :selected").val());
+
+                $("#product_variation_id").on('change',function () {
+                    if(document.getElementById('return_order_checkbox').checked) {
+                        var product_variation_id = $('select[name=product_variation_id]').val();
+                        var order_id = $('select[name=order_id]').val();
+
+                        $.ajax({
+                            type: 'POST',
+                            url: '{{url('/get-quantity').'?_token='.csrf_token()}}',
+                            data: {
+                                'product_variation_id': product_variation_id, 'order_id': order_id
+                            },
+                            success: function (data) {
+                                document.getElementById('quantity').readOnly = true;
+                                document.getElementById('quantity').value = data.return_product_quantity;
+                                document.getElementById('return_order_product_id').value = data.id;
+                            },
+                            error: function (jqXHR, exception) {
+
+                            }
+                        })
+                    }else{
+                        document.getElementById('quantity').readOnly = false;
+                    }
+                });
+
+                $("#invoice_number").on('input', function () {
+                    var invoice_number = $('input[name=invoice_number]').val();
+                    if(invoice_number == ''){
+                        $('#livesearch').hide();
+                        return false;
+                    }
+                    $.ajax({
+                        type:'POST',
+                        url:'{{url('/invoice/number').'?_token='.csrf_token()}}',
+                        data: {
+                            'invoice_number' : invoice_number
+                        },
+                        success:function(data) {
+                            $('#livesearch').show();
+                            var res = '';
+                            document.getElementById("livesearch").style.border="1px solid #A5ACB2";
+                            if($.trim(data)){
+                                Object.keys(data).forEach(function(key,value) {
+                                    Object.keys(data[value]).forEach(function(key1,value1) {
+                                        res +='<option style="cursor:pointer">' + data[value][key1] +'</option' +"<br>";
+                                    })
+                                });
+                                document.getElementById("livesearch").innerHTML=res;
+                            }
+                            if(!$.trim(data)){
+                                document.getElementById("livesearch").innerHTML= 'no match found';
+                            }
+                        },
+                        error: function(jqXHR, exception) {
+
+                        }
+                    });
+                });
+                $('#livesearch').on('click',function (event) {
+                    var value = $(event.target).text();
+                    $.ajax({
+                        type: 'POST',
+                        url: '{{url('/get-vendor').'?_token='.csrf_token()}}',
+                        data: {
+                            'invoice_number': value
+                        },
+                        success: function (data) {
+                            $('select[name="vendor_id"]').find('option[value='+data.vendor_id+']').attr("selected",true);
+                            //document.getElementById('vendor_id'). = 1;
+                            document.getElementById("livesearch").style.border = "1px solid #A5ACB2";
+
+                        },
+                        error: function (jqXHR, exception) {
+
+                        }
+                    });
+                    document.getElementById("invoice_number").value = value;
+                    $('#livesearch').hide();
+                    // var value = $(event.target).text();
+                    // document.getElementById("invoice_number").value = value;
+                    // $('#livesearch').hide();
+                });
+                $('select#invoice_number').on('change',function (event) {
+                    var value = $(this).val();
+                    $.ajax({
+                        type: 'POST',
+                        url: '{{url('/get-vendor').'?_token='.csrf_token()}}',
+                        data: {
+                            'invoice_number': value
+                        },
+                        success: function (data) {
+                            $('select[name="vendor_id"]').find('option').attr("selected",false);
+                            $('select[name="vendor_id"]').find('option[value='+data.vendor_id+']').attr("selected",true);
+                            //document.getElementById('vendor_id'). = 1;
+                            // document.getElementById("livesearch").style.border = "1px solid #A5ACB2";
+
+                        },
+                        error: function (jqXHR, exception) {
+
+                        }
+                    });
+
+                    // document.getElementById("invoice_number").value = value;
+                });
+                $('select[name="vendor_id"]').on('change',function(){
+                    var supplierId = $(this).val()
+                    if(supplierId == ''){
+                        alert('Please select supplier')
+                    }
+                    $('select[name="invoice_number"] > option').each(function(){
+                        if(this.id != ''){
+                            if(supplierId == this.id){
+                                $("select[name='invoice_number'] option[id=" + this.id + "]").show();
+                            }else{
+                                $("select[name='invoice_number'] option[id=" + this.id + "]").hide();
+                            }
+                        }
+                    })
+                })
+            },
+            complete: function(){
+                $("#ajax_loader").hide()
+            }
+        })
+    }
+
+
+    function closeReceiveInvoiceModal(e){
+        $(e).closest('div.order-content').find('tr.bg-highlight').removeClass('bg-highlight')
+        $('tr.bg-highlight').removeClass('bg-highlight')
+        $('#receive-invoice-modal').remove()
+    }
+
+
+    // $(document).mouseup(function(e){
+    //     var container = $("div#receive-invoice-modal")
+    //     if(!container.is(e.target) && container.has(e.target).length === 0) {
+    //         container.remove()
+    //         $('tr.bg-highlight').removeClass('bg-highlight')
+    //     }
+    // });
+
+    
+    function putSelectedVariationIdToArray(variationIds){
+        $('table.receive-invoice-modal-table tbody tr').each(function(i, data){
+            $(this).find(".product-unit-cost > option:selected").each(function(i,v) {
+                variationIds.push($(this).val())
+            });
+        })
+        return variationIds
+    }
+
+    function mapSelectedVariationIdToArray(variationIds){
+        $('table.receive-invoice-modal-table tbody tr').each(function(i, data){
+            var opt = $(this).find(".product-unit-cost > option:selected").map(function(i,v) {
+                variationIds.push(this.value)
+            });
+        })
+        return variationIds
+    }
+
+    function showHideDropdownSku(variationIds){
+        $('table.receive-invoice-modal-table tbody tr').each(function(i, data){
+            $(this).find(".product-unit-cost > option").each(function(i){
+                if(variationIds.includes($(this).val()) == true){
+                    $(this).css('display','none')
+                }else{
+                    $(this).css('display','block')
+                }
+            })
+        })
+    }
+
+    function addMoreButtonShowHide(){
+        var totalVariation = $('span.total-variation').text()
+        var count = $('table.receive-invoice-modal-table tbody tr').length;
+        if(count >= totalVariation){
+            $('.add-more-invoice').addClass('hide')
+        }else{
+            $('.add-more-invoice').removeClass('hide')
+        }
+    }
+
+    function selectAllButtonShowHide(){
+        var totalVariation = $('span.total-variation').text()
+        var count = $('table.receive-invoice-modal-table tbody tr').length;
+        if(count < totalVariation){
+            $('button.receive-all-product').show()
+        }else{
+            $('button.receive-all-product').hide()
+        }
+    }
+                    
+    // $(".product-unit-cost").on('change',function () {
+    //     let prodcut_id = $('.product-unit-cost').val();
+    //     $.ajax({
+    //         type: "post",
+    //         url:"{{url('get-product-price-ajax')}}",
+    //         data: {
+    //             "_token" : "{{csrf_token()}}",
+    //             "prodcut_id" : prodcut_id
+    //         },
+    //         success: function (response) {
+    //             $('#price').val(response.data);
+    //         }
+    //     })
+    // });
+    function bulkReceiveRow(shelverId){
+        let masterCatalogueId = $('#master_catalogue_id').val() ?? null
+        let return_order_id = $('input[name="invoice_type"]').val() ?? null
+        console.log(masterCatalogueId,return_order_id)
+        $.ajax({
+            type: "POST",
+            url: "{{url('/get-quantity')}}",
+            data: {
+                "_token" : "{{csrf_token()}}",
+                "master_catalogue_id" : masterCatalogueId,
+                "return_order_id" : return_order_id
+            },
+            success: function (response) {
+                var allProductInvoice = ''
+                var shelverOption = ''
+                $('span.total-variation').text(response.invoice_info.length)
+                if(shelverId != undefined){
+                    response.shelver_info.users_list.forEach(function(shelver){
+                        if(shelver.id == shelverId){
+                            shelverOption += '<option value="'+shelver.id+'" selected>'+shelver.name+'</option>'
+                        }else{
+                            shelverOption += '<option value="'+shelver.id+'">'+shelver.name+'</option>'
+                        }
+                    })
+                }
+                var variationIds = []
+                var count = 1
+                response.invoice_info.forEach(function(invoice){
+                    console.log(invoice)
+                    allProductInvoice += '<tr class="invoice-row">'
+                        +'<td class="text-center" style="width: 15%; vertical-align: middle">'
+                        +'<select class="form-control product-unit-cost" name="product_variation_id[]" id="product_variation_id_'+count+'" required>'
+                        if(response.invoice_info.length > 1){
+                            allProductInvoice += '<option value="">Select SKU</option>'
+                        }
+                        response.invoice_info.forEach(function(info){
+                            if(info.sku === invoice.sku){
+                                allProductInvoice += '<option value="'+invoice.variation_id+'" selected>'+invoice.sku+'</option>'
+                            }else{
+                                allProductInvoice += '<option value="'+info.variation_id+'">'+info.sku+'</option>'
+                            }
+                        })
+                        allProductInvoice += '</select>'
+                        +'</td>'
+                        +'<td class="text-center" style="width: 15%; vertical-align: middle">'
+                        +'<span id="variation-show_'+count+'" class="variation_show">'+invoice.variation+'</span>'
+                        +'</td>'
+                        if(invoice.qr){
+                            allProductInvoice += '<td class="text-center qr" id="qr_'+count+'" style="width: 15%; vertical-align: middle">'+invoice.qr+'</td>'
+                        }
+                        allProductInvoice += '<td class="text-center qty" style="width: 15%; vertical-align: middle">'
+                        +' <input type="number" id="quantity'+count+'" name="quantity[]" placeholder="" class="form-control quantity" value="'+invoice.return_qty+'" required>'
+                        +'</td>'
+                        +'<td class="text-center unit-cost" style="width: 15%; vertical-align: middle">'
+                        +'<input type="text" id="price'+count+'" name="price[]" placeholder="" class="form-control unit-price" value="'+invoice.cost_price+'" required>'
+                        +'</td>'
+                        if(shelverId != undefined){
+                            allProductInvoice += '<td class="shelver-td" style="width: 15%; vertical-align: middle">'
+                            +'<select id="shelver_user_id'+count+'" class="form-control shelver_user_id" name="shelver_user_id[]" required>'
+                            +'<option value="">Select Shelver</option>'
+                            +shelverOption+
+                            '</select>'
+                            +'</td>'
+                        }
+                        allProductInvoice += '<td class="text-center" style="width: 10%; vertical-align: middle">'
+                        +'<button type="button" class="btn btn-danger remove-more-invoice">Remove</button>'
+                        +'</td>'
+                        +'</tr>'
+                        //variationIds.push(invoice.variation_id)
+                        count++
+                });
+                $('table.receive-invoice-modal-table tbody').html(allProductInvoice)
+                var variationIds = putSelectedVariationIdToArray(variationIds)
+                showHideDropdownSku(variationIds)
+                addMoreButtonShowHide()
+                if(response != undefined){
+                    $('button.receive-all-product').hide()
+                }
+                // $('#variation-show_'+row_count).html(data.variation);
+                // $('#quantity'+row_count).val(data.quantity);
+                // let exitCost = $('#price'+row_count).val()
+                // $('#price'+row_count).val(exitCost != '' ? exitCost : data.cost_price);
+            },
+            error: function (jqXHR, exception) {
+
+            }
+        })
+    }
+
+
+    function invoice_modal_validation(event){
+        // console.log(event)
+        var shelf_count = 0
+        var shelf_counter = []
+        var shelver_value = []
+        var unit_cost_count = 0
+        var unit_cost_counter = []
+        var unit_cost_value = []
+        var quantity_count = 0
+        var quantity_counter = []
+        var quantity_value = []
+        var sku_count = 0
+        var sku_counter = []
+        var sku_value = []
+        $(event.target).find('select.shelver_user_id').each(function(){
+            shelf_count++
+            shelf_counter = shelf_count
+            shelver_value.push($(this).val())
+        })
+        $(event.target).find('input.receive-invoice-modal-unit-price').each(function(){
+            unit_cost_count++
+            unit_cost_counter = unit_cost_count
+            unit_cost_value.push($(this).val())
+        })
+        $(event.target).find('input.receive-invoice-modal-quantity').each(function(){
+            quantity_count++
+            quantity_counter = quantity_count
+            quantity_value.push($(this).val())
+        })
+        $(event.target).find('select.product-unit-cost').each(function(){
+            sku_count++
+            sku_counter = sku_count
+            sku_value.push($(this).val())
+        })
+        if(shelver_value.length == shelf_counter && unit_cost_value.length == unit_cost_counter && quantity_value.length == quantity_counter && sku_value.length == sku_counter){
+            var receiveInvoiceModalBtnOrder = $('button.receiveInvoiceModalBtn_order').length
+            var receiveInvoiceModalBtn = $('button.receiveInvoiceModalBtn').length
+            if(receiveInvoiceModalBtnOrder > 0){
+                $('button.receiveInvoiceModalBtn_order').html( 
+                    `Restocking this product<span class="ml-2"><i class="fa fa-spinner fa-spin"></i></span>`
+                );
+                $('button.receiveInvoiceModalBtn_order').addClass('changeCatalogBTnCss');
+            }
+            if(receiveInvoiceModalBtn > 0){
+                $('button.receiveInvoiceModalBtn').html(
+                    `Stocking this product<span class="ml-2"><i class="fa fa-spinner fa-spin"></i></span>`
+                );
+                $('button.receiveInvoiceModalBtn_order').addClass('changeCatalogBTnCss');
+            }
+        }else{
+            event.preventDefault()
+            return false
+        }
+    }
+
+
+
+    @if ($message = Session::get('new_product_success'))
+        swal("{{ $message }}", "", "success");
+    @endif
+
 
 </script>
 
 <!-- development version, includes helpful console warnings -->
-
-
-{{--<script type="text/javascript">--}}
-{{--    CKEDITOR.replace( 'messageArea',--}}
-{{--        {--}}
-{{--            customConfig : 'config.js',--}}
-{{--            toolbar : 'simple'--}}
-{{--        })--}}
-
-{{--    $(document).on("click", ".copyTo", function(){--}}
-{{--        let $temp = $("<input>");--}}
-{{--        $("body").append($temp);--}}
-{{--        $temp.val($(this).text()).select();--}}
-{{--        document.execCommand("copy");--}}
-{{--        $temp.remove();--}}
-{{--    });--}}
-{{--</script>--}}
-
 
 
 </body>

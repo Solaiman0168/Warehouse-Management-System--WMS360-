@@ -49,7 +49,7 @@
                                         @foreach($product_image as $image)
                                             <div class="col-md-2 col-sm-6">
                                                 <div class="card m-b-10">
-                                                    <img class="card-img-top img-thumbnail" src="{{(filter_var($image->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$image->image_url : $image->image_url}}" alt="Product image">
+                                                    <img class="card-img-top img-thumbnail" src="{{(filter_var($image->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('').$image->image_url : $image->image_url}}" alt="Product image">
                                                 </div>
                                             </div>
                                         @endforeach
@@ -398,6 +398,7 @@
                                             </div> -->
                                         </div>
                                         <div class="screen-option-btn mb-3 mt-sm-10">
+                                            <div class="mt-xs-10 mb-xs-10"><a class="btn btn-outline-success view-manage-variation" target="_blank" href="{{url('catalogue/'.$product_draft_variation_results->id.'/product')}}">Manage Variation</a></div>
                                             <button class="btn btn-link waves-effect waves-light" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                                                 Screen Options &nbsp; <i class="fa" aria-hidden="true"></i>
                                             </button>
@@ -419,6 +420,18 @@
 
                                      @if ($message = Session::get('image_success'))
                                          <div class="alert alert-success alert-block">
+                                             <button type="button" class="variation-close" data-dismiss="alert">×</button>
+                                             <strong>{{ $message }}</strong>
+                                         </div>
+                                     @endif
+                                     @if ($message = Session::get('success'))
+                                         <div class="alert alert-success alert-block">
+                                             <button type="button" class="variation-close" data-dismiss="alert">×</button>
+                                             <strong>{{ $message }}</strong>
+                                         </div>
+                                     @endif
+                                     @if ($message = Session::get('error'))
+                                         <div class="alert alert-danger alert-block">
                                              <button type="button" class="variation-close" data-dismiss="alert">×</button>
                                              <strong>{{ $message }}</strong>
                                          </div>
@@ -634,7 +647,12 @@
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                    </div>
 
+                                                    <div class="action-btn responsive_base_price col-md-12 d-flex justify-content-center mb-2">
+                                                        <button class="btn check-active available-qty-btn btn-inactive view-print-btn" onclick="print_selected_product_qr()" title="Print selected products QR code" type="button" id="basePriceBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                            <i class="fa fa-print view-print-icon" aria-hidden="true"></i>
+                                                        </button>
                                                     </div>
 
                                                 </div>
@@ -842,10 +860,11 @@
 
                                                                  <select class="form-control b-r-0 choose-variation">
                                                                      @if(count($variaition_terms) > 0)
-                                                                         <option hidden>Select Variation</option>
+                                                                         <option value="">Select Variation</option>
                                                                          @foreach($variaition_terms as $terms)
                                                                              <option value="{{$terms['variation_id']}}"> {{$terms['attribute_name']}} -> {{$terms['terms_name']}}</option>
                                                                          @endforeach
+                                                                         <option value="all">Display all Variation</option>
                                                                      @endisset
                                                                  </select>
                                                              </div>
@@ -1148,7 +1167,13 @@
                                                          }
                                                      }
                                                  @endphp
-                                                 <tr id="variation-wise-show-{{$product_variation->id}}">
+
+
+                                                 @if(isset($variation_id))
+                                                   <tr id="variation-wise-show-{{$product_variation->id}}" class="@if($product_variation->id == $variation_id) bg-highlight @endif">
+                                                 @else
+                                                   <tr id="variation-wise-show-{{$product_variation->id}}">
+                                                 @endif
                                                      <td style="width: 3%">
                                                          <input type="checkbox" class="checkBoxClass" id="customCheck" onclick="bulkEditCheckBox()" value="{{$product_variation->id ?? ''}}">
                                                      </td>
@@ -1180,9 +1205,19 @@
                                                              <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button w-100">{{$product_variation->sku ?? ''}}</span>
                                                              <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
                                                          </div>
+                                                         <div class="d-flex justify-content-start modify-sku-bundle">
+                                                            @if (count($product_variation->parent_bundle_product) > 0)
+                                                                <!-- <button class="btn btn-primary mr-1" data-type="edit/{{$product_variation->id}}" data-toggle="tooltip" data-placement="top" title="Edit Bundle"><i class="fas fa-edit"></i></button> -->
+                                                                <button class="btn btn-success mr-1 modify-sku-bundle" data-type="view/{{$product_variation->id}}" data-toggle="tooltip" data-placement="top" title="View Bundle"><i class="fas fa-eye"></i></button>
+                                                                <!-- <button class="btn btn-danger mr-1 modify-sku-bundle" data-type="remove/{{$product_variation->id}}" data-toggle="tooltip" data-placement="top" title="Remove Bundle"><i class="fas fa-trash"></i></button> -->
+                                                            @endif
+                                                            @if(count($product_variation->child_bundle_product) > 0)
+                                                                <button class="btn btn-info modify-sku-bundle" data-type="child/{{$product_variation->id}}" data-toggle="tooltip" data-placement="top" title="View Parent Bundle"><i class="fas fa-eye"></i></button>
+                                                            @endif
+                                                         </div>
                                                      </td>
                                                      <td class="qr" style="width: 10%">
-                                                         <div class="pt-2 pb-2"><a target="_blank" href="{{url('print-barcode/'.$product_variation->id ?? '')}}">
+                                                         <div class="pt-2 pb-2"><a target="_blank" title="Click to print" href="{{url('print-barcode/'.$product_variation->id ?? '')}}">
                                                          {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($product_variation->sku ?? ''); !!}
                                                          </a>
 
@@ -1407,7 +1442,9 @@
                                                                          @if($shelf_use == 1 && Auth::check() && !empty(array_intersect(['1'],explode(',',Auth::user()->role))))
                                                                              <div class="align-items-center mr-2" data-toggle="tooltip" data-placement="top" title="Shelf View"><a class="btn-size shelf-btn" href="#" data-toggle="modal" target="_blank" data-target="#myModal{{$product_variation->id ?? ''}}"><i class="fa fa-shopping-basket" aria-hidden="true"></i></a></div>
                                                                          @endif
-                                                                         <div class="align-items-center mr-2"><a class="btn-size invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft_variation_results->id.'/'.$product_variation->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class="fa fa-book" aria-hidden="true"></i></a></div>
+                                                                         @if (count($product_variation->parent_bundle_product) == 0)
+                                                                            <div class="align-items-center mr-2"><a class="btn-size invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft_variation_results->id.'/'.$product_variation->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class="fa fa-book" aria-hidden="true"></i></a></div>
+                                                                         @endif
                                                                          <!-- @if(Auth::check() && Auth::user()->email == "support@combosoft.co.uk") -->
                                                                          <div class="align-items-center mr-2"><a class="btn-size" href="Javascript:void(0)" data-toggle="tooltip" data-placement="top" title="Declare Defect" onclick="declare_defect({{$product_variation->id}})"><i class="fa fa-bug" aria-hidden="true"></i></a></div>
                                                                          <!-- @endif -->
@@ -1417,6 +1454,9 @@
                                                                          @endif
                                                                          @endif
                                                                          <div class="align-items-center mr-2"><a class="btn-size print-btn" target="_blank" href="{{url('print-barcode/'.$product_variation->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Print"><i class="fa fa-print" aria-hidden="true"></i></a></div>
+                                                                         @if ($shelf_use == 1 && count($product_variation->parent_bundle_product) == 0 && $data == 0)
+                                                                            <div class="align-items-center mr-2"><a class="btn-size bundle-btn" href="javascript:void(0)" data-id="{{$product_variation->id}}" data-toggle="tooltip" data-placement="top" title="Make Bundle"><i class="fas fa-box"></i></a></div>
+                                                                         @endif
                                                                          <div class="align-items-center">
                                                                              <form action="{{route('product-variation.destroy',$product_variation->id ?? '')}}" method="post">
                                                                                  @csrf
@@ -1463,6 +1503,10 @@
                                                                                              <h6> Shelf Name </h6>
                                                                                              <hr width="60%">
                                                                                          </div>
+                                                                                         <div class="col-2 text-center">
+                                                                                            <h6> QR </h6>
+                                                                                            <hr width="60%">
+                                                                                        </div>
                                                                                          <div class="col-3 text-center">
                                                                                              <h6>Quantity</h6>
                                                                                              <hr width="20%">
@@ -1480,6 +1524,9 @@
                                                                                                  <div class="row">
                                                                                                      <div class="col-3 text-center m-b-10">
                                                                                                          <h7> {{$shelf->shelf_name ?? ''}} </h7>
+                                                                                                     </div>
+                                                                                                     <div class="col-2 text-center m-b-10">
+                                                                                                        <a target="_blank" title="Click to print" href="{{url('print-shelf-barcode/'.$shelf->id)}}">{!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($shelf->id); !!} </a>
                                                                                                      </div>
                                                                                                      <div class="col-3 text-center m-b-10">
                                                                                                          <h7 class="qnty_{{$product_variation->id ?? ''}}_{{$shelf->pivot->id ?? ''}}"> {{$shelf->pivot->quantity ?? ''}} </h7>
@@ -1801,15 +1848,55 @@
         </div>
     </div>
 
+<div class="modal fade" id="skuBundleModal" tabindex="-1" role="dialog" aria-labelledby="skuBundleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="skuBundleModalLabel">Make SKU Bundle</h5>
+        <button type="button" class="btn btn-danger ml-2 hide modify-sku-bundle" id="removeBundleFromView">Remove Bundle</button>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form action="{{url('make-sku-bundle')}}" method="post">
+            @csrf
+            <input type="hidden" name="parent_bundle_id" id="parentBundleId" value="">
+            <input type="hidden" name="parent_bundle_type" id="parentBundleType" value="">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card p-2">
+                        <div class="row" id="show-variation-info-div">
+                        </div>
+                        <div class="show-error-message-div"></div>
+                        <div class="appended-more-sku-bundle-div">
+                            <div class="input-group mt-3">
+                                <input type="text" name="sku[]" class="form-control bundle-sku" value-type="sku" placeholder="Enter SKU" required>
+                                <input type="text" name="quantity[]" class="form-control bundle-quantity" value-type="quantity" placeholder="Enter Quantity" required>
+                                <button type="button" class="btn btn-danger btn-sm remove-sku-bundle-row" disabled><i class="fa fa-remove"></i></button>
+                            </div>
+                        </div>
+                        <div class="w-25 my-3">
+                            <div class="btn btn-primary add-more-sku-bundle"><i class="fas fa-plus-circle"></i></div>
+                            <!-- <button type="button" class="btn btn-primary btn-sm add-more-sku-bundle">Add More</button> -->
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm bundle-create-button">Bundle Create</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
     <!--TermsBtn The Modal -->
 
 
 
 <!-----------End Add Terms To Catalogue Modal View------------
 ------------------------------------------------------------>
-
-
-
 
 <script type="text/javascript">
 
@@ -1878,7 +1965,7 @@ $("select").select2();
 
 
     function bulkEditCheckBox(){
-        // console.log('test1')
+        console.log('test1')
         if($('.checkBoxClass:checked').length > 0) {
             $(".bulk-edit-drawer-box").show({
                 duration: 800,
@@ -1926,6 +2013,7 @@ $("select").select2();
 
 
         //Check uncheck property count
+
         // $('.ckbCheckAll, .checkBoxClass').click(function () {
         //     if($('.ckbCheckAll:checked').length > 0 || $('.checkBoxClass:checked').length > 0) {
         //         $('.product-draft-checkbox-content').show(500);
@@ -1934,10 +2022,18 @@ $("select").select2();
         //     }
         // })
 
-        const variationColumnCountCheckedAll = function() {
-            let counter = $(".checkBoxClass:checked").length;
+        var tr_length = $('.product-draft-table tbody tr:visible').length
+        if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+            $('.card-box.shadow').addClass('table-column-filter-issue')
+        }
+
+        var variationColumnCountCheckedAll = function() {
+            var counter = $("tr:visible .checkBoxClass:checked").length;
             $(".checkbox-count").html( counter + " Selected!" );
             // console.log(counter + ' variation selected!');
+            if(counter == 0){
+                $('.bulk-edit-drawer-box').hide(1000);
+            }
         };
 
         $(".checkBoxClass").on( "click", variationColumnCountCheckedAll );
@@ -2272,9 +2368,23 @@ $("select").select2();
                 $('tbody tr').hide();
                 $('tbody tr').each(function(){
                     var rowId = $(this).attr('id')
+                    if(variationIds == 'all'){
+                        $('tbody tr').show();
+                        var tr_length = $('.product-draft-table tbody tr:visible').length
+                        if(tr_length > 3){
+                            $('.card-box.shadow').removeClass('table-column-filter-issue')
+                        }
+                    }
                     ids.forEach(function(id){
                         if(rowId == 'variation-wise-show-'+id){
                             $('tbody tr#variation-wise-show-'+id).show();
+                            var tr_length = $('.product-draft-table tbody tr:visible').length
+                            if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+                                $('.card-box.shadow').addClass('table-column-filter-issue')
+                            }else{
+                                $('.card-box.shadow').removeClass('table-column-filter-issue')
+                            }
+                            $('#all_reset_button').show()
                         }
                     })
                 })
@@ -2486,6 +2596,10 @@ $("select").select2();
 
         $(".draftDeFilter").on("input", ":input", function() {
             filterColumns($(this).closest("table"));
+            var tr_length = $('.product-draft-table tbody tr:visible').length
+            if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+                $('.card-box.shadow').addClass('table-column-filter-issue')
+            }
         });
 
 
@@ -2617,6 +2731,202 @@ $("select").select2();
             .catch(error => {
                 Swal.showValidationMessage(`Something Went Wrong: ${error}`)
             })
+        })
+
+        $('div a.bundle-btn').click(function(){
+            var variationId = $(this).attr('data-id')
+            $('#parentBundleId').val(variationId)
+            $('#parentBundleType').val('create')
+            $('#skuBundleModalLabel').text('Make SKU Bundle')
+            $('#skuBundleModal').modal('show')
+        })
+
+        $('.add-more-sku-bundle').click(function(){
+            let itemAttrTermContainer = '<div class="input-group mt-3">'
+                                +'<input type="text" name="sku[]" class="form-control bundle-sku" value-type="sku" placeholder="Enter SKU" required>'
+                                +'<input type="text" name="quantity[]" class="form-control bundle-quantity" value-type="quantity" placeholder="Enter Quantity" required>'
+                                +'<button type="button" class="btn btn-danger btn-sm remove-sku-bundle-row"><i class="fa fa-remove"></i></button>'
+                                +'</div>'
+            $('.appended-more-sku-bundle-div').append(itemAttrTermContainer)
+        })
+
+        $('.appended-more-sku-bundle-div').on('click','.remove-sku-bundle-row',function(){
+            var removeSKU = $(this).closest('div').find('.bundle-sku').val()
+            $(this).closest('div').remove()
+            if(!bundleSkuWarningMessage(removeSKU)) {
+                return false
+            }
+        })
+        function bundleSkuWarningMessage(inputSKU) {
+            var countExistSKU = 0
+            $('.appended-more-sku-bundle-div .input-group').each(function(eachRow){
+                if($(this).find('.bundle-sku').val() == inputSKU) {
+                    countExistSKU++
+                }
+            })
+            if(countExistSKU > 1) {
+                var html = '<div class="col-md-12 alert alert-danger text-center">Already Choosen This SKU</div>'
+                $('.show-error-message-div').html(html)
+                $('.add-more-sku-bundle').addClass('hide')
+                $('.bundle-create-button').attr('disabled',true)
+                return false
+            }else {
+                $('.add-more-sku-bundle').removeClass('hide')
+                $('.bundle-create-button').attr('disabled',false)
+            }
+            return true
+        }
+        $('.appended-more-sku-bundle-div').on('input','.bundle-quantity, .bundle-sku',function(){
+            var valueType = $(this).attr('value-type')
+            var inputSKU = $(this).closest('div').find('.bundle-sku').val()
+            var inputQuantity = $(this).closest('div').find('.bundle-quantity').val()
+            if(!bundleSkuWarningMessage(inputSKU)) {
+                return false
+            }
+            if(inputSKU == '' || (inputQuantity == '' || inputQuantity == 0)) {
+                $('.bundle-create-button').attr('disabled',true)
+                $('.add-more-sku-bundle').addClass('hide')
+                return false
+            }else {
+                $('.show-error-message-div').html('')
+                $('.bundle-create-button').attr('disabled',false)
+                $('.add-more-sku-bundle').removeClass('hide')
+            }
+            $.ajax({
+                type: "post",
+                url: "{{asset('single-variation-info')}}",
+                data: {
+                    "_token": "{{csrf_token()}}",
+                    "inputSKU": inputSKU,
+                    "inputQuantity": inputQuantity,
+                    "valueType": valueType
+                },
+                beforeSend: function(){
+                    $("#ajax_loader").show();
+                },
+                success: function(response){
+                    if(response.type == 'success') {
+                        var image = response.data.image ?? response.data.master_single_image.image_url ?? ''
+                        var html = '<div class="col-md-2">'
+                            +'<img src="'+image+'" alt="image" style="height: 120px">'
+                                +'</div>'
+                            +'<div class="col-md-4">'
+                                +'<h5>'+response.data.product_draft.name+'</h5>'
+                                +'<h6>SKU: '+response.data.sku+'</h6>'
+                                +'<h7>Quantity: '+response.data.actual_quantity+'</h7>'
+                            +'</div></div>'
+                        $('#show-variation-info-div').append(html)
+                        $('.bundle-create-button').attr('disabled',false)
+                        $('.add-more-sku-bundle').removeClass('hide')
+                    }else {
+                        var html = '<div class="col-md-12 alert alert-danger text-center">'+response.msg+'</div>'
+                        $('.show-error-message-div').html(html)
+                        $('.bundle-create-button').attr('disabled',true)
+                        $('.add-more-sku-bundle').addClass('hide')
+                    }
+                },
+                error: function(error) {
+                    var html = '<div class="col-md-12 alert alert-danger text-center">Something Went Wrong</div>'
+                        $('.show-error-message-div').html(html)
+                        $('.bundle-create-button').attr('disabled',true)
+                        $('.add-more-sku-bundle').addClass('hide')
+                },
+                complete: function(data) {
+                    $("#ajax_loader").hide();
+                }
+            })
+        })
+
+        $('button.modify-sku-bundle').click(function() {
+            var dataType = $(this).attr('data-type').split('/')
+            if(dataType[0] == 'remove') {
+                Swal.fire({
+                    title: 'Are you sure ?',
+                    text: 'This will remove the bundle package with associated connecting SKUs',
+                    showCloseButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes',
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        var dataObj ={
+                            type: 'remove',
+                            variationId: dataType[1]
+                        }
+                        let token = "{{csrf_token()}}"
+                        return fetch("{{asset('modify-sku-bundle')}}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                "X-CSRF-TOKEN": token
+                            },
+                            body: JSON.stringify(dataObj)
+                        })
+                        .then(response => {
+                            return response.json()
+                        })
+                        .then(data => {
+                            if(data.type == 'success'){
+                                setTimeout(() => {
+                                    window.location.reload()
+                                }, 3000);
+                                Swal.fire('Success',data.msg,'success')
+                            }else{
+                                Swal.fire('Error',data.msg,'error')
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire('Error','Somethnig Went Wrong','error')
+                        })
+                    }
+                })
+            }else {
+                $('#parentBundleId').val(dataType[1])
+                $('#parentBundleType').val('edit')
+                $('#removeBundleFromView').attr('data-type','remove/'+dataType[1])
+                $.ajax({
+                    type: "post",
+                    url: "{{asset('modify-sku-bundle')}}",
+                    data: {
+                        "_token": "{{csrf_token()}}",
+                        "type": dataType[0],
+                        "variationId": dataType[1],
+                    },
+                    beforeSend: function() {
+                        $("#ajax_loader").show();
+                    },
+                    success: function(response) {
+                        if(response.type == 'success') {
+                            $('#skuBundleModal').modal('show')
+                            $('#show-variation-info-div').html(response.viewData)
+                            $('.appended-more-sku-bundle-div').html(response.editData)
+                        }
+                        $('#removeBundleFromView').addClass('hide')
+                        if(dataType[0] == 'view' || dataType[0] == 'child') {
+                            if(dataType[0] == 'child') {
+                                $('#skuBundleModalLabel').text('Parent Bundle SKU')
+                            }else {
+                                $('#removeBundleFromView').removeClass('hide')
+                                $('#skuBundleModalLabel').text('View SKU Bundle')
+                            }
+                            $('.add-more-sku-bundle').hide()
+                            $('.bundle-create-button').hide()
+                        }else {
+                            $('.add-more-sku-bundle').show()
+                            $('#skuBundleModalLabel').text('Update SKU Bundle')
+                            $('.bundle-create-button').show().text('Bundle Update')
+                        }
+                    },
+                    error: function(error) {
+                        Swal.fire('Error','Something Went Wrong','error')
+                    },
+                    complete: function(data) {
+                        $("#ajax_loader").hide();
+                    }
+                })
+            }
+            
         })
 
         function declare_defect(variationId){
@@ -2908,6 +3218,29 @@ $("select").select2();
         $('#myModal').on('shown.bs.modal', function() {
             $(document).off('focusin.modal');
         });
+
+        function print_selected_product_qr(){
+            var variation_ids = []
+            var selected_qr_request = "selected_qr_request"
+            $('table.product-draft-table tr:visible td input:checkbox:checked').each(function(){
+                variation_ids.push($(this).val())
+            })
+            $.ajax({
+                type: "get",
+                url: "{{asset('selected-products-print-qr')}}",
+                data: {
+                    "_token": "{{csrf_token()}}",
+                    "variation_ids" : variation_ids,
+                },
+                success: function(html){
+                    // console.log(html)
+                    w = window.open(window.location.href,"_blank");
+                    w.document.write(html);
+                    w.window.print();
+                }
+            })
+        }
+
 
     </script>
 

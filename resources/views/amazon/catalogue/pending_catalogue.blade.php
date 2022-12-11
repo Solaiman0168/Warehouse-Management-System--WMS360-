@@ -255,7 +255,7 @@
                 <!--End Breadcrumb section-->
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box amazon shadow">
                             <div class="m-b-20 m-t-10">
@@ -797,6 +797,10 @@
                     take = response.take;
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
+
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
                 },
                 complete:function(data){
                     $("#ajax_loader").hide();
@@ -839,6 +843,11 @@
                             skip = parseInt(response.skip)+10;
                             $('tbody tr:last').after(response.html);
                             ids = ids.concat(response.ids);
+
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
+
                         },
                         complete:function(data){
                             // Hide image container

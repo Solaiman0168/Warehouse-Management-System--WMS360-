@@ -23,9 +23,12 @@ use PHPUnit\Exception;
 use Pixelpeter\Woocommerce\Facades\Woocommerce;
 use DB;
 use Illuminate\Support\Facades\Session;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 class EbayOrderSyncController extends Controller
 {
+    use BundleSKUTrait;
     public function __construct()
     {
         date_default_timezone_set('Europe/London');
@@ -347,6 +350,14 @@ class EbayOrderSyncController extends Controller
                                                                 // echo "<pre>";
                                                                 // print_r($product);
                                                                 // exit();
+                                                                $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                                Log::info('total parent');
+                                                                Log::info(count($bundleInfo));
+                                                                Log::info($bundleInfo);
+                                                                if(count($bundleInfo) > 0) {
+                                                                    $catalogueName= (gettype($product['Item']['Title']) == 'array') ? null : $product['Item']['Title'];
+                                                                    $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,(gettype($product['QuantityPurchased']) == 'array') ? 0 : $product['QuantityPurchased'],(gettype($product['TransactionPrice']) == 'array') ? null : $product['TransactionPrice'],'Auto Sync',null,$catalogueName);
+                                                                }else {
                                                                 $product_order_result = ProductOrder::insert([
                                                                     'order_id'=> $ebay_id,
                                                                     'variation_id'=> $product_variation_result->id,
@@ -360,6 +371,7 @@ class EbayOrderSyncController extends Controller
                                                                 if ($product_variation_result != null){
                                                                     $check_quantity = new CheckQuantity();
                                                                     $check_quantity->checkQuantity($product['Variation']['SKU'],null,null,'Auto Sync',(gettype($product['QuantityPurchased']) == 'array') ? null : $product['QuantityPurchased'],false,$account_result->id);
+                                                                    $this->bundleSKUSyncQuantity($product_variation_result->id);
                                                                     //$update_quantity = $product_variation_result->actual_quantity - $product['QuantityPurchased'];
 //                                                                    ProductVariation::where('sku',$product['Variation']['SKU'])->update(['actual_quantity'=>$update_quantity]);
 //                                                                    if($shelfUse == 0){
@@ -414,13 +426,23 @@ class EbayOrderSyncController extends Controller
 //                                                                        }
 //                                                                    }
 
-
+                                                                    }
 
                                                                 }
                                                             }else{
                                                                 $product_variation_result = ProductVariation::where('sku' ,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'])->get()->first();
                                                                 try{
                                                                     if ($product_variation_result != null){
+                                                                        $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                                        Log::info('total parent');
+                                                                        Log::info(count($bundleInfo));
+                                                                        Log::info($bundleInfo);
+                                                                        if(count($bundleInfo) > 0) {
+                                                                            $catalogueName = (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $order['TransactionArray']['Transaction']['Item']['Title'];
+                                                                            $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                                            (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                            (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $order['TransactionArray']['Transaction']['TransactionPrice'],'Auto Sync',null,$catalogueName);
+                                                                        }else {
                                                                         $product_order_result = ProductOrder::insert([
                                                                             'order_id'=> $ebay_id,
                                                                             'variation_id'=> $product_variation_result->id,
@@ -435,8 +457,11 @@ class EbayOrderSyncController extends Controller
 
                                                                         if (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])){
                                                                             $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                            $this->bundleSKUSyncQuantity($product_variation_result->id);
                                                                         }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'])){
                                                                             $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                            $this->bundleSKUSyncQuantity($product_variation_result->id);
+                                                                        }
                                                                         }
 
                                                                     }
@@ -474,8 +499,18 @@ class EbayOrderSyncController extends Controller
                                                         try{
                                                             if ($product_variation_result != null){
 
-
-                                                                $product_order_result = ProductOrder::insert([
+                                                                $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                                Log::info('total parent');
+                                                                Log::info(count($bundleInfo));
+                                                                Log::info($bundleInfo);
+                                                                if(count($bundleInfo) > 0) {
+                                                                    $catalogueName = (gettype($order['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $order['TransactionArray']['Transaction']['Item']['Title'];
+                                                                    $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                                    (gettype($order['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                    (gettype($order['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $order['TransactionArray']['Transaction']['TransactionPrice'],
+                                                                    'Auto Sync',null,$catalogueName);
+                                                                }else {
+                                                                    $product_order_result = ProductOrder::insert([
                                                                     'order_id'=> $ebay_id,
                                                                     'variation_id'=> $product_variation_result->id,
                                                                     'name'=> (gettype($order['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $order['TransactionArray']['Transaction']['Item']['Title'],
@@ -484,15 +519,19 @@ class EbayOrderSyncController extends Controller
                                                                     'status'=> 0,
                                                                     'created_at'=> Carbon::now(),
                                                                     'updated_at'=> Carbon::now(),
-                                                                ]);
-                                                                $check_quantity = new CheckQuantity();
+                                                                    ]);
+                                                                    $check_quantity = new CheckQuantity();
+    
+                                                                    if (isset($order['TransactionArray']['Transaction']['Variation']['SKU'])){
+                                                                        $check_quantity->checkQuantity($order['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($order['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                    }
+                                                                    elseif(isset($order['TransactionArray']['Transaction']['Item'])){
+                                                                        $check_quantity->checkQuantity($order['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($order['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                    }
+                                                                    $this->bundleSKUSyncQuantity($product_variation_result->id);
+                                                                }
 
-                                                                if (isset($order['TransactionArray']['Transaction']['Variation']['SKU'])){
-                                                                    $check_quantity->checkQuantity($order['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($order['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
-                                                                }
-                                                                elseif(isset($order['TransactionArray']['Transaction']['Item'])){
-                                                                    $check_quantity->checkQuantity($order['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($order['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
-                                                                }
+                                                                
 
                                                             }
                                                         }catch(Exception $e){
@@ -625,53 +664,64 @@ class EbayOrderSyncController extends Controller
 // Log::info(15);
 
                                                         if ($product_variation_result != null){
-                                                            $update_quantity = $product_variation_result->actual_quantity - $product['QuantityPurchased'];
-                                                            ProductVariation::where('sku',$product['Variation']['SKU'])->update(['actual_quantity'=>$update_quantity]);
-
-
-
-
-                                                            $product_order_result = ProductOrder::insert([
-                                                                'order_id'=> $ebay_id,
-                                                                'variation_id'=> $product_variation_result->id,
-                                                                'name'=> $product['Item']['Title'],
-                                                                'quantity'=> $product['QuantityPurchased'],
-                                                                'price'=> $product['TransactionPrice'],
-                                                                'status'=> 0,
-                                                                'created_at'=> Carbon::now(),
-                                                                'updated_at'=> Carbon::now(),
-                                                            ]);
-//                                                         Log::info(16);
-                                                            // $woocom_get_result = Woocommerce::get('products/'.$product_variation_result->product_draft_id.'/variations/'.$product_variation_result->id);
-                                                            $variation_data = [
-                                                                'stock_quantity' => $update_quantity,
-                                                            ];
-                                                            if ($woo_variation_result != null){
-                                                                try{
-                                                                    $woo_update_info = WoocommerceVariation::where('id',$woo_variation_result->id)->update(['actual_quantity' => $update_quantity]);
-                                                                    // $woocom_put_result = Woocommerce::put('products/'.$woo_variation_result->woocom_master_product_id.'/variations/'.$woo_variation_result->id,$variation_data);
-                                                                }catch (Exception $exception){
-                                                                    //                                continue;
-                                                                    continue;
+                                                            $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                            if(count($bundleInfo) > 0) {
+                                                                $catalogueName = $product['Item']['Title'];
+                                                                $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                                $product['QuantityPurchased'],
+                                                                $product['TransactionPrice'],
+                                                                'Auto Sync',null,$catalogueName);
+                                                            }else {
+                                                                                                                            $update_quantity = $product_variation_result->actual_quantity - $product['QuantityPurchased'];
+                                                                ProductVariation::where('sku',$product['Variation']['SKU'])->update(['actual_quantity'=>$update_quantity]);
+    
+    
+    
+    
+                                                                $product_order_result = ProductOrder::insert([
+                                                                    'order_id'=> $ebay_id,
+                                                                    'variation_id'=> $product_variation_result->id,
+                                                                    'name'=> $product['Item']['Title'],
+                                                                    'quantity'=> $product['QuantityPurchased'],
+                                                                    'price'=> $product['TransactionPrice'],
+                                                                    'status'=> 0,
+                                                                    'created_at'=> Carbon::now(),
+                                                                    'updated_at'=> Carbon::now(),
+                                                                ]);
+    //                                                         Log::info(16);
+                                                                // $woocom_get_result = Woocommerce::get('products/'.$product_variation_result->product_draft_id.'/variations/'.$product_variation_result->id);
+                                                                $variation_data = [
+                                                                    'stock_quantity' => $update_quantity,
+                                                                ];
+                                                                if ($woo_variation_result != null){
+                                                                    try{
+                                                                        $woo_update_info = WoocommerceVariation::where('id',$woo_variation_result->id)->update(['actual_quantity' => $update_quantity]);
+                                                                        // $woocom_put_result = Woocommerce::put('products/'.$woo_variation_result->woocom_master_product_id.'/variations/'.$woo_variation_result->id,$variation_data);
+                                                                    }catch (Exception $exception){
+                                                                        //                                continue;
+                                                                        continue;
+                                                                    }
                                                                 }
+    
+                                                                if ($ebay_variation_result !=null){
+                                                                    try{
+                                                                        $ebay_update_info = EbayVariationProduct::where('sku',$product['Variation']['SKU'])->update(['quantity' => $update_quantity]);
+                                                                        // $ebay_result = $this->updateEbayQuantity($ebay_variation_result[0]->masterProduct->item_id,$product['Variation']['SKU'],$update_quantity,$site_id);
+                                                                    }catch (Exception $exception){
+                                                                        continue;
+                                                                    }
+                                                                }
+                                                                if ($onbuy_variation_result !=null){
+                                                                    try{
+                                                                        OnbuyVariationProducts::where('sku',$product['Variation']['SKU'])->update(['stock'=>$update_quantity]);
+                                                                        // $this->updateOnbuyQuantity($update_quantity,$product['Variation']['SKU']);
+                                                                    }catch(Exception $e){
+                                                                        continue;
+                                                                    }
+                                                                }
+                                                                $this->bundleSKUSyncQuantity($product_variation_result->id);
                                                             }
 
-                                                            if ($ebay_variation_result !=null){
-                                                                try{
-                                                                    $ebay_update_info = EbayVariationProduct::where('sku',$product['Variation']['SKU'])->update(['quantity' => $update_quantity]);
-                                                                    // $ebay_result = $this->updateEbayQuantity($ebay_variation_result[0]->masterProduct->item_id,$product['Variation']['SKU'],$update_quantity,$site_id);
-                                                                }catch (Exception $exception){
-                                                                    continue;
-                                                                }
-                                                            }
-                                                            if ($onbuy_variation_result !=null){
-                                                                try{
-                                                                    OnbuyVariationProducts::where('sku',$product['Variation']['SKU'])->update(['stock'=>$update_quantity]);
-                                                                    // $this->updateOnbuyQuantity($update_quantity,$product['Variation']['SKU']);
-                                                                }catch(Exception $e){
-                                                                    continue;
-                                                                }
-                                                            }
 //                                                         Log::info(17);
 
                                                         }
@@ -679,7 +729,15 @@ class EbayOrderSyncController extends Controller
                                                         $product_variation_result = ProductVariation::where('sku' ,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'])->get()->first();
                                                         try{
                                                             if ($product_variation_result != null){
-                                                                $product_order_result = ProductOrder::insert([
+                                                                $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                                if(count($bundleInfo) > 0) {
+                                                                    $catalogueName = (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $order['TransactionArray']['Transaction']['Item']['Title'];
+                                                                    $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                                    (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $order['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                    (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $order['TransactionArray']['Transaction']['TransactionPrice'],
+                                                                    'Auto Sync',null,$catalogueName);
+                                                                }else {
+                                                                    $product_order_result = ProductOrder::insert([
                                                                     'order_id'=> $ebay_id,
                                                                     'variation_id'=> $product_variation_result->id,
                                                                     'name'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $order['TransactionArray']['Transaction']['Item']['Title'],
@@ -688,14 +746,17 @@ class EbayOrderSyncController extends Controller
                                                                     'status'=> 0,
                                                                     'created_at'=> Carbon::now(),
                                                                     'updated_at'=> Carbon::now(),
-                                                                ]);
-                                                                $check_quantity = new CheckQuantity();
-
-                                                                if (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])){
-                                                                    $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
-                                                                }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item'])){
-                                                                    $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                    ]);
+                                                                    $check_quantity = new CheckQuantity();
+    
+                                                                    if (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])){
+                                                                        $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                    }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item'])){
+                                                                        $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                    }
+                                                                    $this->bundleSKUSyncQuantity($product_variation_result->id);
                                                                 }
+                                                                
 
                                                             }
                                                         }catch(Exception $e){
@@ -716,53 +777,65 @@ class EbayOrderSyncController extends Controller
                                                     ////                        exit();
 
                                                     if ($product_variation_result != null){
-                                                        $update_quantity = $product_variation_result->actual_quantity - $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'];
-                                                        ProductVariation::where('sku',$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])->update(['actual_quantity'=>$update_quantity]);
-
-
-
-                                                        $product_order_result = ProductOrder::insert([
-                                                            'order_id'=> $ebay_id,
-                                                            'variation_id'=> $product_variation_result->id,
-                                                            'name'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'],
-                                                            'quantity'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
-                                                            'price'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
-                                                            'status'=> 0,
-                                                            'created_at'=> Carbon::now(),
-                                                            'updated_at'=> Carbon::now(),
-                                                        ]);
-//                                                     Log::info(19);
-                                                        // $woocom_get_result = Woocommerce::get('products/'.$product_variation_result->product_draft_id.'/variations/'.$product_variation_result->id);
-                                                        $variation_data = [
-                                                            'stock_quantity' => $update_quantity,
-                                                        ];
-                                                        if ($woo_variation_result != null){
-                                                            try{
-                                                                $woo_update_info = WoocommerceVariation::where('id',$woo_variation_result->id)->update(['actual_quantity' => $update_quantity]);
-                                                                // $woocom_put_result = Woocommerce::put('products/'.$woo_variation_result->woocom_master_product_id.'/variations/'.$woo_variation_result->id,$variation_data);
-                                                            }catch (Exception $exception){
-                                                                //                                continue;
-                                                                continue;
+                                                        $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                        if(count($bundleInfo) > 0) {
+                                                            $catalogueName = $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'];
+                                                            $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                            $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                            $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
+                                                            'Auto Sync',null,$catalogueName);
+                                                        }else {
+                                                            
+                                                        
+                                                            $update_quantity = $product_variation_result->actual_quantity - $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'];
+                                                            ProductVariation::where('sku',$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])->update(['actual_quantity'=>$update_quantity]);
+    
+    
+    
+                                                            $product_order_result = ProductOrder::insert([
+                                                                'order_id'=> $ebay_id,
+                                                                'variation_id'=> $product_variation_result->id,
+                                                                'name'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'],
+                                                                'quantity'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                'price'=> $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
+                                                                'status'=> 0,
+                                                                'created_at'=> Carbon::now(),
+                                                                'updated_at'=> Carbon::now(),
+                                                            ]);
+    //                                                     Log::info(19);
+                                                            // $woocom_get_result = Woocommerce::get('products/'.$product_variation_result->product_draft_id.'/variations/'.$product_variation_result->id);
+                                                            $variation_data = [
+                                                                'stock_quantity' => $update_quantity,
+                                                            ];
+                                                            if ($woo_variation_result != null){
+                                                                try{
+                                                                    $woo_update_info = WoocommerceVariation::where('id',$woo_variation_result->id)->update(['actual_quantity' => $update_quantity]);
+                                                                    // $woocom_put_result = Woocommerce::put('products/'.$woo_variation_result->woocom_master_product_id.'/variations/'.$woo_variation_result->id,$variation_data);
+                                                                }catch (Exception $exception){
+                                                                    //                                continue;
+                                                                    continue;
+                                                                }
                                                             }
-                                                        }
-
-                                                        if ($ebay_variation_result !=null){
-                                                            try{
-                                                                $ebay_update_info = EbayVariationProduct::where('id',$ebay_variation_result->id)->update(['quantity' => $update_quantity]);
-                                                                // $ebay_result = $this->updateEbayQuantity($ebay_variation_result[0]->masterProduct->item_id,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],$update_quantity,$site_id);
-                                                            }catch (Exception $exception){
-                                                                continue;
+    
+                                                            if ($ebay_variation_result !=null){
+                                                                try{
+                                                                    $ebay_update_info = EbayVariationProduct::where('id',$ebay_variation_result->id)->update(['quantity' => $update_quantity]);
+                                                                    // $ebay_result = $this->updateEbayQuantity($ebay_variation_result[0]->masterProduct->item_id,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],$update_quantity,$site_id);
+                                                                }catch (Exception $exception){
+                                                                    continue;
+                                                                }
                                                             }
-                                                        }
-                                                        if ($onbuy_variation_result !=null){
-                                                            try{
-                                                                OnbuyVariationProducts::where('sku',$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])->update(['stock'=>$update_quantity]);
-                                                                // $this->updateOnbuyQuantity($update_quantity,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU']);
-                                                            }catch(Exception $exception){
-                                                                continue;
+                                                            if ($onbuy_variation_result !=null){
+                                                                try{
+                                                                    OnbuyVariationProducts::where('sku',$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])->update(['stock'=>$update_quantity]);
+                                                                    // $this->updateOnbuyQuantity($update_quantity,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU']);
+                                                                }catch(Exception $exception){
+                                                                    continue;
+                                                                }
                                                             }
+                                                            $this->bundleSKUSyncQuantity($product_variation_result->id);
+    //                                                     Log::info(20);
                                                         }
-//                                                     Log::info(20);
 
                                                     }
                                                 }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item'])){
@@ -770,23 +843,34 @@ class EbayOrderSyncController extends Controller
                                                     $product_variation_result = ProductVariation::where('sku' ,$orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'])->get()->first();
                                                     try{
                                                         if ($product_variation_result != null){
-                                                            $product_order_result = ProductOrder::insert([
-                                                                'order_id'=> $ebay_id,
-                                                                'variation_id'=> $product_variation_result->id,
-                                                                'name'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'],
-                                                                'quantity'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
-                                                                'price'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
-                                                                'status'=> 0,
-                                                                'created_at'=> Carbon::now(),
-                                                                'updated_at'=> Carbon::now(),
-                                                            ]);
-                                                            $check_quantity = new CheckQuantity();
-
-                                                            if (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])){
-                                                                $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
-                                                            }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item'])){
-                                                                $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                            $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                                            if(count($bundleInfo) > 0) {
+                                                                $catalogueName = (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'];
+                                                                $this->insertOrderedProduct($bundleInfo,$ebay_id,$product_variation_result->sku,
+                                                                (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
+                                                                'Auto Sync',null,$catalogueName);
+                                                            }else {
+                                                                $product_order_result = ProductOrder::insert([
+                                                                    'order_id'=> $ebay_id,
+                                                                    'variation_id'=> $product_variation_result->id,
+                                                                    'name'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['Title'],
+                                                                    'quantity'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],
+                                                                    'price'=> (gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['TransactionPrice'],
+                                                                    'status'=> 0,
+                                                                    'created_at'=> Carbon::now(),
+                                                                    'updated_at'=> Carbon::now(),
+                                                                ]);
+                                                                $check_quantity = new CheckQuantity();
+    
+                                                                if (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'])){
+                                                                    $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Variation']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                }elseif (isset($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item'])){
+                                                                    $check_quantity->checkQuantity($orders['OrderArray']['Order']['TransactionArray']['Transaction']['Item']['SKU'],null,null,'Auto Sync',(gettype($orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased']) == 'array') ? null : $orders['OrderArray']['Order']['TransactionArray']['Transaction']['QuantityPurchased'],false,$account_result->id);
+                                                                }
+                                                                $this->bundleSKUSyncQuantity($product_variation_result->id);
                                                             }
+                                                            
 
                                                         }
                                                     }catch(Exception $e){

@@ -77,6 +77,7 @@
                                         <label for="name" class="col-form-label required">Quantity</label>
                                         <input type="text" name="exchange_quantity" class="form-control" id="exchange_quantity" value="{{ old('exchange_quantity') }}" placeholder="Enter Exchange Quantity here (Ex. 1)" required>
                                     </div>
+                                    <h5 class="text-danger text-center col-md-12" id="exchangeErrorShow"></h5>
                                 </div>
 
                                 <div class="form-group row">
@@ -90,9 +91,9 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group row vendor-btn-top">
+                                <div class="form-group row">
                                     <div class="col-md-12 text-center">
-                                        <button type="submit" class="btn btn-primary vendor-btn waves-effect waves-light">
+                                        <button type="submit" class="btn btn-primary" id="exchangeSubmitButton">
                                             <b>Submit</b>
                                         </button>
                                     </div>
@@ -109,11 +110,19 @@
     <script>
 
         $(document).ready(function(){
-            $('#exchange_sku').on('blur',function(){
-                var exchangeSKU = $(this).val()
+            $('#exchange_sku,#exchange_quantity').on('input',function(){
+                var exchangeSKU = $('#exchange_sku').val()
+                var exchangeQuantity = $('#exchange_quantity').val()
                 if(exchangeSKU == '' || exchangeSKU == 'undefined' || exchangeSKU == null) {
+                    $('#exchangeSubmitButton').attr('disabled',true)
                     Swal.fire('SKU Not Found','If you found this pop up, make sure you click outside of exchange sku product input field after given exchange sku','warning');
                     return false;
+                }
+                
+                if(exchangeQuantity != '' && exchangeQuantity <= 0) {
+                    $('#exchangeSubmitButton').attr('disabled',true)
+                    $('#exchangeErrorShow').text('Enter valid quantity')
+                    return false
                 }
                 $.ajax({
                     type: "POST",
@@ -126,9 +135,13 @@
                         $('#ajax_loader').show()
                     },
                     success: function(response) {
-                        console.log(response);
                         if(response.type == 'success'){
                             if(response.result != null) {
+                                if((exchangeQuantity > response.result.actual_quantity) ||  (response.result.actual_quantity == 0)) {
+                                    $('#exchangeSubmitButton').attr('disabled',true)
+                                    $('#exchangeErrorShow').text('You can not order more than '+response.result.actual_quantity)
+                                    return false
+                                }
                                 $('#catalogue_title').val(response.result.product_draft.name)
                                 $('#product_price').val(response.result.sale_price)
                             }
@@ -136,6 +149,12 @@
                             $('#catalogue_title').val('')
                             $('#product_price').val('')
                             Swal.fire('Oops',response.msg,response.icon)
+                        }
+                        $('#exchangeErrorShow').text('')
+                        if(exchangeQuantity == '') {
+                            $('#exchangeSubmitButton').attr('disabled',true)
+                        }else {
+                            $('#exchangeSubmitButton').attr('disabled',false)
                         }
                     },
                     error: function(error) {

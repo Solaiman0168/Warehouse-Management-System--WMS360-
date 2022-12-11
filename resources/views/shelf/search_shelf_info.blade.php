@@ -9,6 +9,12 @@
             </td>
             <td style="text-align: center !important;">{{$shelf->id}}</td>
             <td style="text-align: center !important;">{{$shelf->shelf_name}}</td>
+            <td style="text-align: center !important;">
+                <div class="id_tooltip_container d-flex justify-content-center align-items-center">
+                    <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$shelf->warehouse->warehouse_name ?? ''}}</span>
+                    <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
+                </div>
+            </td>
             @php
                 $data = 0;
             @endphp
@@ -20,21 +26,42 @@
             <td style="text-align: center !important;">{{$data}}</td>
             <td style="text-align: center !important;">
                 <span class="d-flex justify-content-center align-items-center">
-                    <span class="d-flex justify-content-center align-items-center mr-2"> {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($shelf->id); !!} </span>
-                    <span class="d-flex justify-content-center align-items-center"><a href="{{url('print-shelf-barcode/'.$shelf->id)}}" class="btn btn-success print-barcode-btn" target="_blank">Print Qrcode</a></span>
+                    <a href="{{url('print-shelf-barcode/'.$shelf->id)}}" title="Click to Print" target="_blank"><span class="d-flex justify-content-center align-items-center mr-2"> {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($shelf->id); !!} </span></a>
+                    {{-- <span class="d-flex justify-content-center align-items-center"><a href="{{url('print-shelf-barcode/'.$shelf->id)}}" class="btn btn-success print-barcode-btn" target="_blank">Print Qrcode</a></span> --}}
                 </span>
             </td>
             <td style="text-align: center !important;">{{$shelf->user->name}}</td>
+            @if($shelf->status == 1)
+            <td style="text-align: center !important;"><span class="label label-success">Active</span></td>
+            @elseif($shelf->status == 0)
+                <td style="text-align: center !important;"><span class="label label-danger">InActive</span></td>
+            @else
+                <td style="text-align: center !important;"></td>
+            @endif
             <td class="shelf-action" style="width: 10% !important;">
 
                 <!--action button-->
-                <div class="action-1">
+                <div class="d-flex justify-content-start align-items-center">
 
                     @if (Auth::check() && in_array('1',explode(',',Auth::user()->role)) || in_array('2',explode(',',Auth::user()->role)))
-                        <a class="btn-size edit-btn mr-2" href="#editShelfList{{$shelf->id}}" data-animation="slit" data-plugin="custommodal" data-overlaySpeed="100" data-overlayColor="#36404a"  data-placement="top" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i></a>
-                        <a class="btn-size view-btn mr-2" href="{{url('shelf/'.Crypt::encrypt($shelf->id))}}" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                        <a class="btn-size edit-btn mr-2" href="#editShelfList{{$shelf->id}}" data-animation="slit" data-plugin="custommodal"
+                           data-overlaySpeed="100" data-overlayColor="#36404a"  data-placement="top" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i></a>
+                        {{-- <a class="btn-size view-btn mr-2" href="{{url('shelf/'.Crypt::encrypt($shelf->id))}}" target="_blank" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a> --}}
+                        @if($data > 0)
+                            <a class="btn-size view-btn cursor-pointer text-white mr-2" onclick="singleShelfProductView({{$shelf->id}})" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                        @else 
+                            <form action="{{url('shelf/'.$shelf->id)}}" method="post">
+                                @method('DELETE')
+                                @csrf
+                                {{-- <a href="#" class="on-default remove-row"><button class="vendor_btn_delete btn-danger" onclick="return check_delete('shelf');">Delete</button>  </a> --}}
+                                <button class="del-pub delete-btn cursor-pointer shelf-delete mr-2" data-toggle="tooltip" data-placement="top" data-original-title="Delete" onclick="return check_delete('shelf');"><i class="fa fa-trash" aria-hidden="true"></i></button>
+                            </form>
+                        @endif
                     @else
-                        <a class="btn-size view-btn mr-2" href="{{url('shelf/'.Crypt::encrypt($shelf->id))}}" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                        {{-- <a class="btn-size view-btn mr-2" href="{{url('shelf/'.Crypt::encrypt($shelf->id))}}" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a> --}}
+                        @if($data > 0)
+                        <a class="btn-size view-btn cursor-pointer text-white mr-2" onclick="singleShelfProductView({{$shelf->id}})" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a>
+                        @endif
                     @endif
 
                     <a class="btn-size migrate-btn dropdown-toggle" data-toggle="dropdown" href="" data-placement="top" title="Migrate"><i class="fas fa-exchange-alt"></i></a>
@@ -42,7 +69,7 @@
                         <form action="{{url('shelf-migration')}}" method="post">
                             @csrf
                             <p class="mb-1">Migrate To</p>
-                            <select class="form-control select2" name="to_id">
+                            <select class="form-control" name="to_id">
                                 <option value="">Select Shelf</option>
                                 @foreach($shelfs as $migrate_shelf)
                                     @if($migrate_shelf->id != $shelf->id)
@@ -70,7 +97,19 @@
                             <div class="col-md-1"></div>
                             <label for="name" class="col-md-2 col-form-label ml-sm-25 mr-sm-25 ml-xs-25 mr-xs-25 required">Shelf Name</label>
                             <div class="col-md-8 ml-sm-25 mr-sm-25 ml-xs-25 mr-xs-25">
-                                <input type="text" name="shelf_name" class="form-control" id="shelf_name" value="{{ $shelf->shelf_name ? $shelf->shelf_name : old('shelf_name') }}" placeholder="Enter Shelf Name" required>
+                                <input type="text" name="shelf_name" class="form-control" id="shelf_name" value="{{ trim(explode('(',$shelf->shelf_name)[0] ?? old('shelf_name') )}}" placeholder="Enter Shelf Name" required>
+                            </div>
+                            <div class="col-md-1"></div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-1"></div>
+                            <label for="status" class="col-md-2 col-form-label ml-sm-25 mr-sm-25 ml-xs-25 mr-xs-25 required">Shelf Status</label>
+                            <div class="col-md-8 ml-sm-25 mr-sm-25 ml-xs-25 mr-xs-25">
+                            <select class="form-control b-r-0" name="status" id="">
+                                    <option value="1" @if($shelf->status == 1) selected @endif>Active</option>
+                                    <option value="0" @if($shelf->status == 0) selected @endif>Inactive</option>
+                                </select>
                             </div>
                             <div class="col-md-1"></div>
                         </div>
@@ -85,6 +124,7 @@
                     </form>
                 </div>
                 <!--End Edit Shelf Modal -->
+                
             </td>
         </tr>
     @endforeach

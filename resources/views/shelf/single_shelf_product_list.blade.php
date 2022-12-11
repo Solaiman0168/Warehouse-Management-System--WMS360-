@@ -24,7 +24,7 @@
 
 
 
-                <div class="card-box m-t-20 shadow table-responsive">
+                <div class="card-box m-t-20 shadow table-responsive"> 
 
                     @if ($message = Session::get('success'))
                         <div class="alert alert-success alert-block">

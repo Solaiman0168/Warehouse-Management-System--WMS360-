@@ -35,6 +35,7 @@ use App\Traits\ActivityLogs;
 use App\Traits\ListingLimit;
 use App\Channel;
 use App\Traits\CommonFunction;
+use App\Http\Controllers\Channel\ChannelFactory;
 
 class OnbuyController extends Controller
 {
@@ -42,6 +43,7 @@ class OnbuyController extends Controller
     use ActivityLogs;
     use ListingLimit;
     use CommonFunction;
+    protected $channel = ChannelFactory::OnBuy;
     public function __construct()
     {
         $this->middleware('auth');
@@ -237,9 +239,10 @@ class OnbuyController extends Controller
     }
 
     public function saveOnbuyProduct(Request $request){
+        $draftChangeStatus['title_flag'] = $request->title_flag ?? 0;
         try {
             $masterCatalogueInfo = ProductDraft::find($request->catalogue_id);
-            
+
             $listingLimitInfo = $this->ListingLimitAllChannelActiveProduct();
             $clientListingLimit = $this->ClientListingLimit();
             $listingLimitAllChannelActiveProduct = $listingLimitInfo['subTotalActiveProduct'] ?? 0;
@@ -282,7 +285,7 @@ class OnbuyController extends Controller
                 $option_value1 = array();
                 foreach ($request->product_codes as $key => $value) {
                 if($masterCatalogueInfo->type == 'variable') {
-                    if ($request->product_variant_option[$key] != null) {
+                    if (isset($request->product_variant_option[$key])) {
                         foreach ($request->product_variant_option[$key] as $variation) {
                             if ($variation != null) {
                                 $op_value = $variation;
@@ -293,14 +296,15 @@ class OnbuyController extends Controller
 
                     if (!isset($request->custom_variant[$key])) {
                         $custom_count = 0;
+                        if(isset($request->product_variant_option[$key])){
                         foreach ($request->product_variant_option[$key] as $variation) {
                             if ($variation != null) {
                                 $test1["variant_" . $variant_loop_count] = [
-                                    "option_id" => explode('/', $variation)[0],
+                                    "option_id" => explode('/', $variation)[0] ?? null,
                                     "name" => $request->product_variant_custom_option[$key][$custom_count] ?? null
                                 ];
                                 $option_value1["variant_" . $variant_loop_count] = [
-                                    "option_id" => $variation,
+                                    "option_id" => $variation ?? null,
                                     "name" => $request->product_variant_custom_option[$key][$custom_count] ?? null
                                 ];
                                 $variant_loop_count++;
@@ -315,6 +319,7 @@ class OnbuyController extends Controller
                                 $variant_loop_count++;
                             }
                             $custom_count++;
+                        }
                         }
                     } elseif (isset($request->custom_variant[$key]) && $count > 0) {
                         $test1["variant_1"] = [
@@ -575,9 +580,9 @@ class OnbuyController extends Controller
                 $datas = array_merge($data1, $data2, $data3, $data4);
                 $product_info = json_encode($datas, JSON_PRETTY_PRINT);
 
-    //            echo "<pre>";
-    //            print_r($product_info);
-    //            exit();
+                // echo "<pre>";
+                // print_r($product_info);
+                // exit();
 
                 $url = "https://api.onbuy.com/v2/products";
                 $post_data = $product_info;
@@ -616,6 +621,7 @@ class OnbuyController extends Controller
                         'rrp' => $request->m_rrp,
                         'base_price' => $masterCatalogurInfo->base_price ?? null,
                         'low_quantity' => 5,
+                        'draft_change_status' => \Opis\Closure\serialize($draftChangeStatus),
                         'status' => 'pending'
                     ]);
 
@@ -698,9 +704,29 @@ class OnbuyController extends Controller
 
         $distinct_status = OnbuyMasterProduct::distinct()->orderBy('status','ASC')->get(['status'])->where('status', '!=', null);
         $distinct_category = OnbuyCategory::distinct()->orderBy('name','ASC')->get(['category_id','name','category_tree'])->where('name', '!=', null);
-
-        $master_product_list = OnbuyMasterProduct::with('category_info')
-        ->withCount('variation_product');
+        $lead_listing = false;
+        if($request->get('listing_type') == 'not_lead_listing') {
+            $lead_listing = true;
+            $searchProduct = OnbuyVariationProducts::select('master_product_id')->whereIn('lead_listing',[0,2])->take(500)->get();
+            $ids = [];
+            if(count($searchProduct) > 0){
+                foreach ($searchProduct as $id){
+                    $ids[] = $id->master_product_id;
+                }
+            }
+            $master_product_list = OnbuyMasterProduct::with(['category_info','variation_product' => function($query) {
+                $query->select('master_product_id', DB::raw('sum(onbuy_variation_products.stock) stock'))
+                    ->groupBy('master_product_id');
+                }])
+                ->withCount('variation_product')
+                ->whereIn('id',$ids);
+        }else {
+            $master_product_list = OnbuyMasterProduct::with(['category_info','variation_product' => function($query) {
+                $query->select('master_product_id', DB::raw('sum(onbuy_variation_products.stock) stock'))
+                    ->groupBy('master_product_id');
+            }])
+            ->withCount('variation_product');
+        }
         $isSearch = $request->get('is_search') ? true : false;
         $allCondition = [];
         if($isSearch){
@@ -711,7 +737,7 @@ class OnbuyController extends Controller
         $master_product_list = $master_product_list->orderByDesc('id')->paginate($pagination);
         if($request->has('is_clear_filter')){
             $search_result = $master_product_list;
-            $view = view('onbuy.master_product.search_master_product', compact('search_result'))->render();
+            $view = view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render();
             return response()->json(['html' => $view]);
         }
         $decode_master_product = json_decode(json_encode($master_product_list));
@@ -719,7 +745,7 @@ class OnbuyController extends Controller
 //        echo "<pre>";
 //        print_r(json_decode(json_encode($master_product_list)));
 //        exit();
-        $content = view('onbuy.master_product.master_product_list',compact('master_product_list','decode_master_product','total_product', 'setting', 'page_title', 'pagination','distinct_status','distinct_category','url','allCondition'));
+        $content = view('onbuy.master_product.master_product_list',compact('master_product_list','decode_master_product','total_product', 'setting', 'page_title', 'pagination','distinct_status','distinct_category','url','allCondition','lead_listing'));
         return view('master',compact('content'));
 
     }
@@ -1125,7 +1151,8 @@ class OnbuyController extends Controller
             $result_info2 = $this->curl_request_send($url, $method, $post_data, $http_header);
             $technical_data = json_decode($result_info2);
             $catalogue_id = $request->catalogue_id;
-            $variant_view = view('onbuy.category_variant_by_ajax',compact('category_data','technical_data','catalogue_info','p_v','exits_ean','profile_result','brand_info','feature_array','technical_details','catalogue_id','exits_ean_product_info'));
+            $mapFields = $this->itemAttributeMappingFieldByMasterCatalogue($request->catalogue_id,$this->channel);
+            $variant_view = view('onbuy.category_variant_by_ajax',compact('category_data','technical_data','catalogue_info','p_v','exits_ean','profile_result','brand_info','feature_array','technical_details','catalogue_id','exits_ean_product_info','mapFields'));
             echo $variant_view;
 //        }
 //        return response()->json(['data' => $dependent_category]);
@@ -1182,7 +1209,7 @@ class OnbuyController extends Controller
     public function editMasterProduct($id){
         $access_token = $this->access_token();
         $single_master_product_info = OnbuyMasterProduct::with('category_info:category_id,name','brand_info:brand_id,name')->find($id);
-
+//return unserialize($single_master_product_info->draft_change_status)['title_flag'];
         $access_token = $this->access_token();
         $url = "https://api.onbuy.com/v2/categories/".$single_master_product_info->category_info->category_id."/features?site_id=2000";
         $post_data = null;
@@ -1198,6 +1225,7 @@ class OnbuyController extends Controller
     }
 
     public function updateMasterProduct(Request $request, $id){
+        $draftChangeStatus['title_flag'] = $request->title_flag ?? 0;
         $access_token = $this->access_token();
 
         foreach ($request->m_label as $key => $value){
@@ -1290,6 +1318,7 @@ class OnbuyController extends Controller
                 'description' => $request->m_product_description,
 //            'videos' => $rand,
 //            'documents' => $rand,
+                'draft_change_status' => \Opis\Closure\serialize($draftChangeStatus),
                 'product_data' => json_encode($m_p_d) ?? null,
                 'features' => json_encode($db_features) ?? null,
                 'rrp' => $request->m_rrp,
@@ -1852,6 +1881,7 @@ class OnbuyController extends Controller
         if($profileId){
             $profileInfo = OnbuyProfile::find($profileId);
         }
+        $draftcatalogueId = ProductDraft::find($catalogueId);
         // $productInfo = ProductVariation::where('ean_no',$existEAN)->first();
         $productInfo = ProductVariation::find($productId);
 //        echo '<pre>';
@@ -1870,7 +1900,7 @@ class OnbuyController extends Controller
 //        print_r($category_data);
 //        exit();
 
-        $content = view('onbuy.variant_product.add_listing_existing_ean',compact('catalogueId','existEAN','existOPC','productId','profileId','onbuyBrand','profileInfo','productInfo','allProfile'));
+        $content = view('onbuy.variant_product.add_listing_existing_ean',compact('catalogueId','existEAN','existOPC','productId','profileId','onbuyBrand','profileInfo','productInfo','allProfile','draftcatalogueId'));
         return view('master',compact('content'));
     }
 
@@ -1944,7 +1974,7 @@ class OnbuyController extends Controller
             shuffle($seed); // probably optional since array_is randomized; this may be redundant
             $rand = '';
             foreach (array_rand($seed, 5) as $k) $rand .= $seed[$k];
-
+            if(isset($res_result->success)) {
             $existOnbuyMasterCatalogue = OnbuyMasterProduct::where('woo_catalogue_id',$catalogueId)->first();
             $masterCatalogueInfo = ProductDraft::with(['single_image_info' => function($img) {
                 $img->where('deleted_at',null);
@@ -1958,13 +1988,13 @@ class OnbuyController extends Controller
                     'woo_catalogue_id' => $catalogueId,
                     'master_category_id' => $profileInfo->last_category_id,
                     'master_brand_id' => $brandId,
-                    'product_type' => $masterCatalogueInfo->product_type ?? null,
+                    'product_type' => $masterCatalogueInfo->product_type ?? $masterCatalogueInfo->type ?? null,
                     'summary_points' => null,
                     'published' => 1,
                     'product_name' => $masterCatalogueInfo->name,
                     'queue_id' => $rand,
                     'description' => $masterCatalogueInfo->description,
-                    'default_image' => $masterCatalogueInfo->single_image_info ? asset('/'). $masterCatalogueInfo->single_image_info->image_url : null,
+                    'default_image' => $masterCatalogueInfo->single_image_info ? ((filter_var($masterCatalogueInfo->single_image_info->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').ltrim($masterCatalogueInfo->single_image_info->image_url,'/') : $masterCatalogueInfo->single_image_info->image_url) : null,
                     'additional_images' => empty($masterImages) ? null : json_encode($masterImages),
                     'product_data' => null,
                     'features' => null,
@@ -1990,12 +2020,17 @@ class OnbuyController extends Controller
                 'name' => $masterCatalogueInfo->name,
                 'group_sku' => $request->group_sku ?? null,
                 'price' => $request->price ?? '0.00',
+                'base_price' => $request->base_price ?? '0.00',
+                'max_price' => $request->max_price ?? '0.00',
                 'stock' => $request->stock ?? 0,
                 'technical_detail' => null,
                 'condition' => $request->condition,
                 'low_quantity' => 2
             ]);
             return back()->with('success', 'Product Listing Added Successfully');
+            }else {
+                return back()->with('error', $res_result->error->message);
+            }
         }
     }
 
@@ -2387,6 +2422,8 @@ class OnbuyController extends Controller
         $skip = $request->skip;
         $ids = $request->ids;
 
+        $settingData = $this->paginationSetting('', '');
+        $setting = $settingData['setting'];
 
         $matched_product_array = array();
 
@@ -2398,7 +2435,7 @@ class OnbuyController extends Controller
                     $search_draft_result = $this->getProductDraft('id',$matched_product_array,$status,$take,$skip,$ids);
                     $search_result = $search_draft_result['search'];
                     $ids = $search_draft_result['ids'];
-                    return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'setting' => $setting]);
                 }else{
                     $search_result_by_word = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
                     $search_result = $search_result_by_word["search"];
@@ -2411,7 +2448,7 @@ class OnbuyController extends Controller
                         $search_result = $search_sku_result['search'];
                         $ids = $search_sku_result['ids'];
                     }
-                    return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'setting' => $setting]);
                 }
             }else{
 
@@ -2432,7 +2469,7 @@ class OnbuyController extends Controller
                         }
                     }
 
-                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'setting' => $setting]);
             }
 
         }else{
@@ -2442,7 +2479,7 @@ class OnbuyController extends Controller
                 $search_result = $search_result_by_word["search"];
                 $search_priority = $search_result_by_word["search_priority"];
                 $ids = $search_result_by_word["ids"];
-                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'setting' => $setting]);
 
             }else{
 
@@ -2470,7 +2507,7 @@ class OnbuyController extends Controller
 
                 }
 
-                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('onbuy.master_product.search_master_product', compact('search_result','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'setting' => $setting]);
 
             }
 
@@ -2523,7 +2560,10 @@ class OnbuyController extends Controller
         return ['search'=>$search_result,'ids' => $ids];
     }
     public function getProductDraft($column_name,$word,$status,$take,$skip,$ids){
-        $search_result = OnbuyMasterProduct::with('variation_product')->whereIn($column_name,$word)->whereNotIn('id', $ids)
+        $search_result = OnbuyMasterProduct::with(['variation_product' => function($query) {
+            $query->select('master_product_id', DB::raw('sum(onbuy_variation_products.stock) stock'))
+                ->groupBy('master_product_id');
+        }])->whereIn($column_name,$word)->whereNotIn('id', $ids)
             ->withCount('variation_product')
             //->where('status',$status)
 //            ->whereDate('created_at', '>', Carbon::now()->subDays(30))
@@ -2702,7 +2742,7 @@ class OnbuyController extends Controller
         $total_catalogue = $total_catalogue->orderBy('id', 'DESC')->paginate($pagination);
         if($request->has('is_clear_filter')){
             $search_result = $total_catalogue;
-            $view = view('onbuy.master_product.pending_catalogue_ajax', compact('search_result'))->render();
+            $view = view('onbuy.master_product.pending_catalogue_ajax', compact('search_result','setting'))->render();
             return response()->json(['html' => $view]);
         }
 
@@ -2777,7 +2817,8 @@ class OnbuyController extends Controller
             $update_info = OnbuyAccount::find($id)->update([
                 'consumer_key' => $request->consumer_key,
                 'secret_key' => $request->secret_key,
-                'modifier' => Auth::id()
+                'modifier' => Auth::id(),
+                'account_name' => $request->account_name,
             ]);
             return back()->with('success','Account credentials update successfully');
         }catch (\Exception $exception){
@@ -3150,7 +3191,10 @@ class OnbuyController extends Controller
                 }
             }
 //            return response()->json($searchProduct);
-            $master_product_list = OnbuyMasterProduct::with('category_info')
+            $master_product_list = OnbuyMasterProduct::with(['category_info','variation_product' => function($query) {
+                $query->select('master_product_id', DB::raw('sum(onbuy_variation_products.stock) stock'))
+                    ->groupBy('master_product_id');
+            }])
                 ->withCount('variation_product')
                 ->whereIn('id',$ids)
                 ->orderByDesc('id')
@@ -3169,7 +3213,7 @@ class OnbuyController extends Controller
             $catalogueIDs = $request->catalogueIds;
             $notLeadListingInfo = OnbuyVariationProducts::select('sku','base_price','max_price','lead_listing')
                 ->where([['base_price','!=',NULL],['max_price','!=',NULL]])
-                ->whereIn('lead_listing',[0,2])
+                //->whereIn('lead_listing',[0,2])
                 ->whereIn('master_product_id',$catalogueIDs)
                 ->get();
             $skus = [];

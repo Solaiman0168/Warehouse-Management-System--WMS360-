@@ -72,15 +72,17 @@
                                     <div class="product-inner">
 
                                         <div class="ebay-master-product-search-form">
-                                            <form class="d-flex" action="{{URL('ebay/profile/search')}}" method="post">
+                                            <!-- <form class="d-flex" action="{{URL('ebay/profile/search')}}" method="post"> -->
+                                            <form class="d-flex" action="{{URL('column-search')}}" method="post">
                                                 @csrf
 {{--                                                <div class="row-wise-search ebay-profile-search">--}}
 {{--                                                    <input class="form-control" id="row-wise-search" type="text" placeholder="Search On eBay...">--}}
 {{--                                                </div>--}}
                                                 <div class="p-text-area">
-                                                    <input type="text" name="search_value" id="search_value" class="form-control" placeholder="Search On eBay...">
+                                                    <input type="text" name="search_value" id="search_value" class="form-control" placeholder="Search eBay Profile...">
                                                 </div>
-                                                <input type="hidden" name="route_name" value="ebay-profile-name-list">
+                                                <!-- <input type="hidden" name="route_name" value="ebay-profile-name-list"> -->
+                                                <input type="hidden" name="route_name" value="ebay-profile">
                                                 <div class="submit-btn">
                                                     <button type="submit" class="search-btn waves-effect waves-light" onclick="ebay_profile_search()">Search</button>
                                                 </div>
@@ -108,6 +110,7 @@
                                                             <input class="current-page" id="current-page-selector" type="text" name="paged" value="{{$all_decode_EbayProfile->current_page}}" size="3" aria-describedby="table-paging">
                                                             <span class="datatable-paging-text d-flex">of<span class="total-pages">{{$all_decode_EbayProfile->last_page}}</span></span>
                                                             <input type="hidden" name="route_name" value="ebay-profile">
+                                                            <input type="hidden" name="query_params" value="{{$url}}">
                                                         </span>
                                                         @if($results->currentPage()  !== $results->lastPage())
                                                         <a class="next-page btn" href="{{$all_decode_EbayProfile->next_page_url}}" data-toggle="tooltip" data-placement="top" title="Next Page">

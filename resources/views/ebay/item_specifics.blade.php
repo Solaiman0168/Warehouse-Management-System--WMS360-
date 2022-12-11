@@ -43,7 +43,7 @@
 
 <div class="form-group row ">
     <label for="Category" class="col-md-2 col-form-label required">Item Specifies</label>
-    @isset($item_specifics['Recommendations']['NameRecommendation'])
+    @isset($item_specifics['aspects'])
         <div class="col-md-10 wow pulse">
 
 
@@ -55,13 +55,13 @@
 
 
             <div class="row d-flex justify-content-between">
-                @foreach($item_specifics['Recommendations']['NameRecommendation'] as $index => $item_specific)
+                @foreach($item_specifics['aspects'] as $index => $aspect)
                     @php
                         $counter = 0;
                         if(isset($result[0]->attribute)){
                             foreach (\Opis\Closure\unserialize($result[0]->attribute) as $key => $attribute_array){
                             foreach ($attribute_array as $attribute => $terms_array){
-                                if($key == $item_specific['Name']){
+                                if($key == $aspect['localizedAspectName']){
                                     $counter++;
                                 }
                             }
@@ -70,21 +70,21 @@
                         }
 
                     @endphp
-                    @if(isset($item_specific['Name']) && $counter==0)
+                    @if(isset($aspect['localizedAspectName']) && $counter==0)
                         <div class="col-md-4 mb-3">
-                            <label style="font-weight: normal">{{$item_specific['Name']}}
-                                @if($item_specific['ValidationRules']['UsageConstraint'] == 'Required')
+                            <label style="font-weight: normal">{{$aspect['localizedAspectName']}}
+                                @if($aspect['aspectConstraint']['aspectRequired'])
                                     <strong>*</strong>
                                 @endif
                             </label>
                             {{--                            Search our models: <input type="search" name="modelsearch" list="modelslist">--}}
-                            <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$item_specific['Name']}}]'>
-                            @if(isset($item_specific['ValueRecommendation']))
+                            <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$aspect['localizedAspectName']}}]'>
+                            @if(isset($aspect['aspectValues']))
 
                                 <datalist id="modelslist{{$index}}">
-                                    @foreach($item_specific['ValueRecommendation'] as $recommendation)
-                                        @if(isset($recommendation['Value']))
-                                            <option value="{{$recommendation['Value']}}">
+                                    @foreach($aspect['aspectValues'] as $recommendation)
+                                        @if(isset($recommendation['localizedValue']))
+                                            <option value="{{$recommendation['localizedValue']}}">
                                         @endif
                                     @endforeach
                                 </datalist>

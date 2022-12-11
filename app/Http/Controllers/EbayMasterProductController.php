@@ -96,7 +96,7 @@ class EbayMasterProductController extends Controller
         $master_product_list = EbayMasterProduct::where("product_status",'Active')->with('variationProducts')->orderByDesc('id')->paginate($pagination);
         if($request->has('is_clear_filter')){
             $search_result = $master_product_list;
-            $view = view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render();
+            $view = view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render();
             return response()->json(['html' => $view]);
         }
         $master_decode_product_list = json_decode(json_encode($master_product_list));
@@ -364,6 +364,32 @@ class EbayMasterProductController extends Controller
 
         return view('ebay.master_product.revise_product_list',compact('master_product_list', 'all_decode_revise_product', 'setting','search_value', 'page_title', 'pagination'));
     }
+
+
+    public function reviseProductListGenericSearch(Request $request){
+        $settingData = $this->paginationSetting('ebay', 'ebay_revise_product');
+        $setting = $settingData['setting'];
+        $page_title = 'eBay Revise | WMS360';
+        $pagination = $settingData['pagination'];
+        $shelfUse = $this->shelf_use;
+        $user_list = User::get();
+
+        $generic_search_value = $request->search_value;
+        $master_product_list = EbayMasterProduct::where('profile_status','!=',null)->orderByDesc('id')
+                                ->where(function($query)use($request, $generic_search_value){
+                                    if(is_numeric($generic_search_value)){
+                                        $query->where('item_id', $generic_search_value)->orWhere('master_product_id', $generic_search_value);
+                                    }else{
+                                        $query->where('title', 'LIKE', '%' .$generic_search_value. '%');
+                                    }
+                                })->paginate($pagination)->appends(request()->query());
+
+        $all_decode_revise_product = json_decode(json_encode($master_product_list));
+
+        return view('ebay.master_product.revise_product_list', compact('master_product_list', 'all_decode_revise_product', 'setting','generic_search_value', 'page_title', 'pagination'));
+
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -702,17 +728,18 @@ class EbayMasterProductController extends Controller
 //        /// ////////////////////////////// end
 //        session(['access_token' => $response['access_token']]);
 
-        $item_specific_results = $this->getItemSpecifics($result->category_id,$ebay_access_token);
-
         //        item specifics start
+
+
 //        echo "<pre>";
 //        echo "********************";
+//        print_r($item_specific_results);
+//        exit();
+        $item_specifics= $this->getItemSpecifics($result->category_id,$ebay_access_token,$result->site_id);
+//                echo "<pre>";
+//        echo "********************";
 //        print_r($item_specifics);
-        echo "<pre>";
-        echo "********************";
-        print_r($item_specific_results);
-        exit();
-
+//        exit();
 //        item specifics ends
 
         //        get store data starts
@@ -746,11 +773,11 @@ class EbayMasterProductController extends Controller
         }
 //        get store data ends
 
-        $remainDataResult = EbayMasterProduct::onlyTrashed()->where('master_product_id',$request->product_id)->first();
-//        dd($remainDataResult);
-        if ($remainDataResult){
-            $item_specific_results = \Opis\Closure\unserialize($remainDataResult['item_specifics']);
-        }
+//        $remainDataResult = EbayMasterProduct::onlyTrashed()->where('master_product_id',$request->product_id)->first();
+////        dd($remainDataResult);
+//        if ($remainDataResult){
+//            $item_specific_results = \Opis\Closure\unserialize($remainDataResult['item_specifics']);
+//        }
 //                echo "<pre>";
 //        echo "********************";
 //        print_r($item_specifics);
@@ -760,12 +787,14 @@ class EbayMasterProductController extends Controller
 //        exit();
         $ebayEndProduct = false;
         $ebayMasterImages = [];
+        $ebayMasterProductItemSpecifics = [];
         if(isset($request->ebay_item_id) && ($request->ebay_item_id != null)){
             $ebayEndProduct = true;
             $ebayMasterInfo = EbayMasterProduct::where('item_id',$request->ebay_item_id)->first();
             $ebayMasterImages = unserialize($ebayMasterInfo->master_images);
+            $ebayMasterProductItemSpecifics = @unserialize($ebayMasterInfo->item_specifics) != false ? unserialize($ebayMasterInfo->item_specifics) : [];
         }
-        $profile_data = view('ebay.master_product.profile_data',compact('result','item_specifics','item_specific_results','product_result','shop_categories','id','profile_id','feeder_quantity','campaigns','categories','account_id','site_id','p_id','ebayEndProduct','ebayMasterImages'));
+        $profile_data = view('ebay.master_product.profile_data',compact('result','item_specifics','item_specific_results','product_result','shop_categories','id','profile_id','feeder_quantity','campaigns','categories','account_id','site_id','p_id','ebayEndProduct','ebayMasterImages','ebayMasterProductItemSpecifics'));
         return $profile_data;
     }
     public function checkTemplate(Request $request,$template_id,$id){
@@ -1941,10 +1970,10 @@ class EbayMasterProductController extends Controller
 
                             $campaigns = $this->curl($url, $headers, $body, 'POST');
                             $campaigns = \GuzzleHttp\json_decode($campaigns);
-                            if(isset($campaigns->responses[0]->adId) && isset($campaigns_array["href"])){
-                                $campaigns_array["adId"] = $campaigns->responses[0]->adId;
-                                $campaigns_array["href"] = $campaigns->responses[0]->href;
-                            }
+
+                                $campaigns_array["adId"] = $campaigns->responses[0]->adId ?? '';
+                                $campaigns_array["href"] = $campaigns->responses[0]->href ?? '';
+
                             // echo "<pre>";
                             // print_r($campaigns->responses[0]->adId);
 
@@ -2320,28 +2349,10 @@ class EbayMasterProductController extends Controller
 //        get store data ends
 
 //        item specifics start
-        $url = 'https://api.ebay.com/ws/api.dll';
-        $headers = [
-            'X-EBAY-API-SITEID:'.$result->site_id,
-            'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-            'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-            'X-EBAY-API-IAF-TOKEN:'.$ebay_access_token,
-        ];
-
-        $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>'.$result->category_id.'</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
-
-        $item_specifics = $this->curl($url,$headers,$body,'POST');
-        $item_specifics =simplexml_load_string($item_specifics);
-        $item_specifics = json_decode(json_encode($item_specifics),true);
-
+        $item_specifics= $this->getItemSpecifics($result->category_id,$ebay_access_token,$result->site_id);
+//        echo "<pre>";
+//        print_r($item_specifics);
+//        exit();
 //        item specifics ends
 
         //                get condition data start
@@ -2442,7 +2453,7 @@ class EbayMasterProductController extends Controller
         $request['image'] = $image_array;
 
         $result = EbayMasterProduct::with(['variationProducts'])->find($id);
-        $campaign_result = $result;
+        $ebay_product = $result;
 //        echo "<pre>";
 //        print_r($result);
 //        exit();
@@ -2704,7 +2715,7 @@ class EbayMasterProductController extends Controller
         if($request->condition_id == 1000){
             $condition_des = '';
         }else{
-                $condition_des = $request->condition_description;
+            $condition_des = $request->condition_description;
         }
 
         $body = '<?xml version="1.0" encoding="utf-8"?>
@@ -2780,10 +2791,14 @@ class EbayMasterProductController extends Controller
         $result = $this->curl($url,$headers,$body,'POST');
         $result =simplexml_load_string($result);
         $result = json_decode(json_encode($result),true);
-
+        // $ebay_result_for_campaign = EbayMasterProduct::where('item_id' , $request->item_id)->get()->first();
+        $campaign_result = unserialize($ebay_product->campaign_data);
+//        echo "<pre>";
+//        print_r($campaign_result);
+//        exit();
         if ($result['Ack'] == 'Warning' || $result['Ack'] == 'Success'){
 
-            if (isset($request->campaign_checkbox)){
+            if (isset($request->campaign_checkbox) && $ebay_product->campaign_data == null){
                 $url = 'https://api.ebay.com/sell/marketing/v1/ad_campaign/'.$request->campaign_id.'/bulk_create_ads_by_listing_id';
                 $headers = [
                     'Authorization:Bearer '.$ebay_access_token,
@@ -2809,40 +2824,89 @@ class EbayMasterProductController extends Controller
                         $campaigns_array["campaignId"] = $request->campaign_id;
                         $campaigns_array["bidPercentage"] = $request->bid_rate;
                         $campaigns_array["suggestedRate"] = $request->suggested_rate ?? 0.0;
-                        $campaigns_array["adId"] = $campaigns->responses[0]->adId;
-                        $campaigns_array["href"] = $campaigns->responses[0]->href;
+                        $campaigns_array["adId"] = $campaigns->responses[0]->adId ?? '';
+                        $campaigns_array["href"] = $campaigns->responses[0]->href ?? '';
 
-                        EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 1,'campaign_data' => serialize($campaigns_array)]);
+                        EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 0,'campaign_data' => serialize($campaigns_array)]);
                     }
                 }
 
-            }else{
-//                echo "<pre>";
-//                print_r(unserialize($result["campaign_data"])["campaignId"]);
-//                exit();
-                if ($campaign_result["campaign_data"] != null && $campaign_result["campaign_data"] != ""){
-                    if (isset(unserialize($campaign_result["campaign_data"])["campaignId"])){
-                        $url = 'https://api.ebay.com/sell/marketing/v1/ad_campaign/'.unserialize($campaign_result["campaign_data"])["campaignId"].'/ad/'.unserialize($campaign_result["campaign_data"])["adId"];
+            }
+            else if (!isset($request->campaign_checkbox) && $ebay_product->campaign_data != null){
+
+
+                if ($campaign_result != null && $campaign_result != ""){
+                    if (isset($campaign_result["campaignId"])){
+                        $url = 'https://api.ebay.com/sell/marketing/v1/ad_campaign/'.$campaign_result["campaignId"].'/bulk_delete_ads_by_listing_id';
                         $headers = [
                             'Authorization:Bearer '.$ebay_access_token,
                             'Accept:application/json',
                             'Content-Type:application/json'
                         ];
-                        $body ='';
+                        $body ='{
+                            "requests": [
+                                {
+                                    "listingId": "'.(string)$request->item_id.'"
+                                }
+                            ]
+                        }';
 
-                        $campaigns = $this->curl($url,$headers,$body,'DELETE');
+                        $campaigns = $this->curl($url,$headers,$body,'POST');
+                        $campaigns = \GuzzleHttp\json_decode($campaigns);
 
-
-                        if($campaigns==null){
-                            EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 1,'campaign_data' => null]);
+                        if(isset($campaigns->responses[0]->statusCode)){
+                            if ($campaigns->responses[0]->statusCode == '200') {
+                                EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 1, 'campaign_data' => null]);
+                            }
                         }else{
-                            $campaigns = \GuzzleHttp\json_decode($campaigns);
+                            echo "<pre>";
+                            print_r($campaigns->errors[0]->errorId);
+                            if ($campaigns->errors[0]->errorId = "35045"){
+                                EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 0, 'campaign_data' => null]);
+                            }
+                            exit();
                             return $campaigns;
                         }
                     }
 
                 }
 
+            }else if(isset($request->campaign_checkbox) && $ebay_product->campaign_data != null){
+                if ($campaign_result != null && $campaign_result != ""){
+                    if (isset($campaign_result["campaignId"])){
+                        $url = 'https://api.ebay.com/sell/marketing/v1/ad_campaign/'.$campaign_result["campaignId"].'/bulk_update_ads_bid_by_listing_id';
+                        $headers = [
+                            'Authorization:Bearer '.$ebay_access_token,
+                            'Accept:application/json',
+                            'Content-Type:application/json'
+                        ];
+                        $body ='{
+                            "requests": [
+                                {
+                                    "bidPercentage": "'.$request->bid_rate.'",
+                                    "listingId": "'.(string)$request->item_id.'"
+                                }
+                            ]
+                        }';
+
+                        $campaigns = $this->curl($url,$headers,$body,'POST');
+                        $campaigns = \GuzzleHttp\json_decode($campaigns);
+                        // $ebay_result_for_campaign = EbayMasterProduct::where('item_id' , $request->item_id)->get()->first();
+                        // $campaign_array = unserialize($ebay_result_for_campaign->campaign_data);
+                        $campaign_result['bidPercentage'] = $request->bid_rate;
+                        if(isset($campaigns->responses[0]->statusCode)){
+                            if ($campaigns->responses[0]->statusCode == '200') {
+                                EbayMasterProduct::where('item_id', $request->item_id)->update(['campaign_status' => 1, 'campaign_data' => serialize($campaign_result)]);
+                            }
+                        }else{
+                            echo "<pre>";
+                            print_r($campaigns->errors[0]->errorId);
+                            exit();
+                            return $campaigns;
+                        }
+                    }
+
+                }
             }
             $product = EbayMasterProduct::with(['variationProducts'])->find($id);
             // $campaign_array = array();
@@ -3035,6 +3099,7 @@ class EbayMasterProductController extends Controller
     }
 
     public function reviseProduct(Request $request){
+        $errorMessage = [];
         foreach ($request->products as $product){
             try{
                 $revise_body = '';
@@ -3065,12 +3130,13 @@ class EbayMasterProductController extends Controller
 
                 $profile_item_specific = \Opis\Closure\unserialize($profile_result->item_specifics);
                 $master_product_item_specific = \Opis\Closure\unserialize($master_product_result->item_specifics);
-                foreach ($master_product_item_specific as $key => $value){
+                if($master_product_item_specific != null && count($master_product_item_specific) > 0) {
+                    foreach ($master_product_item_specific as $key => $value){
 
-                    if ($master_product_item_specific[$key] == ''){
-                        $master_product_item_specific[$key] = $profile_item_specific[$key] ?? '';
+                        if ($master_product_item_specific[$key] == ''){
+                            $master_product_item_specific[$key] = $profile_item_specific[$key] ?? '';
+                        }
                     }
-
                 }
 
                 $item_specifics_array = array();
@@ -3215,6 +3281,7 @@ class EbayMasterProductController extends Controller
                 $result = json_decode(json_encode($result),true);
 
 
+                $messages = [];
                 if ($result['Ack'] == 'Warning' || $result['Ack'] == 'Success'){
 
                     $master_product_item_specific = \Opis\Closure\serialize($master_product_item_specific);
@@ -3227,9 +3294,24 @@ class EbayMasterProductController extends Controller
 //                    'shipping_id' => $profile_result->shipping_id,'return_id' => $profile_result->return_id,'payment_id' => $profile_result->return_id,'paypal' => $profile_result->paypal,'profile_status' => 1]);
 
 
-                }elseif ($result['ShortMessage'] == "Auction ended."){
-                    $master_product_result->product_status = "Completed";
-                    $master_product_result->save();
+                }elseif(isset($result["Errors"]["ShortMessage"])){
+                    if(($result["Errors"]["ShortMessage"] == "Item cannot be accessed.") || ($result["Errors"]['ShortMessage'] == "Auction ended.")){
+                        $master_product_result->product_status = "Completed";
+                        $master_product_result->save();
+                    }else {
+                        $errorMessage[] = [
+                            'item_id' => $master_product_result->item_id,
+                            'errMessage' => [$result["Errors"]["LongMessage"] ?? $result["Errors"]["ShortMessage"] ?? ''],
+                        ];
+                    }
+                }elseif(isset($result["Errors"][0]["ShortMessage"])){
+                    foreach($result["Errors"] as $error) {
+                        $messages[] = $error['LongMessage'] ?? $error['ShortMessage'] ?? '';
+                    }
+                    $errorMessage[] = [
+                        'item_id' => $master_product_result->item_id,
+                        'errMessage' => $messages,
+                    ];
                 }else{
                     continue;
                 }
@@ -3238,10 +3320,12 @@ class EbayMasterProductController extends Controller
             }
 
         }
-
-
-
-        return redirect('ebay-master-product-list')->with('success','successfully revised');
+        if(count($errorMessage) > 0) {
+            return response()->json(['type' => 'error', 'errorMessages' => $errorMessage]);
+        }else {
+            return response()->json(['type' => 'success',]);
+        }
+        //return redirect('ebay-master-product-list')->with('success','successfully revised');
 
 
     }
@@ -3485,10 +3569,10 @@ class EbayMasterProductController extends Controller
             ->orderBy('id','DESC')->paginate($pagination);
             if($request->has('is_clear_filter')){
                 $search_result = $total_catalogue;
-                $status = $request->get('status') ?? 'publish';
+                $status = 'ebay_pending';
                 $date = '12345';
                 $woocommerceSiteUrl = WoocommerceAccount::first();
-                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render();
+                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting'))->render();
                 return response()->json(['html' => $view]);
             }
 
@@ -3838,6 +3922,9 @@ class EbayMasterProductController extends Controller
         $skip = $request->skip;
         $ids = $request->ids;
 
+        $settingData = $this->paginationSetting('', '');
+        $setting = $settingData['setting'];
+
         $matched_product_array = array();
         if (is_numeric($search_keyword)){
             if (strlen($search_keyword) == 13){
@@ -3848,7 +3935,7 @@ class EbayMasterProductController extends Controller
                     $search_result = $search_draft_result['search'];
                     $ids = $search_draft_result['ids'];
                     $defaultEditAdd = NULL;
-                    return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
                 }else{
                     $search_result_by_word = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
                     $search_result = $search_result_by_word["search"];
@@ -3862,7 +3949,7 @@ class EbayMasterProductController extends Controller
                         $ids = $search_sku_result['ids'];
                     }
                     $defaultEditAdd = NULL;
-                    return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
                 }
             }else{
                 if (strlen($search_keyword) > 10){
@@ -3873,7 +3960,7 @@ class EbayMasterProductController extends Controller
                         $search_result = $search_draft_result['search'];
                         $ids = $search_draft_result['ids'];
                         $defaultEditAdd = NULL;
-                        return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                        return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
                     }
                 }else{
                     $search_draft_result = $this->searchAsId($search_keyword,$status,$take,$skip,$ids);
@@ -3894,7 +3981,7 @@ class EbayMasterProductController extends Controller
                     }
                 }
                 $defaultEditAdd = NULL;
-                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
             }
 
         }else{
@@ -3905,7 +3992,7 @@ class EbayMasterProductController extends Controller
                 $search_priority = $search_result_by_word["search_priority"];
                 $ids = $search_result_by_word["ids"];
                 $defaultEditAdd = NULL;
-                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
 
             }else{
                 $search_sku_result = $this->searchAsSku($search_keyword,$status,$search_priority,$take,$skip,$ids);
@@ -3919,7 +4006,7 @@ class EbayMasterProductController extends Controller
                     $ids = $search_result_by_word["ids"];
                 }
                 $defaultEditAdd = NULL;
-                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('ebay.master_product.search_master_product', compact('search_result', 'defaultEditAdd','setting'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
 
             }
 

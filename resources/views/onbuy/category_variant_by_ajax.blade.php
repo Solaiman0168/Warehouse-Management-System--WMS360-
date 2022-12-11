@@ -49,6 +49,18 @@
         <div class="row m-t-10 d-flex align-items-center">
             <div class="col-md-2">
                 <label class="required">Master Product Name</label>
+                <div class="ebay-edit-title-switch-btn">
+                    <div class="onoffswitch mb-sm-10 res-onoff-btn">
+                        @php
+                        $title_flag = \Opis\Closure\unserialize($profile_result->draft_change_status)['title_flag'] ?? 0;
+                        @endphp
+                        <input type="checkbox" value="{{$title_flag}}" name="title_flag" class="onoffswitch-checkbox"  id="title_flag" tabindex="1" @if ($title_flag == '1')  checked @else unchecked @endif>
+                        <label class="onoffswitch-label" for="catalogue-name">
+                            <span onclick="onOff('title_flag')" class="onoffswitch-inner"></span>
+                            <span onclick="onOff('title_flag')" class="ebay-onoffswitch-switch"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="col-md-10">
                 <input type="text" class="form-control" name="m_product_name" id="m_product_name" onkeyup="Count();" value="{{$catalogue_info->name}}"
@@ -64,11 +76,14 @@
                 <div class="row">
                     <div class="col-md-12">
                         <p class="text-success">If you want to change your default image, please select your desired image from additional images below.</p>
+                        @php
+                        $imageUrl = $catalogue_info->images[0]->image_url ?? '';
+                        @endphp
                         <img id="default_image_show"
-                            src="{{(filter_var($catalogue_info->images[0]->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$catalogue_info->images[0]->image_url : 'https://previews.123rf.com/images/pavelstasevich/pavelstasevich1811/pavelstasevich181101027/112815900-no-image-available-icon-flat-vector.jpg'}}"
+                            src="{{(filter_var($imageUrl ?? '', FILTER_VALIDATE_URL) == FALSE) ? asset('/').$imageUrl ?? '' : $imageUrl ?? ''}}"
                             width="128" height="128" alt="IMAGE">
                         <input type="hidden" name="default_image" id="default_image_value"
-                               value="{{(filter_var($catalogue_info->images[0]->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$catalogue_info->images[0]->image_url : 'https://previews.123rf.com/images/pavelstasevich/pavelstasevich1811/pavelstasevich181101027/112815900-no-image-available-icon-flat-vector.jpg'}}">
+                               value="{{(filter_var($imageUrl ?? '', FILTER_VALIDATE_URL) == FALSE) ? asset('/').$imageUrl ?? '' : $imageUrl ?? ''}}">
                     </div>
                 </div>
             </div>
@@ -131,7 +146,7 @@
                 <label class="required">Master Product Price</label>
             </div>
             <div class="col-md-10">
-                <input type="text" class="form-control" name="m_rrp" value="{{$catalogue_info->sale_price}}" required>
+                <input type="text" class="form-control" name="m_rrp" value="{{$mapFields['Master Product Price'] ?? $catalogue_info->sale_price}}" required>
             </div>
         </div>
         <div class="row m-t-10">
@@ -217,7 +232,10 @@
                                         @foreach($data->options as $option)
                                             <div class="col-md-6 m-t-15">
                                                 <button class="btn btn-primary w-100">{{$option->name}}</button>
-                                                @if(isset($technical_details[$i]))
+                                                @if(isset($mapFields[$option->name]))
+                                                <input type="text" class="form-control" name="m_tectnical_details[]"
+                                                           value="{{$option->detail_id}}/{{$mapFields[$option->name]}}">
+                                                @elseif(isset($technical_details[$i]))
                                                     <input type="text" class="form-control" name="m_tectnical_details[]"
                                                            value="{{$technical_details[$i]}}">
                                                 @else
@@ -329,13 +347,13 @@
                                                         @if(in_array($data->name,$p_v))
                                                             <div class="row px-1 py-2">
                                                                 <div class="col-md-2">
-                                                                    <label class="required">{{$data->name}}</label>
+                                                                    <label class="">{{$data->name}}</label>
                                                                 </div>
                                                                 <div class="col-md-10">
                                                                     <select
                                                                         class="form-control child_attr_{{$data->feature_id}}"
                                                                         name="product_variant_option[{{$count}}][]"
-                                                                        id="product_variant_option_{{$count}}" required>
+                                                                        id="product_variant_option_{{$count}}" >
                                                                         <option value="">Select Option</option>
                                                                         @php
                                                                             $temp = '';

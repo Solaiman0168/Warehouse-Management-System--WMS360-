@@ -96,7 +96,7 @@
                                         </div>
                                         <div class="ml-1"><p>MSP</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
+                                    <div class="d-flex align-items-center mt-2 mt-sm-10">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="product" class="onoffswitch-checkbox" id="product" tabindex="0" @if(isset($setting['onbuy']['onbuy_active_product']['product']) && $setting['onbuy']['onbuy_active_product']['product'] == 1) checked @elseif(isset($setting['onbuy']['onbuy_active_product']['product']) && $setting['onbuy']['onbuy_active_product']['product'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="product">
@@ -109,6 +109,16 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center mt-sm-10">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="stock" class="onoffswitch-checkbox" id="stock" tabindex="0" @if(isset($setting['onbuy']['onbuy_active_product']['stock']) && $setting['onbuy']['onbuy_active_product']['stock'] == 1) checked @elseif(isset($setting['onbuy']['onbuy_active_product']['stock']) && $setting['onbuy']['onbuy_active_product']['stock'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="stock">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>Stock</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="status" class="onoffswitch-checkbox" id="status" tabindex="0" @if(isset($setting['onbuy']['onbuy_active_product']['status']) && $setting['onbuy']['onbuy_active_product']['status'] == 1) checked @elseif(isset($setting['onbuy']['onbuy_active_product']['status']) && $setting['onbuy']['onbuy_active_product']['status'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="status">
@@ -168,7 +178,9 @@
                                         </div>
                                         <div class="ml-1"><p>RRP</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mt-sm-10">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="sales-price" class="onoffswitch-checkbox" id="sales-price" tabindex="0" @if(isset($setting['onbuy']['onbuy_active_product']['sales-price']) && $setting['onbuy']['onbuy_active_product']['sales-price'] == 1) checked @elseif(isset($setting['onbuy']['onbuy_active_product']['sales-price']) && $setting['onbuy']['onbuy_active_product']['sales-price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="sales-price">
@@ -178,9 +190,7 @@
                                         </div>
                                         <div class="ml-1"><p>Sales Price</p></div>
                                     </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center mt-sm-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="variation_base_price" class="onoffswitch-checkbox" id="variation_base_price" tabindex="0" @if(isset($setting['onbuy']['onbuy_active_product']['variation_base_price']) && $setting['onbuy']['onbuy_active_product']['variation_base_price'] == 1) checked @elseif(isset($setting['onbuy']['onbuy_active_product']['variation_base_price']) && $setting['onbuy']['onbuy_active_product']['variation_base_price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="variation_base_price">
@@ -294,6 +304,24 @@
                             <li class="breadcrumb-item active" aria-current="page">Active Product</li>
                         </ol>
                     </div>
+                    <div class="unmatched-csv-mb">
+                        <form action="{{asset('generate-csv-comparing-live-data')}}" method="post" enctype="multipart/form-data">
+                            @csrf
+                            <div class="upload-csv-in-unmatched-list">
+                                <div class="mr-1">
+                                    <a class="btn btn-default sample-csv-unmatched" href="{{asset('assets/sample-csv/sample.csv')}}"><i class="fa fa-download"></i> Sample CSV</a>
+                                </div>
+                                <div class="custom-file mr-1">
+                                    <input type="file" class="custom-file-input" name="csvFile" accept=".csv" required>
+                                    <input type="hidden" class="" name="channel_column" value="OnBuy Quantity">
+                                    <label class="custom-file-label unmatched-label" for="customFile">Upload CSV To Check Qty</label>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn upload-csv-unmatched-btn">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="screen-option-btn">
                         <button class="btn btn-link waves-effect waves-light" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                             Screen Options &nbsp; <i class="fa" aria-hidden="true"></i>
@@ -305,7 +333,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive onbuy shadow">
 
@@ -362,9 +390,9 @@
                                     </div>
                                     <div class="m-l-10" style="width: 30%;">
                                         <select class="form-control" name="leadListing" id="leadListing">
-                                            <option value="">Select Lead Listing Option</option>
-{{--                                            <option value="1">Lead Listing</option>--}}
-                                            <option value="0">Not Lead Listing</option>
+                                            <option value="all">Select Lead Listing Option</option>
+                                            <!-- <option value="0">Not Lead Listing</option> -->
+                                            <option value="not_lead_listing" @if($lead_listing) selected @endif>Not Lead Listing</option>
                                         </select>
                                     </div>
                                     <div class="m-l-10 make-lead-button" style="width: 10%; display: none">
@@ -707,6 +735,43 @@
                                             <div>Product</div>
                                         </div>
                                     </th>
+                                    <th class="stock filter-symbol" style="width: 10%">
+                                        <div class="d-flex justify-content-center">
+                                            <div class="btn-group">
+                                                <a type="button" class="dropdown-toggle filter-btn" data-toggle="dropdown">
+                                                    <i class="fa @isset($allCondition['stock'])text-warning @endisset" aria-hidden="true"></i>
+                                                </a>
+                                                <div class="dropdown-menu filter-content stock-filter-content shadow" role="menu">
+                                                    <p>Filter Value</p>
+                                                    <div class="d-flex">
+                                                        <div>
+                                                            <select class="form-control" name="stock_opt">
+                                                                <option value=""></option>
+                                                                <option value="=" @if(isset($allCondition['stock_opt']) && ($allCondition['stock_opt'] == '=')) selected @endif>=</option>
+                                                                <option value="<" @if(isset($allCondition['stock_opt']) && ($allCondition['stock_opt'] == '<')) selected @endif><</option>
+                                                                <option value=">" @if(isset($allCondition['stock_opt']) && ($allCondition['stock_opt'] == '>')) selected @endif>></option>
+                                                                <option value="<=" @if(isset($allCondition['stock_opt']) && ($allCondition['stock_opt'] == '≤')) selected @endif>≤</option>
+                                                                <option value=">=" @if(isset($allCondition['stock_opt']) && ($allCondition['stock_opt'] == '≥')) selected @endif>≥</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="ml-2">
+                                                            <input type="number" class="form-control input-text symbol-filter-input-text" name="stock" value="{{$allCondition['stock'] ?? ''}}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
+                                                        <input id="stock_opt_out" type="checkbox" name="stock_opt_out" value="1" @isset($allCondition['stock_opt_out']) checked @endisset><label for="stock_opt_out">Opt Out</label>
+                                                    </div>
+                                                   @if(isset($allCondition['stock']))
+                                                        <div class="individual_clr">
+                                                            <button title="Clear filters" type="submit" name="stock" value=" " class='btn btn-outline-info clear-params'><i class="fas fa-times"></i></button>
+                                                        </div>
+                                                    @endif
+                                                    <button type="submit" class="btn btn-primary filter-apply-btn float-right">Apply<i class="fa fa-arrow-circle-right ml-1"></i></button>
+                                                </div>
+                                            </div>
+                                            <div>Stock</div>
+                                        </div>
+                                    </th>
                                     <th class="status" style="width: 10%">
                                         <div class="d-flex justify-content-center">
                                             <div class="btn-group">
@@ -829,6 +894,7 @@
                                         <td class="category" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->category_info->name}}(<small>{{$product_list->category_info->category_tree}}</small>)</td>
                                         <td class="master_base_price" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->base_price ?? ''}}</td>
                                         <td class="product text-center" style="cursor: pointer; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->variation_product_count}}</td>
+                                        <td class="stock text-center" style="cursor: pointer; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->variation_product[0]->stock ?? ''}}</td>
                                         <td class="status" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle"><span class="label label-status label-@if($product_list->status == 'success')success @elseif($product_list->status == 'pending')warning @elseif($product_list->status == 'failed')danger @endif">{{$product_list->status}}</span></td>
 {{--                                        <td class="queue-id" style="width: 10%">--}}
 {{--                                            <div class="d-block">--}}
@@ -1045,6 +1111,7 @@
                     $("#ajax_loader").show();
                 },
                 success: function(response){
+                    console.log(response.setting)
                     if (response.ids.length === 0) {
                         $(document).ready(function() {
                             Swal.fire(
@@ -1060,6 +1127,10 @@
                         take = response.take;
                         skip = parseInt(response.skip)+10;
                         ids = ids.concat(response.ids);
+
+                        var item = response.ids.length
+                        $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
                     }else{
                         $("#product_variation_loading").hide();
                         alert('No Catalogue Found');
@@ -1114,6 +1185,9 @@
 
                             ids = ids.concat(response.ids);
 
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){
@@ -1229,6 +1303,8 @@
 
             $('select#leadListing').on('change',function (){
                 var listingValue = $(this).val();
+                window.location = "{{url('onbuy/master-product-list?listing_type=')}}"+listingValue
+                return false
                 $.ajax({
                     type: "post",
                     url: "{{url('onbuy/search-lead-listing-product')}}",
@@ -1298,20 +1374,25 @@
             $('table tbody tr td :checkbox:checked').each(function (i) {
                 order_number[i] = $(this).val();
             });
+            if(order_number.length > 0) {
+                $('.make-lead-button').show('slow');
+            }else {
+                $('.make-lead-button').hide('slow');
+            }
             if(leadListingOption == '' || leadListingOption == 1) {
                 if (order_number.length == 0) {
                     $('div.bulk-add-sale-price').hide('slow');
                 } else {
                     $('div.bulk-add-sale-price').show('slow');
                 }
-                $('.make-lead-button').hide('slow');
+                // $('.make-lead-button').hide('slow');
             }else{
                 if(order_number.length == 0){
                     $('div.bulk-add-sale-price').hide('slow');
-                    $('.make-lead-button').hide('slow');
+                    // $('.make-lead-button').hide('slow');
                 }else{
                     $('div.bulk-add-sale-price').hide('slow');
-                    $('.make-lead-button').show('slow');
+                    // $('.make-lead-button').show('slow');
                 }
             }
             return order_number;

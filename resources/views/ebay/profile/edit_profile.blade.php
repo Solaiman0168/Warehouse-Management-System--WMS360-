@@ -159,7 +159,7 @@
                                     <div id="add_variant_product">
                                         <div class="form-group row ">
                                             <label for="Category" class="col-md-2 col-form-label required">Item Specifies</label>
-                                            @if(isset($item_specifics['Recommendations']['NameRecommendation']) && $item_specifics != '' )
+                                            @if(isset($item_specifics['aspects']))
                                                 <div class="col-md-10 wow pulse">
 
 
@@ -169,24 +169,24 @@
 
 
                                                     <div class="row d-flex justify-content-between">
-                                                        @foreach($item_specifics['Recommendations']['NameRecommendation'] as $index => $item_specific)
-                                                            @isset($item_specific['Name'])
+                                                        @foreach($item_specifics['aspects'] as $index => $aspect)
+                                                            @isset($aspect['localizedAspectName'])
                                                                 <div class="col-md-4 mb-3">
-                                                                    <label style="font-weight: normal">{{$item_specific['Name']}}
-                                                                        @if($item_specific['ValidationRules']['UsageConstraint'] == 'Required')
+                                                                    <label style="font-weight: normal">{{$aspect['localizedAspectName']}}
+                                                                        @if($aspect['aspectConstraint']['aspectRequired'])
                                                                             <strong>*</strong>
                                                                         @endif
                                                                     </label>
                                                                     @if($item_specific_results != '')
                                                                         @foreach($item_specific_results as $key => $item_specific_result)
-                                                                            @if($item_specific['Name'] == $key)
-                                                                                <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$item_specific['Name']}}]' value="{{$item_specific_results[$item_specific['Name']]}}">
-                                                                                @if(isset($item_specific['ValueRecommendation']))
+                                                                            @if($aspect['localizedAspectName'] == $key)
+                                                                                <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$aspect['localizedAspectName']}}]' value="{{$item_specific_results[$aspect['localizedAspectName']]}}">
+                                                                                @if(isset($aspect['aspectValues']))
 
                                                                                     <datalist id="modelslist{{$index}}">
-                                                                                        @foreach($item_specific['ValueRecommendation'] as $recommendation)
-                                                                                            @if(isset($recommendation['Value']))
-                                                                                                <option value="{{$recommendation['Value']}}">
+                                                                                        @foreach($aspect['aspectValues'] as $recommendation)
+                                                                                            @if(isset($recommendation['localizedValue']))
+                                                                                                <option value="{{$recommendation['localizedValue']}}">
                                                                                             @endif
                                                                                         @endforeach
                                                                                     </datalist>
@@ -196,13 +196,13 @@
                                                                             @endif
                                                                         @endforeach
                                                                     @else
-                                                                            <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$item_specific['Name']}}]' value="">
-                                                                            @if(isset($item_specific['ValueRecommendation']))
+                                                                            <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$aspect['localizedAspectName']}}]' value="">
+                                                                            @if(isset($aspect['aspectValues']))
 
                                                                                 <datalist id="modelslist{{$index}}">
-                                                                                    @foreach($item_specific['ValueRecommendation'] as $recommendation)
-                                                                                        @if(isset($recommendation['Value']))
-                                                                                            <option value="{{$recommendation['Value']}}">
+                                                                                    @foreach($aspect['aspectValues'] as $recommendation)
+                                                                                        @if(isset($recommendation['localizedValue']))
+                                                                                            <option value="{{$recommendation['localizedValue']}}">
                                                                                         @endif
                                                                                     @endforeach
                                                                                 </datalist>
@@ -345,13 +345,17 @@
                                                         @if(isset($conditions['Category']['ConditionValues']['Condition']))
                                                             <div class="col-md-4 mb-3">
                                                                 <select name='condition_id' class="form-control" id="condition-select">
-                                                                    @foreach($conditions['Category']['ConditionValues']['Condition'] as $condition)
-                                                                        @if($condition['ID'] == $result->condition_id)
-                                                                            <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" selected>{{$condition['DisplayName']}}/{{$condition['ID']}}</option>
-                                                                        @else
-                                                                            <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" >{{$condition['DisplayName']}}/{{$condition['ID']}}</option>
-                                                                        @endif
-                                                                    @endforeach
+                                                                    @if(isset($conditions['Category']['ConditionValues']['Condition'][0]))
+                                                                        @foreach($conditions['Category']['ConditionValues']['Condition'] as $condition)
+                                                                            @if($condition['ID'] == $result->condition_id)
+                                                                                <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" selected>{{$condition['DisplayName']}}/{{$condition['ID']}}</option>
+                                                                            @else
+                                                                                <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" >{{$condition['DisplayName']}}/{{$condition['ID']}}</option>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    @else
+                                                                        <option value="{{$conditions['Category']['ConditionValues']['Condition']['ID']}}/{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}" >{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}/{{$conditions['Category']['ConditionValues']['Condition']['ID']}}</option>
+                                                                    @endif
 
                                                                 </select>
                                                             </div>
@@ -378,6 +382,76 @@
                                             </div>
                                         </div>
 
+                                    </div>
+
+                                    <div class="form-group row">
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div>
+                                                <label for="condition_id" class="r-sec">International Site Visibility <label id="intSiteVisibility"></label></label>
+                                            </div>
+                                            <div class="ml-1">
+                                                <div id="wms-tooltip">
+                                                    <span id="wms-tooltip-text">Select an additional eBay site where you'd like this listing to appear. <b>(fees may apply)</b></span>
+                                                    <span><img style="width: 18px; height: 18px;" src="{{asset('assets/common-assets/tooltip_button.png')}}"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9 d-flex align-items-center">
+                                            <!-- <div class="row d-flex justify-content-between"> -->
+                                            <!-- <div class="col-md-4 mb-3"> -->
+                                            {{--                                                    <select name="cross_border_trade" class="form-control" id="condition-select">--}}
+                                            {{--                                                        @if($result->cross_border_trade == "None")--}}
+                                            {{--                                                            <option value="None" selected>-</option>--}}
+                                            {{--                                                            <option value="North America">eBay US and Canada</option>--}}
+                                            {{--                                                        @elseif($result->cross_border_trade == "North America")--}}
+                                            {{--                                                            <option value="None">-</option>--}}
+                                            {{--                                                            <option value="North America" selected>eBay US and Canada</option>--}}
+                                            {{--                                                        @else--}}
+                                            {{--                                                            <option value="None" selected>-</option>--}}
+                                            {{--                                                            <option value="North America" >eBay US and Canada</option>--}}
+                                            {{--                                                        @endif--}}
+                                            {{--                                                    </select>--}}
+                                            @include('partials.cross_border_trade.edit_drop_down',['cross_border_trade' => $result->cross_border_trade])
+                                            <!-- </div> -->
+                                            <!-- </div> -->
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-3 d-flex align-items-center">
+                                            <div>
+                                                <label for="private_listing" class="col-form-label">Private Listing <label id="privateListing"></label></label>
+                                            </div>
+                                            <div class="ml-1">
+                                                <div id="wms-tooltip">
+                                                                                            <span id="wms-tooltip-text">
+                                                                                                Keep bidder and buyer identities hidden from other eBay members. <b>(fees may apply)</b>
+                                                                                            </span>
+                                                    <span><img class="wms-tooltip-image" src="{{asset('assets/common-assets/tooltip_button.png')}}"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9 d-flex align-items-center">
+                                            <div class="custom-control custom-checkbox">
+                                                {{--                                                        <input type="checkbox" name="private_listing" value="1" class="custom-control-input private_listing" id="private_listing"--}}
+                                                {{--                                                        @if($result->private_listing)--}}
+                                                {{--                                                            checked--}}
+
+                                                {{--                                                        @endif>--}}
+                                                @include('partials.private_listing.edit_check_box',['result' => $result->private_listing])
+                                                <label class="custom-control-label" for="private_listing"> </label>
+                                            </div>
+                                            {{-- <div class="onoffswitch mb-sm-10 res-onoff-btn">
+                                                <input type="checkbox" value="1" name="private_listing" class="onoffswitch-checkbox"  id="private_listing" tabindex="1"
+                                                    @if(isset($result->private_listing)){
+                                                        checked
+                                                        }
+                                                    @endif>
+                                                <label class="onoffswitch-label" for="private_listing">
+                                                    <span class="onoffswitch-inner"></span>
+                                                    <span class="ebay-onoffswitch-switch"></span>
+                                                </label>
+                                            </div> --}}
+                                        </div>
                                     </div>
 
                                     <div class="form-group row">

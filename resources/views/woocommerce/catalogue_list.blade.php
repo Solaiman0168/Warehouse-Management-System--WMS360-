@@ -269,6 +269,24 @@
                             <li class="breadcrumb-item active" aria-current="page">{{$status_type == 'draft' ? 'Draft Product' : 'Active Product'}} </li>
                         </ol>
                     </div>
+                    <div class="unmatched-csv-mb">
+                        <form action="{{asset('generate-csv-comparing-live-data')}}" method="post" enctype="multipart/form-data">
+                            @csrf
+                            <div class="upload-csv-in-unmatched-list">
+                                <div class="mr-1">
+                                    <a class="btn btn-default sample-csv-unmatched" href="{{asset('assets/sample-csv/sample.csv')}}"><i class="fa fa-download"></i> Sample CSV</a>
+                                </div>
+                                <div class="custom-file mr-1">
+                                    <input type="file" class="custom-file-input" name="csvFile" accept=".csv" required>
+                                    <input type="hidden" class="" name="channel_column" value="Woocommerce Quantity">
+                                    <label class="custom-file-label unmatched-label" for="customFile">Upload CSV To Check Qty</label>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn upload-csv-unmatched-btn">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="screen-option-btn">
                         <button class="btn btn-link waves-effect waves-light" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                             Screen Options &nbsp; <i class="fa" aria-hidden="true"></i>
@@ -280,7 +298,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
 
@@ -416,7 +434,7 @@
                                 <input type="hidden" name="search_route" value="woocommerce/{{$status_type}}/catalogue/list">
                                 <input type="hidden" name="status" value="publish">
                                 <tr>
-                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th style="width: 3%"><input type="checkbox" id="selectAll"></th>
                                     <th class="image" style="width: 15%; text-align: center !important;">Image</th>
                                     <th class="id" style="width: 6%; text-align: center !important;">
                                         <div class="d-flex justify-content-center">
@@ -888,7 +906,7 @@
                                 @endisset
                                 @foreach($woocommerce_list as $list)
                                     <tr class="hide-after-complete-{{$list->id}}">
-                                        <td><input type="checkbox" class="checkBoxClass" id="customCheck{{$list->id}}" value="{{$list->id}}"></td>
+                                        <td style="width: 3%"><input type="checkbox" class="checkBoxClass" id="customCheck{{$list->id}}" value="{{$list->id}}"></td>
                                         <td class="image" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}"  data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
 
                                             <!--Start each row loader-->
@@ -1130,13 +1148,15 @@
                     // $('.product-content ul.pagination').hide();
                     // $('.total-d-o span').hide();
                     // $('table.draft_search_result').html(response);
-                    //console.log(response);
+                    console.log(response.setting);
                     if(response != 'error') {
                         $('tbody').html(response.html);
                         searchPriority = response.search_priority;
                         take = response.take;
                         skip = parseInt(response.skip)+10;
                         ids = ids.concat(response.ids);
+                        var item = response.ids.length
+                        $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
                     }else{
                         $("#product_variation_loading").hide();
                         alert('No Catalogue Found');
@@ -1196,6 +1216,11 @@
                             // div.innerHTML +=response.html;
                             $('tbody tr:last').after(response.html);
                             ids = ids.concat(response.ids);
+
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
+
                         },
                         complete:function(data){
                             // Hide image container

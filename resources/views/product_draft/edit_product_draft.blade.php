@@ -94,6 +94,13 @@
                                 </div>
                             @endif
 
+                            @if ($message = Session::get('shopify_success'))
+                                <div class="alert alert-success alert-block">
+                                    <button type="button" class="close" data-dismiss="alert">×</button>
+                                    <strong>{{ $message }}</strong>
+                                </div>
+                            @endif
+
                             @if ($errors->any())
                                 <div class="alert alert-danger">
                                     <ul>
@@ -246,7 +253,7 @@
                                                 <div class="tab-input-div mb-3">
                                                     {{-- <label for="sku_short_code" class="draft-sku_short_code">SKU Short Code</label> --}}
                                                     <div class="tab-input-label" style="display: none">SKU Short Code</div>
-                                                    <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="sku_short_code" autocomplete="sku_short_code" value="{{$product_draft->sku_short_code ?? ''}}" autofocus="" id="sku_short_code" placeholder="SKU Short Code">
+                                                    <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="sku_short_code" autocomplete="sku_short_code" value="{{$product_draft->sku_short_code ?? 0}}" autofocus="" id="sku_short_code" placeholder="SKU Short Code">
                                                 </div>
                                                 <div class="tab-input-div mb-3">
                                                     {{-- <label class="draft-ean_no" for="ean_no">EAN</label> --}}
@@ -292,32 +299,41 @@
                                                 Price
                                             </a>
                                         </li>
-                                        <li class="tab">
+                                        <!-- <li class="tab">
                                             <a href="#item_specific" data-toggle="tab" aria-expanded="false">
                                                 Item Specific
                                             </a>
-                                        </li>
+                                        </li> -->
                                         @if ($tabAttributeInfo)
                                             @php
                                             $activeClass = true
                                             @endphp
-                                            @if (isset($tabAttributeInfo->categoryAttribute))
-                                            @if(count($tabAttributeInfo->categoryAttribute) > 0)
-                                                @foreach($tabAttributeInfo->categoryAttribute as $key => $attribute)
-                                                    @if (count($attribute->attributes) > 0)
-                                                        @foreach ($attribute->attributes as $term)
-                                                            <li class="tab">
-                                                                <a href="#{{$term->item_attribute_slug}}" data-toggle="tab" aria-expanded="false">
-                                                                    {{$term->item_attribute}}
-                                                                </a>
-                                                            </li>
-                                                            @php
-                                                                $activeClass = false
-                                                            @endphp
-                                                        @endforeach
+                                            @if(count($tabAttributeInfo['sortItemAttribue']) > 0)
+                                                @foreach($tabAttributeInfo['sortItemAttribue'] as $sortAttr)
+                                                    @if (isset($tabAttributeInfo['categoryInfo']->categoryAttribute))
+                                                        @if(count($tabAttributeInfo['categoryInfo']->categoryAttribute) > 0)
+                                                            @foreach($tabAttributeInfo['categoryInfo']->categoryAttribute as $key => $attribute)
+                                                                @if (count($attribute->attributes) > 0)
+                                                                    @foreach ($attribute->attributes as $term)
+                                                                        @if ($sortAttr->position == $term->position)
+                                                                            <li class="tab">
+                                                                            <a href="#{{$term->item_attribute_slug}}" data-toggle="tab" aria-expanded="false">
+                                                                                {{$term->item_attribute}}
+                                                                            </a>
+                                                                        </li>
+                                                                        @endif
+                                                                        @php
+                                                                            $activeClass = false
+                                                                        @endphp
+                                                                    @endforeach
+                                                                @endif
+                                                                @php
+                                                                    $activeClass = false
+                                                                @endphp
+                                                            @endforeach
+                                                        @endif
                                                     @endif
                                                 @endforeach
-                                            @endif
                                             @endif
                                             @php
                                                 $activeClass = true
@@ -371,6 +387,7 @@
                                                         </span>
                                                         @enderror
                                                     </div>
+                                                    @if($onbuyActive)
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="input-field-design" for="base_price">Base Price</label> --}}
                                                         <div class="tab-input-label" style="display: none;">Base Price</div>
@@ -381,6 +398,16 @@
                                                         </span>
                                                         @enderror
                                                     </div>
+                                                    <div class="tab-input-div mb-3">
+                                                        <div class="tab-input-label" style="display: none;">Max Price</div>
+                                                        <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control @error('rrp') is-invalid @enderror" name="max_price" value="{{$product_draft->max_price}}" autocomplete="max_price" autofocus id="max_price" placeholder="Max Price">
+                                                        @error('base_price')
+                                                        <span class="invalid-feedback" role="alert">
+                                                            <strong>{{ $message }}</strong>
+                                                        </span>
+                                                        @enderror
+                                                    </div>
+                                                    @endif
                                                     <div class="tab-input-div mb-3">
                                                         {{-- <label class="input-field-design draft-active" for="vat">VAT Percentage</label> --}}
                                                         <div class="tab-input-label" style="display: none;">VAT Percentage</div>
@@ -394,7 +421,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="tab-pane" id="item_specific">
+                                        <!-- <div class="tab-pane" id="item_specific">
                                             <div class="draft-wrap mt-3">
                                                 <div class="wms-row">
                                                     <div class="tab-input-div mb-3">
@@ -426,31 +453,32 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        @if(isset($tabAttributeInfo->categoryAttribute))
-                                        @if (count($tabAttributeInfo->categoryAttribute) > 0)
-                                            @foreach($tabAttributeInfo->categoryAttribute as $key => $attribute)
+                                        </div> -->
+                                        @if (count($tabAttributeInfo['categoryInfo']->categoryAttribute) > 0)
+                                            @foreach($tabAttributeInfo['categoryInfo']->categoryAttribute as $key => $attribute)
                                                 @if (count($attribute->attributes) > 0)
                                                     @foreach ($attribute->attributes as $term_att)
-                                                    <div class="tab-pane" id="{{$term_att->item_attribute_slug}}">
-                                                        <div class="draft-wrap">
-                                                            <div class="wms-row">
-                                                                @if (count($term_att->itemAttributeTerms) > 0)
-                                                                    @foreach ($term_att->itemAttributeTerms as $term)
-                                                                        <div class="tab-input-div mb-3">
-                                                                            {{-- <label class="draft-regular-price" for="{{$term->item_attribute_term_slug}}">{{$term->item_attribute_term}}</label> --}}
-                                                                            <div class="tab-input-label" style="display: none;">{{$term->item_attribute_term}}</div>
-                                                                            <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="item_attribute[{{$term->id}}/{{$term->catalogueItemAttribute->itemAttributeTermValue->id ?? ''}}]" value="{{$term->catalogueItemAttribute->itemAttributeTermValue->item_attribute_term_value ?? ''}}" placeholder="{{$term->item_attribute_term}}">
-                                                                        </div>
-                                                                    @endforeach
-                                                                @endif
+                                                        <div class="tab-pane" id="{{$term_att->item_attribute_slug}}">
+                                                            <div class="draft-wrap">
+                                                                <div class="wms-row">
+                                                                    @if (count($term_att->itemAttributeTerms) > 0)
+                                                                        @foreach ($term_att->itemAttributeTerms as $term)
+                                                                            <div class="tab-input-div mb-3">
+                                                                                {{-- <label class="draft-regular-price" for="{{$term->item_attribute_term_slug}}">{{$term->item_attribute_term}}</label> --}}
+                                                                                <div class="tab-input-label" style="display: none;">{{$term->item_attribute_term}}</div>
+                                                                                <input type="text" onfocusin="inputLabelShow(this)" onfocusout="inputLabelHide(this)" class="form-control" name="item_attribute[{{$term->id}}/{{$term->catalogueItemAttribute->itemAttributeTermValue->id ?? ''}}]" value="{{$term->catalogueItemAttribute->itemAttributeTermValue->item_attribute_term_value ?? ''}}" placeholder="{{$term->item_attribute_term}}">
+                                                                            </div>
+                                                                            @php
+                                                                                $activeClass = false
+                                                                            @endphp
+                                                                        @endforeach
+                                                                    @endif
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
                                                     @endforeach
                                                 @endif
                                             @endforeach
-                                        @endif
                                         @endif
                                     </div>
                                 </div>
@@ -488,9 +516,9 @@
                                                             @foreach($product_draft->images as $images)
                                                             <li class="drag-drop-image active">
                                                                 <a class="cross-icon bg-white border-0 btn-outline-light" id="{{$images->image_url ?? ''}}" onclick="removeLi(this)">&#10060;</a>
-                                                                <input type="hidden" name="newUploadImage[{{$images->image_url}}]" value="{{(filter_var($images->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$images->image_url : $images->image_url}}">
+                                                                <input type="hidden" name="newUploadImage[{{$images->image_url}}]" value="{{$images->image_url}}">
                                                                 <span class="main_photo"></span>
-                                                                <img class="drag_drop_image" id="{{$images->image_url ?? ''}}" src="{{(filter_var($images->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$images->image_url : $images->image_url}}">
+                                                                <img class="drag_drop_image" id="{{$images->image_url ?? ''}}" src="{{$images->image_url}}">
                                                                 <p class="drag_and_drop hide"></p>
                                                             </li>
                                                             @php

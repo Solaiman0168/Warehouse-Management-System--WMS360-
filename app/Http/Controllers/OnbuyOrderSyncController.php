@@ -24,9 +24,12 @@ use Illuminate\Support\Facades\Session;
 use App\EbayAccount;
 
 use App\DeveloperAccount;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 class OnbuyOrderSyncController extends Controller
 {
+    use BundleSKUTrait;
     public function access_token(){
         $consumer_key = Session::get('consumer_key');
         $secret_key = Session::get('secret_key');
@@ -271,6 +274,7 @@ class OnbuyOrderSyncController extends Controller
                             'created_at' => Carbon::now(),
                             'updated_at' => Carbon::now(),
                             //'date_completed' => $info->,
+                            'shipping_method' => $info->price_delivery ?? null,
                             'payment_method' => $info->paypal_capture_id != null ? ('paypal') : ($info->stripe_transaction_id != null ? ('stripe') : ('null')),
                             'transaction_id' => $info->paypal_capture_id ?? $info->stripe_transaction_id ?? null,
                             'shipping_user_name' => $info->delivery_address->name ?? null,
@@ -296,6 +300,11 @@ class OnbuyOrderSyncController extends Controller
 ////                        exit();
 
                             if ($product_variation_result != null) {
+                                $bundleInfo = BundleSku::where('parent_variation_id',$product_variation_result->id)->get();
+                                if(count($bundleInfo) > 0) {
+                                    $catalogueName = $product->name;
+                                    $this->insertOrderedProduct($bundleInfo,$info->onbuy_internal_reference,$sku,$product->quantity,$product->total_price,'Auto Sync',null,$catalogueName);
+                                }else {
 //                                $update_quantity = $product_variation_result->actual_quantity - $product->quantity;
 //                                ProductVariation::where('sku', $product->sku)->update(['actual_quantity' => $update_quantity]);
 //                                OnbuyVariationProducts::where('sku', $product->sku)->update(['stock' => $update_quantity]);
@@ -349,6 +358,8 @@ class OnbuyOrderSyncController extends Controller
 //                                }
                                 $check_quantity = new CheckQuantity();
                                 $check_quantity->checkQuantity($sku,null,null,'Auto Sync');
+                                $this->bundleSKUSyncQuantity($product_variation_result->id);
+                                }
 
                             }
 

@@ -75,202 +75,231 @@
                     <li class="breadcrumb-item"><i class="ti-home"></i>WMS</li>
                     <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
                 </ol>
-                <div class="dash_top_eight_card_content">
-                    <a type="button" class="dropdown-toggle" style="cursor: pointer" data-toggle="dropdown">
-                        <span id="activeTopEightCard"></span>
-                        <span class="fa fa-angle-down font-18"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
-                    </a>
-                    <ul class="dropdown-menu" role="menu">
-                        <div class="tab d-block m-l-10">
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 1 , 'Today');">Today</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, -1 , 'Yesterday');">Yesterday</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 7 , 'Last 7 days');">Last 7 days</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 30 , 'Last 30 days');" id="topEightCardSaledefaultOpen">Last 30 days</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 60 , 'Last 60 days');">Last 60 days</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 90 , 'Last 90 days');">Last 90 days</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 180 , 'Last 6 months');">Last 6 months</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 365 , 'Last 12 months');">Last 12 months</a>
-                            <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 'all' , 'Over All Sales');">Lifetime</a>
-                            <div class="dropdown-divider"></div>
-                            <small>Custom Date</small>
-                            <span class="dashboard-custom-date-sale-div">
-                                <input type="date" name="start_date" class="form-control cus_start_date mb-1">
-                                <input type="date" name="end_date" class="form-control cus_end_date mb-1">
-                                <button class="btn btn-info btn-sm" onclick="sales_by_date(event, 'custom' , 'Custom Date');">Search</button>
-                            </span>
-                        </div>
-                    </ul>
+                @if (Auth::check() && in_array('1',explode(',',Auth::user()->role)))
+                <div class="sales-card-selection">
+                    <div class="check-channel mr-2" onclick="check_channels(this)">View all channels</div> 
+                    <div class="dash_top_eight_card_content">
+                        <a type="button" class="dropdown-toggle" style="cursor: pointer" data-toggle="dropdown">
+                            <span id="activeTopEightCard"></span>
+                            <span class="fa fa-angle-down font-18"></span>
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </a>
+                        <ul class="dropdown-menu" role="menu">
+                            <div class="tab d-block m-l-10">
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 1 , 'Today');">Today</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, -1 , 'Yesterday');">Yesterday</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 7 , 'Last 7 days');">Last 7 days</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 30 , 'Last 30 days');" id="topEightCardSaledefaultOpen">Last 30 days</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 60 , 'Last 60 days');">Last 60 days</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 90 , 'Last 90 days');">Last 90 days</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 180 , 'Last 6 months');">Last 6 months</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 365 , 'Last 12 months');">Last 12 months</a>
+                                <a class="topEightCardSaletablinks d-block" style="cursor: pointer" onclick="sales_by_date(event, 'all' , 'Over All Sales');">Lifetime</a>
+                                <div class="dropdown-divider"></div>
+                                <small>Custom Date</small>
+                                <span class="dashboard-custom-date-sale-div">
+                                    <input type="date" name="start_date" class="form-control cus_start_date mb-1">
+                                    <input type="date" name="end_date" class="form-control cus_end_date mb-1">
+                                    <button class="btn btn-info btn-sm" onclick="sales_by_date(event, 'custom' , 'Custom Date');">Search</button>
+                                </span>
+                            </div>
+                        </ul>
+                    </div>
                 </div>
+                @endif
             </div>
 
-                <!--Top Eight Card Tab Content Start-->
-                <div id="topEightCardSale_Today" class="topEightCardSaletabcontent">
-                    <!--Sales Part-->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="row position-relative">
-                                <div id="salesLoader" class="lds-dual-ring sales-lds-dual-ring hidden"></div> <!--Sales part Loader added-->
-                                @if (Session::get('ebay') == 1)
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-cherry mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4 d-flex">
-                                                <div><h5 class="card-title mb-0">eBay Sales</h5></div>
-                                            </div>
 
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center ebay mb-0">
-                                                        {{ number_format($data['ebay_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+            @if (Auth::check() && in_array('1',explode(',',Auth::user()->role)))
+            <div id="check_channel" class="d-none">
+                
+            </div>
+            @endif
+
+            @if (Auth::check() && in_array('1',explode(',',Auth::user()->role)))
+            <!--Top Eight Card Tab Content Start-->
+            <div id="topEightCardSale_Today" class="topEightCardSaletabcontent">
+                <!--Sales Part-->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="row position-relative">
+                            <div id="salesLoader" class="lds-dual-ring sales-lds-dual-ring hidden"></div> <!--Sales part Loader added-->
+                            @if (Session::get('ebay') == 1)
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-cherry mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4 d-flex">
+                                            <div><h5 class="card-title mb-0">eBay Sales</h5></div>
+                                        </div>
+
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center ebay mb-0">
+                                                    {{ number_format($data['ebay_total_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
-                                @if (Session::get('amazon') == 1)
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-blue-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">Amazon Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center amazon mb-0">
-                                                        {{ number_format($data['amazon_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            @endif
+                            @if (Session::get('amazon') == 1)
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-blue-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Amazon Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center amazon mb-0">
+                                                    {{ number_format($data['amazon_total_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
-                                @if (Session::get('woocommerce') == 1)
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-green-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">WooCommerce Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center website mb-0">
-                                                        {{ number_format($data['tbo_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            @endif
+                            @if (Session::get('woocommerce') == 1)
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-green-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">WooCommerce Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center website mb-0">
+                                                    {{ number_format($data['tbo_total_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
-                                @if (Session::get('onbuy') == 1)
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-orange-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">OnBuy Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center onbuy mb-0">
-                                                        {{ number_format($data['onbuy_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            @endif
+                            @if (Session::get('onbuy') == 1)
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-orange-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">OnBuy Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center onbuy mb-0">
+                                                    {{ number_format($data['onbuy_total_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
-                                @if (Session::get('shopify') == 1)
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-light-green-orange mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">Shopify Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center shopify mb-0">
-                                                        {{ number_format($data['shopify_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            @endif
+                            @if (Session::get('shopify') == 1)
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-light-green-orange mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Shopify Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center shopify mb-0">
+                                                    {{ number_format($data['shopify_total_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-bringal-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">Complete Order Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center complete-order mb-0">
-                                                        {{ number_format($data['complete_order_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            @endif
+                            <div class="col-xl-3 col-lg-6 col-md-4">
+                                <div class="card sales-card l-bg-cyan-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Processing Order Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center processing-order mb-0">
+                                                    {{ number_format($data['processing_order_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-cyan-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">Processing Order Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center processing-order mb-0">
-                                                        {{ number_format($data['processing_order_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-4">
+                                <div class="card sales-card l-bg-bringal-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Total Cancelled Order</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center total-cancel-order mb-0">
+                                                    {{ number_format($data['total_cancelled_order'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-ash-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">ePOS Sales</h5>
-                                            </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center manual-order mb-0">
-                                                        {{ number_format($data['manual_total_sell'], 2)}}
-                                                    </h2>
-                                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-4">
+                                <div class="card sales-card l-bg-bringal-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Complete Order Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center complete-order mb-0">
+                                                    {{ number_format($data['complete_order_sell'], 2)}}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-xl-3 col-lg-6 col-md-4">
-                                    <div class="card sales-card l-bg-melon-dark mb-3">
-                                        <div class="card-statistic p-4">
-                                            <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
-                                            <div class="mb-4">
-                                                <h5 class="card-title mb-0">Total Sales</h5>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-4 onpage-overall">
+                                <div class="card sales-card l-bg-ash-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">ePOS Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center manual-order mb-0">
+                                                    {{ number_format($data['manual_total_sell'], 2)}}
+                                                </h2>
                                             </div>
-                                            <div class="row align-items-center mb-2 d-flex">
-                                                <div class="col-8">
-                                                    <h2 class="d-flex align-items-center total-sales mb-0">
-                                                        {{ number_format($data['total_sell'], 2) }}
-                                                    </h2>
-                                                </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-4">
+                                <div class="card sales-card l-bg-melon-dark mb-3">
+                                    <div class="card-statistic p-4">
+                                        <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>
+                                        <div class="mb-4">
+                                            <h5 class="card-title mb-0">Total Sales</h5>
+                                        </div>
+                                        <div class="row align-items-center mb-2 d-flex">
+                                            <div class="col-8">
+                                                <h2 class="d-flex align-items-center total-sales mb-0">
+                                                    {{ number_format($data['total_sell'], 2) }}
+                                                </h2>
                                             </div>
                                         </div>
                                     </div>
@@ -278,8 +307,12 @@
                             </div>
                         </div>
                     </div>
-                    <!--End Sales Part -->
                 </div>
+                <!--End Sales Part -->
+            </div>
+            @endif
+
+
                 <!--Catalogue Order Product Inventory-->
                 <div class="row">
                     <div class="col-xl-3 col-lg-6 col-md-4">
@@ -1391,22 +1424,215 @@
                     $("#salesLoader").show();
                 },
                 success: function (response) {
-                    // console.log(response.shopify_total_sell)
-                    $('.topEightCardSaletabcontent h2.ebay').text(response.ebay_total_sell);
-                    $('.topEightCardSaletabcontent h2.amazon').text(response.amazon_total_sell);
-                    $('.topEightCardSaletabcontent h2.website').text(response.tbo_total_sell);
-                    $('.topEightCardSaletabcontent h2.onbuy').text(response.onbuy_total_sell);
-                    $('.topEightCardSaletabcontent h2.shopify').text(response.shopify_total_sell);
-                    $('.topEightCardSaletabcontent h2.complete-order').text(response.complete_order_sell);
-                    $('.topEightCardSaletabcontent h2.processing-order').text(response.processing_order_sell);
-                    $('.topEightCardSaletabcontent h2.manual-order').text(response.manual_total_sell);
-                    $('.topEightCardSaletabcontent h2.total-sales').text(response.total_sell);
+                    console.log(response)
+                    let channel_card = ''
+                    let checked_channel = ''
+                    $('div.onpage-overall').remove()
+                    $('div.channel-parent-class').remove()
+                    $('div.channel-checked').remove()
+                    response.channel_sales_card_array.forEach(function(item, index){
+                        // console.log(item)
+                        if(index <= 3){
+                            if(item.channel_session == 1){
+                                channel_card += '<div class="col-xl-3 col-lg-6 col-md-4 channel-parent-class" id="'+item.channel_name+'">'+
+                                   '     <div class="card sales-card '+item.channel_card_bg_class+' mb-3">'+
+                                   '         <div class="card-statistic p-4">'+
+                                   '             <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>'+
+                                   '             <div class="mb-4 d-flex">'+
+                                   '                 <div><h5 class="card-title mb-0">'+item.channel_sales_name+'</h5></div>'+
+                                   '             </div>'+
+                                   '             <div class="row align-items-center mb-2 d-flex">'+
+                                   '                 <div class="col-8">'+
+                                   '                     <h2 class="d-flex align-items-center '+item.channel_name_class+' mb-0">'+item.channel_sales_value+'</h2>'+
+                                   '                 </div>'+
+                                   '             </div>'+
+                                   '         </div>'+
+                                   '     </div>'+
+                                   ' </div>'
+                                   
+                                checked_channel += '<div class="mr-2 channel-checked" id="'+item.checked_channel_name+'">'+
+                                   '     <div class="updateChannelIconButton pointer-events" id="updateChannelIconButton" title="Click to deselect ('+item.checked_channel_name+')" onclick="channelCheckUncheck(this)" style="opacity: 0.6">'+
+                                   '         <i class="'+item.channel_logo+' custom-font channel-icon-font" aria-hidden="true"></i>'+
+                                   '         <i class="fa fa-check channel-show-check-'+item.channel_term_slug+' channel-show-check" aria-hidden="true"></i>'+
+                                   '     </div>'+
+                                   '     <input type="checkbox" id="'+item.channel_term_slug+'" class="checkbox-inline" value="1" style="display: none" checked>'+
+                                   ' </div>' 
+                            }  
+                        }else{
+                             if(item.channel_session == 1){
+                                channel_card += '<div class="col-xl-3 col-lg-6 col-md-4 channel-parent-class d-none" id="'+item.channel_name+'">'+
+                                  '     <div class="card sales-card '+item.channel_card_bg_class+' mb-3">'+
+                                  '         <div class="card-statistic p-4">'+
+                                  '             <div class="card-icon card-icon-large"><i class="fa fa-gbp"></i></div>'+
+                                  '             <div class="mb-4 d-flex">'+
+                                  '                 <div><h5 class="card-title mb-0">'+item.channel_sales_name+'</h5></div>'+
+                                  '             </div>'+
+                                  '             <div class="row align-items-center mb-2 d-flex">'+
+                                  '                 <div class="col-8">'+
+                                  '                     <h2 class="d-flex align-items-center '+item.channel_name_class+' mb-0">'+item.channel_sales_value+'</h2>'+
+                                  '                 </div>'+
+                                  '             </div>'+
+                                  '         </div>'+
+                                  '     </div>'+
+                                  ' </div>'
+                                  
+                                checked_channel += '<div class="mr-2 channel-checked" id="'+item.checked_channel_name+'" onclick="rest_individual_channel_view('+item.channel_term_slug+')">'+
+                                   '     <div class="updateChannelIconButton cursor-pointer" id="updateChannelIconButton" title="Click to select ('+item.checked_channel_name+')" onclick="channelCheckUncheck(this)" style="border: 1px solid var(--wms-primary-color); background: rgb(255, 255, 255); color: rgb(0, 0, 0);">'+
+                                   '         <i class="'+item.channel_logo+' custom-font channel-icon-font" aria-hidden="true"></i>'+
+                                   '         <i class="fa fa-check channel-show-check-'+item.channel_term_slug+' channel-show-check" aria-hidden="true" style="display: none"></i>'+
+                                   '     </div>'+
+                                   '     <input type="checkbox" id="'+item.channel_term_slug+'" class="checkbox-inline" value="1" style="display: none">'+
+                                   ' </div>'   
+                            }
+                        }
+                    })
+                    
+                    $('#salesLoader').after(channel_card)
+                    $('#check_channel').append(checked_channel)
+                    
+                    // $('.topEightCardSaletabcontent h2.ebay').text(response.ebay_total_sell);
+                    // $('.topEightCardSaletabcontent h2.amazon').text(response.amazon_total_sell);
+                    // $('.topEightCardSaletabcontent h2.website').text(response.tbo_total_sell);
+                    // $('.topEightCardSaletabcontent h2.onbuy').text(response.onbuy_total_sell);
+                    // $('.topEightCardSaletabcontent h2.shopify').text(response.shopify_total_sell);
+                    $('.topEightCardSaletabcontent h2.complete-order').text(response.data.complete_order_sell);
+                    $('.topEightCardSaletabcontent h2.processing-order').text(response.data.processing_order_sell);
+                    // $('.topEightCardSaletabcontent h2.manual-order').text(response.manual_total_sell);
+                    $('.topEightCardSaletabcontent h2.total-sales').text(response.data.total_sell);
+                    $('.topEightCardSaletabcontent h2.total-cancel-order').text(response.data.total_cancelled_order);
                     $("#activeTopEightCard").html(optionTitle);
                 },
                 complete:function(data){
                     $("#salesLoader").hide();
                 }
             });
+        }
+        
+        function check_channels(e){
+            $('#check_channel').toggleClass('d-none')
+            $(e).text(function(i, text){
+               return text === "View all channels" ? "Collapse all channels" : "View all channels";
+            })
+        }
+        
+        function rest_individual_channel_view(channel){
+            $(channel).toggleClass('d-none')
+        }
+        
+        
+        function channelCheckUncheck(e){
+            var id = $(e).next('input').attr('id');
+            if($('#'+id).is(':checked')){
+                if(id == 'ebay'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+                if(id == 'woocommerce'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+                if(id == 'onbuy'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+                if(id == 'amazon'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+                if(id == 'shopify'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+                if(id == 'manual_order'){
+                    document.getElementById(id).checked = false;
+                    $('.channel-show-check-'+id).removeClass('channel-show-check').hide()
+                    $(e).attr('title', 'Click to select ('+id+')').css({
+                        'border' : '1px solid var(--wms-primary-color)',
+                        'background-color' : '#ffffff',
+                        'color' : '#000'
+                    })
+                }
+            }else{
+                if(id == 'ebay'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+                if(id == 'woocommerce'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+                if(id == 'onbuy'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+                 if(id == 'amazon'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+                if(id == 'shopify'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+                if(id == 'manual_order'){
+                    document.getElementById(id).checked = true;
+                    $('.channel-show-check-'+id).addClass('channel-show-check').show()
+                    $(e).attr('title', 'Click to deselect ('+id+')').css({
+                        'border' : '2px solid var(--wms-primary-color)',
+                        'background' : '#5D9CEC',
+                        'color' : '#ffffff'
+                    })
+                }
+            }
         }
 
         function top_ordered_product(evt, day , optionTitle) {

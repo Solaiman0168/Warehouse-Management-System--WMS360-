@@ -136,7 +136,7 @@
                 <div class="screen-option">
                     <div class="d-flex justify-content-start align-items-center">
                         <ol class="breadcrumb page-breadcrumb">
-                            <li class="breadcrumb-item"> Inventory </li> 
+                            <li class="breadcrumb-item"> Inventory </li>
                             <li class="breadcrumb-item active" aria-current="page"> Shelf Quantity Change Log </li>
                         </ol>
                     </div>
@@ -150,7 +150,7 @@
                 <!--End Breadcrumb section-->
 
                    <!--Card box start-->
-                   <div class="row m-t-20">
+                   <div class="row m-t-20 order-content">
                         <div class="col-md-12">
                             <div class="card-box table-responsive shadow shelf-quantity-change-log-card">
 
@@ -557,7 +557,7 @@
                         $("#ajax_loader").hide()
                     },
                     completle: function () {
-                        $("#ajax_loader").hide() 
+                        $("#ajax_loader").hide()
                     }
                 });
 
@@ -613,6 +613,14 @@
         $('.filter-content').on('click', function(event){
             event.stopPropagation();
         });
+
+
+        var tr_shelf_length = $('.shelf-quantity-change-log-table tbody tr').length
+        if(tr_shelf_length == 0 || tr_shelf_length == 1 || tr_shelf_length == 2 || tr_shelf_length == 3){
+            $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+        }else if(tr_shelf_length > 3){
+            $('.order-content .card-box').removeAttr('style')
+        }
 
     </script>
 

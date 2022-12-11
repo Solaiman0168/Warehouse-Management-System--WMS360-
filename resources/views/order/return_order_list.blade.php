@@ -118,7 +118,7 @@ $(document).ready(function(){
                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
-                                        <div class="ml-1"><p>Ebay User Id</p></div>
+                                        <div class="ml-1"><p>User ID</p></div>
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
@@ -140,7 +140,7 @@ $(document).ready(function(){
                                         </div>
                                         <div class="ml-1"><p>City</p></div>
                                     </div>
-                                    
+
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="order-product" class="onoffswitch-checkbox" id="order-product" tabindex="0" @if(isset($setting['order']['return_order']['order-product']) && $setting['order']['return_order']['order-product'] == 1) checked @elseif(isset($setting['order']['return_order']['order-product']) && $setting['order']['return_order']['order-product'] == 0) @else checked @endif>
@@ -635,29 +635,12 @@ $(document).ready(function(){
                                                                 <div class="dropdown-menu filter-content shadow" role="menu">
                                                                     <p>Filter Value</p>
                                                                     <select class="form-control select2" name="channels[]" multiple>
-                                                                        @isset($allChannels)
-                                                                            @foreach($allChannels as $channel)
-                                                                                @if(isset($allCondition['channels']))
-                                                                                    @php
-                                                                                        $existChannel = null;
-                                                                                        $getChannel = $channel['account'];
-                                                                                    @endphp
-                                                                                    @foreach($allCondition['channels'] as $ch)
-                                                                                        @if($getChannel == $ch)
-                                                                                            <option value="{{$channel['account']}}" selected>{{$channel['channel']}}</option>
-                                                                                            @php
-                                                                                                $existChannel = 1;
-                                                                                            @endphp
-                                                                                        @endif
-                                                                                    @endforeach
-                                                                                    @if($existChannel == null)
-                                                                                        <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                                    @endif
-                                                                                @else
-                                                                                    <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                                @endif
+                                                                        <option value="">Manual</option>
+                                                                        @if (count($channelWithAccount) > 0)
+                                                                            @foreach ($channelWithAccount as $channel)
+                                                                                <option value="{{$channel}}" @if(isset($allCondition['channels']) && in_array($channel,$allCondition['channels'])) selected @endif>{{explode('/',$channel)[1] ?? ''}} ({{explode('/',$channel)[0] == 'checkout' ? 'woocommerce' : explode('/',$channel)[0]}})</option>
                                                                             @endforeach
-                                                                        @endisset
+                                                                        @endif
                                                                     </select>
                                                                     <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
                                                                         <input id="channel_opt_out" type="checkbox" name="channel_opt_out" value="1" @isset($allCondition['channel_opt_out']) checked @endisset><label for="channel_opt_out">Opt Out</label>
@@ -754,7 +737,7 @@ $(document).ready(function(){
                                                             </div>
 
                                                         </div>
-                                                        <div>Ebay User ID</div>
+                                                        <div>User ID</div>
                                                     </div>
                                                 </th>
                                                 <th class="name" style="width: 10%; text-align: center;">
@@ -807,7 +790,7 @@ $(document).ready(function(){
                                                         <div>City</div>
                                                     </div>
                                                 </th>
-                                                
+
                                                 <th class="order-product filter-symbol" style="text-align: center; width: 10%;">
                                                     <div class="d-flex justify-content-center">
                                                         <div class="btn-group">
@@ -1143,7 +1126,14 @@ $(document).ready(function(){
                                                 @endisset
                                             @inject('CommonFunction', 'App\Helpers\TraitFromClass')
                                             @foreach($all_return_order as $return_order)
-                                                <tr>
+                                                @php
+                                                    $colorCodeIndex = array_search($return_order->orders->order_number, array_column($shipping_fee_array, 'order_number'));
+                                                    $colorCode = '';
+                                                    if($colorCodeIndex) {
+                                                        $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+                                                    }
+                                                @endphp
+                                                <tr class="order_number_{{$return_order->orders->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
                                                     <td class="order-no" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
                                                         <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
                                                             <span title="Click to view in channel" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{!! \App\Traits\CommonFunction::dynamicOrderLink($return_order->orders->created_via,$return_order->orders) !!}</span>
@@ -1248,22 +1238,14 @@ $(document).ready(function(){
                                                     @else
                                                         <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{ucfirst($return_order->orders->created_via)}}</td>
                                                     @endif
-                                                    @if($return_order->orders->payment_method == 'paypal' || $return_order->orders->payment_method == 'PayPal')
-                                                        <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
-                                                            <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$return_order->orders->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$return_order->orders->payment_method}}"></a>
-                                                        </td>
-                                                    @elseif($return_order->orders->payment_method == 'Amazon')
-                                                        <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$return_order->orders->payment_method}}">
-                                                            @if(!empty($return_order->orders->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$return_order->orders->transaction_id}}" target="_blank">({{$return_order->orders->transaction_id}})</a>@endif
-                                                        </td>
-                                                    @elseif($return_order->orders->payment_method == 'stripe')
-                                                        <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$return_order->orders->payment_method}}">
-                                                            @if(!empty($return_order->orders->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$return_order->orders->transaction_id}}" target="_blank">({{$return_order->orders->transaction_id}})</a>@endif
-                                                        </td>
-                                                    @elseif($return_order->orders->payment_method == 'CreditCard')
-                                                        <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->orders->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$return_order->orders->payment_method}}" style="width: 65px;height: 50px;"></td>
+                                                    @if ($return_order->orders->payment_method == 'cash')
+                                                    <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$return_order->order_number}}" class="accordion-toggle">
+                                                        <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$return_order->payment_method}}" style="width: 65px;height: 50px;"></a>
+                                                    </td>
                                                     @else
-                                                        <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{ucfirst($return_order->orders->payment_method)}}</td>
+                                                        <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->order_number}}" class="accordion-toggle">
+                                                            <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$return_order->payment_method}}" style="width: 65px;height: 50px;">
+                                                        </td>
                                                     @endif
                                                     <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
                                                         <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -1283,7 +1265,7 @@ $(document).ready(function(){
                                                             <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
                                                         </div>
                                                     </td>
-                                                    
+
                                                     <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{count($return_order->return_product_save)}}</td>
                                                     <td class="total-price" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{$return_order->orders->total_price}}</td>
                                                     <td class="currency" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{$return_order->orders->currency}}</td>
@@ -1312,8 +1294,8 @@ $(document).ready(function(){
                                                                         @if(count($return_order->return_product_save) > 0)
                                                                             {{--                                                                    <a href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id)}}"    --}}
                                                                             {{--                                                                       class="btn btn-success btn-sm m-b-5 w-100 text-center" target="_blank">Restock</a>--}}
-                                                                            <a href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id)}}"
-                                                                               class="btn-size restock-btn mr-2" target="_blank" data-toggle="tooltip" data-placement="top" title="Restock"><i class="fas fa-exchange-alt"></i></a>
+                                                                            {{-- <a href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id)}}" class="btn-size restock-btn mr-2" target="_blank" data-toggle="tooltip" data-placement="top" title="Restock"><i class="fas fa-exchange-alt"></i></a> --}}
+                                                                            <div onclick="receive_invoice_modal(this,{{$return_order->return_product_save[0]->product_draft_id ?? 0}},{{$return_order->order_id}},'return',{{$return_order->id}},null)" class="btn-size restock-btn cursor-pointer mr-2" target="_blank" data-toggle="tooltip" data-placement="top" title="Restock"><i class="fas fa-exchange-alt"></i></div>
                                                                         @endif
                                                                         @if(!isset($return_order->order_note))
 
@@ -1333,7 +1315,7 @@ $(document).ready(function(){
                                                 </tr>
 
                                                 <tr>
-                                                    <td colspan="18" class="hiddenRow">
+                                                    <td colspan="19" class="hiddenRow">
                                                         <div class="accordian-body collapse" id="demo{{$return_order->id}}">
                                                             <div class="row">
                                                                 <div class="col-md-12">
@@ -1366,7 +1348,7 @@ $(document).ready(function(){
                                                                                 </div>
                                                                             </div>
                                                                             @foreach($return_order->return_product_save as $product)
-                                                                                <div class="row pt-2 @if($product->deleted_at != null) bg-danger text-white @endif">
+                                                                                <div class="row pt-2 d-flex justify-content-center align-items-center single-variation-invoice-receive @if($product->deleted_at != null) bg-danger text-white @endif">
                                                                                     <div class="col-2 text-center">
                                                                                         @if(isset($product->image))
                                                                                         <a href="{{$product->image}}" target="_blank">
@@ -1414,7 +1396,8 @@ $(document).ready(function(){
                                                                                                 </a>
                                                                                             </div>
                                                                                             <div class="col-md-6 my-auto">
-                                                                                                <a href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id.'/'.$product->id)}}" class="btn btn-success" target="_blank">Restock</a>
+                                                                                                {{-- <a href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id.'/'.$product->id)}}" class="btn btn-success" target="_blank">Restock</a> --}}
+                                                                                                <div onclick="receive_invoice_modal(this,{{$return_order->return_product_save[0]->product_draft_id ?? 0}},{{$return_order->order_id}},'return',{{$return_order->id}},{{$product->id}})" href="{{url('catalogue-product-invoice-receive/'.($return_order->return_product_save[0]->product_draft_id ?? 0).'/'.$return_order->order_id.'/return/'.$return_order->id.'/'.$product->id)}}" class="btn btn-success" target="_blank">Restock</div>
                                                                                             </div>
                                                                                         </div>
 
@@ -1522,6 +1505,7 @@ $(document).ready(function(){
                                                                                                     <h7> : {{$return_order->orders->shipping_country}} </h7>
                                                                                                 </div>
                                                                                             </div>
+                                                                                            @include('partials.order.ioss_number',['ebay_tax_reference' => $return_order->ebay_tax_reference])
                                                                                         @else
                                                                                             {!! $return_order->orders->shipping !!}
                                                                                         @endif
@@ -1688,7 +1672,6 @@ $(document).ready(function(){
         $('.accordian-body').on('show.bs.collapse', function () {
             $(this).closest("table").find(".collapse.in").not(this).collapse('toggle')
         });
-
 
         $(document).ready(function () {
             $('.modal .modal-footer .reason').on('click',function () {
@@ -1934,7 +1917,7 @@ $(document).ready(function(){
             });
         }
 
-
+       
 
 
         //Window local storage

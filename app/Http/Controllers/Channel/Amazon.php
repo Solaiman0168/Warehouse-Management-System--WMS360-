@@ -65,7 +65,7 @@ class Amazon implements EChannel {
             $body = json_encode($data);
             $api = new Api\ListingsApi($config);
             $marketplace_ids = array($this->marketPlaceId);
-            $logInsertData = $this->paramToArray(url()->full(),$this->changeReason,'Amazon',$amazonVariationInfo->masterCatalogue->application_id,$amazonVariationInfo->sku,$data,null,'Quantity Sync',$amazonVariationInfo->quantity,$quantity,Carbon::now(),2,2);
+            $logInsertData = $this->paramToArray(url()->full(),$this->changeReason,'Amazon',$amazonVariationInfo->masterCatalogue->application_id,$amazonVariationInfo->sku,$data,null,'Cron Job',$amazonVariationInfo->quantity,$quantity,Carbon::now(),2,2);
             $result = $api->patchListingsItem($this->sellerId, $amazonVariationInfo->sku, $marketplace_ids, $body);
             if($result['status'] == 'ACCEPTED'){
                 $wmsAmazonVariationInfoUpdate = AmazonVariationProduct::find($amazonVariationInfo->id)
@@ -78,7 +78,7 @@ class Amazon implements EChannel {
             }
             sleep(1);
         }catch(\Exception $exception){
-            $logInsertData = $this->paramToArray(url()->full(),$this->changeReason,'Amazon',$variationInfo->masterCatalogue->applicationInfo->id,$variationInfo->sku,null,$exception,'Quantity Sync',$variationInfo->quantity,$quantity,Carbon::now(),0,0);
+            $logInsertData = $this->paramToArray(url()->full(),$this->changeReason,'Amazon',$variationInfo->masterCatalogue->applicationInfo->id,$variationInfo->sku,null,$exception,'Cron Job',$variationInfo->quantity,$quantity,Carbon::now(),0,0);
             Log::info('Something Went Wrong When Quantity Sync In Amazon');
         }
     }

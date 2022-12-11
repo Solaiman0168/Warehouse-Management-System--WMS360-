@@ -31,7 +31,7 @@
                 </div>
 
 
-                <div class="row m-t-20 invoice-view">
+                <div class="row m-t-20 invoice-view catalog">
                     <div class="col-12">
                         <div class="card-box shadow table-responsive">
 

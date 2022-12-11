@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Traits\CommonFunction;
 use App\ItemAttributeProfile;
 use App\ItemAttributeProfileTerm;
+use App\ProductVariation;
+use Illuminate\Support\Facades\Response;
+use App\Http\Controllers\CheckQuantity\CheckQuantity;
+use Carbon\Carbon;
 
 class ProductDraftController2 extends Controller
 {
@@ -138,5 +142,66 @@ class ProductDraftController2 extends Controller
         }
     }
 
+    public function generateCSVComparingLiveData(Request $request) {
+        try{
+            $fileName = $request->csvFile;
+            $channelColumn = $request->channel_column;
+            //$filename = $this->generateArrayToCSV($request->csvFile,$request->channel_column);
+            $delimeter = ',';
+            if(!file_exists($fileName) && !is_readable($fileName)){
+                return false;
+            }
+            $header = null;
+            $allProducts = [];
+            if(($handle = fopen($fileName, 'r')) !== false){
+                while(($row = fgetcsv($handle, $delimeter)) !== false){
+                    if(!$header){
+                        $header[] = 'SKU';
+                        $header[] = $channelColumn;
+                        $header[] = 'WMS Quantity';
+                        $header[] = 'Remarks';
+                    }
+                    else{
+                        $existVariation = ProductVariation::where('sku',$row[0])->first();
+                        if($existVariation){
+                            $checkQuantity = new CheckQuantity();
+                            $wmsQuantity = $checkQuantity->getUpdateAvailableQuantity($existVariation->id);
+                            if($row[1] != $wmsQuantity){
+                                $allProducts[] = $this->uploadCSVFormattedData($row, $wmsQuantity,$channelColumn,'Mismatch');
+                            }
+                        }else {
+                            $allProducts[] = $this->uploadCSVFormattedData($row, 0,$channelColumn,'Not Found');
+                        }
+                    }
+                }
+                fclose($handle);
+            }
+            $filename = Carbon::now()->format('d-m-Y-h-i-s').".csv";
+            $fp = fopen($filename, 'w+');
+            if(count($allProducts) > 0){
+                fputcsv($fp, ['SKU',$channelColumn,'WMS Quantity','Remarks']);
+                foreach ($allProducts as $fields) {
+                    fputcsv($fp, [$fields['SKU'],$fields[$channelColumn],$fields['WMS Quantity'],$fields['Remarks']]);
+                }
+            }
+            fclose($fp);
+            $headers = array(
+                'Content-Type' => 'text/csv',
+            );
+            return Response::download($filename, $filename, $headers);
+        }catch(\Exception $exception){
+            return back()->with('error','Something went wrong. Please try again');
+        }
+    }
+
+    public function uploadCSVFormattedData($row, $wmsQuantity,$channelColumn, $remarks = ''){
+        $arrInfo = [
+            'SKU' => $row[0],
+            $channelColumn => $row[1],
+            'WMS Quantity' => $wmsQuantity,
+            'Remarks' => $remarks,
+        ];
+        return $arrInfo;
+    }
 
 }

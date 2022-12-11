@@ -132,3 +132,20 @@
     @endforeach
 @endisset
 
+<script>
+  $(document).ready(function(){
+        var tr_length = $('.order-table tbody tr').length
+        var tr_length_pro_draft = $('.product-draft-table tbody tr').length
+        var tr_length_onbuy = $('.onbuy-table tbody tr').length
+        if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue')
+        }
+        if(tr_length_pro_draft == 0 || tr_length_pro_draft == 1 || tr_length_pro_draft == 2 || tr_length_pro_draft == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }
+        if(tr_length_onbuy == 0 || tr_length_onbuy == 1 || tr_length_onbuy == 2 || tr_length_onbuy == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }
+    })
+</script>
+

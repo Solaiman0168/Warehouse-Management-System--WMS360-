@@ -38,10 +38,13 @@ use function GuzzleHttp\Promise\all;
 use App\Brand;
 use App\ProductDraft;
 use App\Traits\CommonFunction;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 class AuthController extends Controller
 {
     use CommonFunction;
+    use BundleSKUTrait;
     public function __construct()
     {
         $this->project_url = $this->projectUrl();
@@ -246,6 +249,76 @@ class AuthController extends Controller
                 $sku = ProductVariation::find($this->product_variation_id)->sku;
                 $check_quantity = new CheckQuantity();
                 $check_quantity->checkQuantity($sku,null,null,'Shelve Quantity Through App',null,true,null);
+                $this->bundleSKUSyncQuantity($this->product_variation_id,$request);
+                // if we receive bundle parent sku code start
+                // $parentBundleSKUs = BundleSku::where('parent_variation_id',$this->product_variation_id)->get();
+                // if(count($parentBundleSKUs) > 0) {
+                //     foreach($parentBundleSKUs as $bundle) {
+                //         $childProduct = ProductVariation::find($bundle->child_variation_id);
+                //         $shelfProduct = ShelfedProduct::where(['variation_id' => $bundle->child_variation_id,'shelf_id' => $this->shelf_id])->first();
+                //         if($shelfProduct) {
+                //             $shelf_update_quantity = $shelfProduct->quantity + ($this->quantity * $bundle->quantity);
+                //             $update_result = ShelfedProduct::find($shelfProduct->id);
+                //             $update_result->quantity = $shelf_update_quantity;
+                //             $update_result->save();
+                //         }else {
+                //             $result = ShelfedProduct::create([
+                //                 'shelf_id' => $request->shelf_id,
+                //                 'variation_id' => $bundle->child_variation_id,
+                //                 'quantity' => $this->quantity * $bundle->quantity
+                //             ]);
+                //         }
+                //         $sku = $childProduct->sku;
+                //         $check_quantity = new CheckQuantity();
+                //         $check_quantity->checkQuantity($sku,null,null,'Quantity sync by bundle SKU',null,true,null);
+                //     }
+                // }
+
+                // if we receive bundle parent sku code end
+                
+                // $childBundleSKUs = BundleSku::where('child_variation_id',$this->product_variation_id)->get();
+                // if(count($childBundleSKUs) > 0) {
+                //     foreach($childBundleSKUs as $bundle) {
+                //         $parentProduct = ProductVariation::find($bundle->parent_variation_id);
+                //         // $lowBundleQuantityArr = [];
+                //         $proBundle = BundleSku::where('parent_variation_id',$bundle->parent_variation_id)->get();
+                //         if(count($proBundle) > 0) {
+                //             $this->childBundleReceive($proBundle,$parentProduct,$bundle,$request);
+
+                            // foreach($proBundle as $p_b) {
+                            //     $variationInfo = ProductVariation::find($p_b->child_variation_id);
+                            //     if($variationInfo) {
+                            //         $lowBundleQuantityArr[] = floor($variationInfo->actual_quantity / $p_b->quantity);
+                            //     }
+                            // }
+                            // $miValue = min($lowBundleQuantityArr);
+                            // if($miValue > $parentProduct->actual_quantity) {
+                            //     $addedValue = $miValue - $parentProduct->actual_quantity;
+                            //     $shelfProduct = ShelfedProduct::where(['variation_id' => $bundle->parent_variation_id,'shelf_id' => $this->shelf_id])->first();
+                            //     if($shelfProduct) {
+                            //         $shelf_update_quantity = $shelfProduct->quantity + $addedValue;
+                            //         $update_result = ShelfedProduct::find($shelfProduct->id);
+                            //         $update_result->quantity = $shelf_update_quantity;
+                            //         $update_result->save();
+                            //     }else {
+                            //         $result = ShelfedProduct::create([
+                            //             'shelf_id' => $request->shelf_id,
+                            //             'variation_id' => $bundle->parent_variation_id,
+                            //             'quantity' => $addedValue
+                            //         ]);
+                            //     }
+                            // }else {
+                            //     //dd('min not greater');
+                            //     //code for reduce shelf quantity from shelf
+                            // }
+
+
+                //             $sku = $parentProduct->sku;
+                //             $check_quantity = new CheckQuantity();
+                //             $check_quantity->checkQuantity($sku,null,null,'Quantity sync by bundle SKU',null,true,null);
+                //         }
+                //     }
+                // }
 
 //                $woocom_find_result = WoocommerceCatalogue::where('master_catalogue_id',$this->product_draft_id)->get()->first();
 //                $onbuy_find_result = OnbuyMasterProduct::where('woo_catalogue_id',$this->product_draft_id)->get()->first();
@@ -726,7 +799,7 @@ class AuthController extends Controller
                 array_push($shelf_ids,$info->id);
             }
             $implode_id = implode(',',$shelf_ids);
-            $result = ShelfedProduct::with(['shelf_info:id,shelf_name'])
+            $result = ShelfedProduct::with(['shelf_info'])
                 ->where( [['quantity','!=',0]])
                 ->whereIn('id',$shelf_ids)
                 ->orderByRaw("FIELD(id, $implode_id)")
@@ -780,13 +853,18 @@ class AuthController extends Controller
         $variation_info = ProductVariation::select(['id','product_draft_id','image','sku','actual_quantity','ean_no','sale_price','attribute'])
             ->with(['master_single_image' => function($image){
                 $image->select('id','draft_product_id',DB::raw("CONCAT('$this->project_url',image_url) AS image_url"));
-            },'product_draft:id,name,brand_id'])
+            },'product_draft:id,name,brand_id','get_reshelved_product' => function($r_shelve) {
+                $r_shelve->where('status',0);
+            }])
             ->where('id','LIKE',$request->sku)
             ->orWhere('sku','LIKE',$request->sku)
             ->orWhere('ean_no','LIKE',$request->sku)->first();
         $variation = '';
         if($variation_info) {
             $shelfQuantity = ShelfedProduct::where('variation_id',$variation_info->id)->sum('quantity');
+            $shelfQuantity += $variation_info->get_reshelved_product->sum(function($s) {
+                return $s->quantity - $s->shelved_quantity;
+            });
             $changed_variation_info = [
                 "id" => $variation_info->id ?? '',
                 "product_draft_id" => $variation_info->product_draft_id ?? '',
@@ -809,7 +887,7 @@ class AuthController extends Controller
                     $changed_variation_info["variation"] = $changed_variation_info["variation"] . ' ' . $variation["terms_name"] ?? '';
                 }
             }
-            $result = ShelfedProduct::with(['shelf_info:id,shelf_name'])->where(['variation_id' => $variation_info->id])
+            $result = ShelfedProduct::with(['shelf_info'])->where(['variation_id' => $variation_info->id])
                 ->where('quantity', '>', 0)->get();
             return response()->json(['product_info' => $changed_variation_info, 'success' => $result], 200);
         }else{
@@ -967,11 +1045,12 @@ class AuthController extends Controller
                 ->groupBy('orders.date_created')
                 ->get();
         }elseif($request->filter_value == 'groupshelf'){
-            $query_info = Order::select('shelfs.id','shelfs.shelf_name',DB::raw('count(shelfs.shelf_name) as total_product'))
+            $query_info = Order::select('shelfs.id',DB::raw("CONCAT(shelfs.shelf_name,'(',warehouses.warehouse_name,')') AS shelf_name"),DB::raw('count(shelfs.shelf_name) as total_product'))
                 ->leftJoin('product_orders', 'orders.id', '=', 'product_orders.order_id')
                 ->join('product_variation', 'product_orders.variation_id', '=', 'product_variation.id')
                 ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
                 ->join('shelfs', 'product_shelfs.shelf_id', '=', 'shelfs.id')
+                ->join('warehouses','shelfs.warehouse_id','=','warehouses.id')
                 ->where('orders.status', 'processing')
                 ->where('orders.picker_id', '=', $request->user_id)
                 ->where('product_orders.status',0)
@@ -1112,7 +1191,7 @@ class AuthController extends Controller
                 $result = Order::select('id', 'order_number', 'shipping_post_code', 'total_price', 'date_created as order_date')->with(['productOrders' => function ($query) {
                     $query->select(['variation_id as id', 'product_draft_id', 'image', 'sku', 'actual_quantity', 'ean_no', 'attribute'])
                         ->with(['shelf_quantity' => function ($query) {
-                            $query->select('shelf_name')->where('quantity', '>', 0);
+                            $query->where('quantity', '>', 0);
                         }, 'product_draft' => function ($query_image) {
                             $query_image->select(['id', 'name'])
                                 ->with(['single_image_info' => function($image){
@@ -1133,13 +1212,13 @@ class AuthController extends Controller
                             ->groupBy('product_variation.product_draft_id')
                             ->where('product_variation.id', $info->variation_id)
                             ->select(['product_variation.id', 'product_variation.product_draft_id'])->with(['shelf_quantity' => function ($query) use ($info) {
-                                $query->select('shelf_name')->where('quantity', '>', 0)->orderBy('shelf_name');
+                                $query->where('quantity', '>', 0)->orderBy('shelf_name');
                             }, 'product_draft' => function ($query) {
                                 $query->select(['id', 'name'])->with(['single_image_info' => function($image){
                                     $image->select('id','draft_product_id',DB::raw("CONCAT('$this->project_url',image_url) AS image_url"));
                                 }]);
                             }, 'getSelfVariation:id,product_draft_id,image,sku,actual_quantity,ean_no,attribute'])
-                            ->where('status', 0);
+                            ->where('product_orders.status', 0);
                     }])->where('id', $info->order_id)
                         ->orderByRaw("FIELD(id, $implode_id)")
                         ->first();
@@ -1839,9 +1918,10 @@ class AuthController extends Controller
 
     public function singleShelfOrderedProductList($userId, $shelfId){
         $query_info = Shelf::select('product_variation.id as variation_id','product_orders.name','product_orders.id as product_order_id',
-            'shelfs.id as shelf_id','shelfs.shelf_name','orders.order_number',DB::raw("CONCAT('$this->project_url',image) AS image"),'product_variation.sku','product_variation.attribute',
+            'shelfs.id as shelf_id',DB::raw("CONCAT(shelfs.shelf_name,'(',warehouses.warehouse_name,')') AS shelf_name"),'orders.order_number',DB::raw("CONCAT('$this->project_url',image) AS image"),'product_variation.sku','product_variation.attribute',
             'product_variation.ean_no', 'product_orders.quantity','product_orders.picked_quantity', 'product_shelfs.quantity as shelf_quantity',
             DB::raw('(select image_url from images where draft_product_id = product_variation.product_draft_id order by id asc limit 1) as master_image'))
+            ->join('warehouses','shelfs.warehouse_id','=','warehouses.id')
             ->join('product_shelfs','shelfs.id','=','product_shelfs.shelf_id')
             ->join('product_variation','product_shelfs.variation_id','=','product_variation.id')
 //            ->join('images','product_variation.product_draft_id','=','images.draft_product_id')
@@ -1903,7 +1983,7 @@ class AuthController extends Controller
                 $shelf_quantity = [];
                 if (count($shelf) > 0) {
                     foreach ($shelf as $shelf_id) {
-                        $shelf_quantity[] = Shelf::select(['id', 'shelf_name'])->with(['pivot' => function ($query) use ($shelf_id, $info) {
+                        $shelf_quantity[] = Shelf::with(['pivot' => function ($query) use ($shelf_id, $info) {
                             $query->select(['id', 'shelf_id', 'variation_id', 'quantity'])->where([['shelf_id', $shelf_id->shelf_id], ['variation_id', $info->variation_id]]);
                         }])->where('id', $shelf_id->shelf_id)->first();
 //                $shelf_ids[] = $shelf_id->shelf_id;
@@ -1965,7 +2045,7 @@ class AuthController extends Controller
             $shelf_info = [];
             if (count($shelf) > 0) {
                 foreach ($shelf as $shelf_id) {
-                    $shelf_info[] = Shelf::select(['id', 'shelf_name'])->with(['pivot' => function ($query) use ($shelf_id, $variationId) {
+                    $shelf_info[] = Shelf::with(['pivot' => function ($query) use ($shelf_id, $variationId) {
                         $query->select(['id', 'shelf_id', 'variation_id', 'quantity'])->where([['shelf_id', $shelf_id->shelf_id], ['variation_id', $variationId]]);
                     }])->where('id', $shelf_id->shelf_id)->first();
 //                $shelf_ids[] = $shelf_id->shelf_id;

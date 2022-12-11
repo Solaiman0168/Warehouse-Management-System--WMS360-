@@ -20,6 +20,8 @@ use App\amazon\AmazonMasterCatalogue;
 use App\amazon\AmazonMarketPlace;
 use App\amazon\AmazonAccountApplication;
 use App\amazon\AmazonAccount;
+use App\shopify\ShopifyAccount;
+use App\shopify\ShopifyMasterProduct;
 
 trait SearchCatalogue {
     public function optOutOperator($optVal){
@@ -53,33 +55,51 @@ trait SearchCatalogue {
                 }
             }
             if($request->get('channel')){
-                //dd(explode(' ~',$request->get('channel')));
+                // dd(explode(' ~',$request->get('channel')));
                 $channelArr = explode(' ~',$request->get('channel'));
                 $ids = array();
                 foreach ($channelArr as $channel){
-                    if ($channel == "woocommerce"){
+                    $channel_explode = explode('/',$channel);
+                    $channelName = $channel_explode[0];
+                    $exact_channel = $channel_explode[1];
+                    // dd($exact_channel);
+                    if ($channelName == "woocommerce" || $channelName == "checkout"){
+                        $woocommerce_account_id = WoocommerceAccount::where('account_name', $exact_channel)->first();
                         $ids =  WoocommerceCatalogue::select('master_catalogue_id as id' )->get()->pluck('id')->toArray();
                     }
-                    elseif ($channel == "onbuy"){
+                    elseif ($channelName == "onbuy"){
+                        $onbuy_account_id = OnbuyAccount::where('account_name', $exact_channel)->first();
                         $temp = OnbuyMasterProduct::select('woo_catalogue_id as id')->get()->pluck('id')->toArray();
                         $ids = array_merge($ids,$temp);
                     }
-                    elseif ($channel == "Topbrandoutlet-ltd"){
-                        $ebay_account_id = EbayAccount::where('account_name', $channel)->first();
-                        $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->get()->pluck('id')->toArray();
+                    elseif ($channelName == "ebay"){
+                        $ebay_account_id = EbayAccount::where('account_name', $exact_channel)->first();
+                        $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->pluck('id')->toArray();
                         $ids = array_merge($ids,$temp);
                     }
-                    elseif ($channel == "Topbrandclearence"){
-                        $ebay_account_id = EbayAccount::where('account_name', $channel)->first();
-                        $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->get()->pluck('id')->toArray();
+                    // elseif ($exact_channel == "Topbrandclearence"){
+                    //     $ebay_account_id = EbayAccount::where('account_name', $exact_channel)->first();
+                    //     $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->get()->pluck('id')->toArray();
+                    //     $ids = array_merge($ids,$temp);
+                    // }
+                    // elseif ($exact_channel == "Fashion Aid"){
+                    //     $ebay_account_id = EbayAccount::where('account_name', $exact_channel)->first();
+                    //     $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->get()->pluck('id')->toArray();
+                    //     $ids = array_merge($ids,$temp);
+                    // }
+                    elseif ($channelName == "amazon") {
+                        $amazon_account = AmazonAccount::where('account_name', $exact_channel)->first();
+                        $amazon_application = AmazonAccountApplication::where('amazon_account_id', $amazon_account->id)->first();
+                        $temp = AmazonMasterCatalogue::select('master_product_id as id')->where('application_id', $amazon_application->id)->get()->pluck('id')->toArray();
                         $ids = array_merge($ids,$temp);
                     }
-                    elseif ($channel == "Fashion Aid"){
-                        $ebay_account_id = EbayAccount::where('account_name', $channel)->first();
-                        $temp = EbayMasterProduct::select('master_product_id as id')->where('account_id', $ebay_account_id->id)->get()->pluck('id')->toArray();
-                        $ids = array_merge($ids,$temp);
+                    elseif ($channelName == "shopify") {
+                        $shopify_account = ShopifyAccount::where('account_name', $exact_channel)->first();
+                        $temp = ShopifyMasterProduct::select('master_catalogue_id as id')->where('account_id', $shopify_account->id)->get()->pluck('id')->toArray();
+                        $ids = array_merge($ids, $temp);
                     }
                 }
+                //dd($ids);
                 if($request->get('channel_opt_out') == 1){
                     $query->whereNotIn('id', $ids);
                 }else{
@@ -425,6 +445,30 @@ trait SearchCatalogue {
                     $query->whereIn('id', $ids);
                 }
             }
+            if($request->has('stock')){
+                $stock = $request->get('stock');
+                $stockOpt = $request->get('stock_opt') ? $request->get('stock_opt') : null;
+                $stock_query = OnbuyMasterProduct::select('onbuy_master_products.id', DB::raw('sum(onbuy_variation_products.stock) stock'))
+                    ->leftJoin('onbuy_variation_products', 'onbuy_master_products.id', '=', 'onbuy_variation_products.master_product_id')
+                    ->where([['onbuy_master_products.deleted_at', null], ['onbuy_variation_products.deleted_at', null]]);
+                    if($stockOpt){
+                                $stock_query = $stock_query->havingRaw('sum(onbuy_variation_products.stock)'.$stockOpt.$stock);
+                            }else{
+                                $stock_query = $stock_query->havingRaw('sum(onbuy_variation_products.stock) = '.$stock);
+                            }
+                            $stock_query = $stock_query->groupBy('onbuy_master_products.id')
+                    ->get();
+                $ids = [];
+                foreach ($stock_query as $stock){
+                    $ids[] = $stock->id;
+                }
+
+                if($request->get('stock_opt_out') == 1){
+                    $query->whereNotIn('id', $ids);
+                }else{
+                    $query->whereIn('id', $ids);
+                }
+            }
             if($request->get('status')){
                 $status = $request->get('status');
                 if($request->get('status_opt_out') == 1){
@@ -484,6 +528,15 @@ trait SearchCatalogue {
         }
         if($request->get('product_opt_out')){
             $allCondition['product_opt_out'] = $request->get('product_opt_out');
+        }
+        if($request->has('stock')){
+            $allCondition['stock'] = $request->get('stock');
+        }
+        if($request->has('stock_opt')){
+            $allCondition['stock_opt'] = $request->get('stock_opt');
+        }
+        if($request->get('stock_opt_out')){
+            $allCondition['stock_opt_out'] = $request->get('stock_opt_out');
         }
         if($request->get('status')){
             $allCondition['status'] = $request->get('status');
@@ -1421,6 +1474,57 @@ trait SearchCatalogue {
                 $query->whereIn('id',$ids);
             }
         });
+    }
+
+    public function warehouseSearchCondition($mainQuery, $request) {
+        $mainQuery->where(function($query) use ($request){
+            if($request->has('warehouse_name')){
+                $warehouseName = $request->get('warehouse_name');
+                if($request->get('warehouse_name_opt_out') == 1){
+                    $query->where('warehouse_name', '!=' ,$warehouseName);
+                }else{
+                    $query->where('warehouse_name', $warehouseName);
+               }
+            }
+            if($request->has('warehouse_location')){
+                $warehouseLocation = $request->get('warehouse_location');
+                if($request->get('warehouse_location_opt_out') == 1){
+                    $query->where('warehouse_location', '!=' ,$warehouseLocation);
+                }else{
+                    $query->where('warehouse_location', $warehouseLocation);
+               }
+            }
+            if($request->has('status')){
+                $status = $request->get('status');
+                if($request->get('status_opt_out') == 1){
+                    $query->where('status', '!=' ,$status);
+                }else{
+                    $query->where('status', $status);
+               }
+            }
+        });
+    }
+
+    public function warehouseSearchParams($request, $allCondition){
+        if($request->get('warehouse_name')){
+            $allCondition['warehouse_name'] = $request->get('warehouse_name');
+        }
+        if($request->get('warehouse_name_opt_out')){
+            $allCondition['warehouse_name_opt_out'] = $request->get('warehouse_name_opt_out');
+        }
+        if($request->get('warehouse_location')){
+            $allCondition['warehouse_location'] = $request->get('warehouse_location');
+        }
+        if($request->get('warehouse_location_opt_out')){
+            $allCondition['warehouse_location_opt_out'] = $request->get('warehouse_location_opt_out');
+        }
+        if($request->has('status')){
+            $allCondition['status'] = $request->get('status');
+        }
+        if($request->get('status_opt_out')){
+            $allCondition['status_opt_out'] = $request->get('status_opt_out');
+        }
+        return $allCondition;
     }
 
 

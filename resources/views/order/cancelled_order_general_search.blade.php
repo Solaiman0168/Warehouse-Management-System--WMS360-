@@ -1,6 +1,13 @@
 @isset($searchCancelledOrderList)
     @foreach($searchCancelledOrderList as $cancelledOrder)
-        <tr>
+        @php
+            $colorCodeIndex = array_search($cancelledOrder->order_number, array_column($shipping_fee_array, 'order_number'));
+            $colorCode = '';
+            if($colorCodeIndex) {
+                $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+            }
+        @endphp
+        <tr class="order_number_{{$cancelledOrder->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
             <td class="order-no" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$cancelledOrder->order_number}}" class="accordion-toggle">
                 <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
                     <span title="Click to view in channel" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{!! \App\Traits\CommonFunction::dynamicOrderLink($cancelledOrder->created_via,$cancelledOrder) !!}</span>
@@ -11,6 +18,7 @@
                         <label class="label label-success view-note" style="cursor: pointer" id="{{$cancelledOrder->id}}" onclick="view_note({{$cancelledOrder->id}});">View Note</label>
                     @endisset
                 </span>
+                @include('partials.order.order_note.order_note',['id' => $cancelledOrder->id,'buyer_message' => $cancelledOrder->buyer_message,'order_note' => $cancelledOrder->order_note])
             </td>
             @if(($cancelledOrder->created_via == 'ebay' || $cancelledOrder->created_via == 'Ebay') && ($cancelledOrder->account_id == null))
                 <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$cancelledOrder->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/ebay-42x16.png')}}" alt="image"></td>
@@ -157,7 +165,7 @@
         </tr>
 
         <tr>
-            <td colspan="17" class="hiddenRow">
+            <td colspan="19" class="hiddenRow">
                 <div class="accordian-body collapse" id="demo{{$cancelledOrder->order_number}}">
                     <div class="row">
                         <div class="col-12">
@@ -320,6 +328,7 @@
                                                             <h7> : {{$cancelledOrder->shipping_country}} </h7>
                                                         </div>
                                                     </div>
+                                                    @include('partials.order.ioss_number',['ebay_tax_reference' => $cancelledOrder->ebay_tax_reference])
                                                 @else
                                                     {!! $cancelledOrder->shipping !!}
                                                 @endif
@@ -403,58 +412,14 @@
 
 
 <!--Order note modal view-->
-<div class="modal fade" id="orderNoteModalView" tabindex="-1" role="dialog" aria-labelledby="orderNoteLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Ordr Note</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body-view">
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary update-note">Update</button>
-                <button type="button" class="btn btn-danger delete-note">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
+@include('partials.order.order_note.order_note_modal')
 <!--End Order note modal view-->
 
 
 <script>
 
-    function view_note(id) {
-        // var id = $(this).attr('id');
-        $.ajax({
-            type: "POST",
-            url:"{{url('view-order-note')}}",
-            data: {
-                "_token" : "{{csrf_token()}}",
-                "order_id" : id
-            },
-            success: function (response) {
-                if(response.data !== 'error'){
-                    var infoModal = $('#orderNoteModalView');
-                    var info = '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                        '<strong>Note : </strong>\n' +
-                        '<p class=""></p>' +
-                        '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                        '<strong>Created By : ' + response.data.user_info.name + '</strong>' +
-                        '<strong class="pull-right">Modified By : ' + response.data.modifier_info.name + ' (' + response.data.updated_at + ')' + '</strong>'
-                    infoModal.find('.modal-body-view')[0].innerHTML = info;
-                    infoModal.modal();
-                    $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                    $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                }else{
-                    alert('Something went wrong');
-                }
-            }
-        });
-    }
+    @include('partials.order.order_note.order_note_unread_javascript')
+    @include('partials.order.order_note.order_note_javascript')
 
 
     $(document).ready(function () {

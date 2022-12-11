@@ -10,6 +10,8 @@ use App\OnbuyMasterProduct;
 use App\WoocommerceAccount;
 use App\OnbuyAccount;
 use App\amazon\AmazonAccountApplication;
+use App\amazon\AmazonAccount;
+use App\shopify\ShopifyAccount;
 
 use Illuminate\Support\Facades\DB;
 
@@ -40,8 +42,7 @@ trait SearchOrder {
             // print_r($request->get('channels'));
             // exit();
 
-            $status = ($request->get('status') == 'processing') ? 'processing' : (($request->get('status') == 'assigned') ? 'processing' : ($request->get('status') ?? 'on-hold'));
-
+            $status = ($request->get('status') == 'processing') ? 'processing' : (($request->get('status') == 'assigned') ? 'processing' : ($request->get('status') ?? null));
             if($request->order_number){
                 $orderNo = $request->order_number;
                 if($request->orderNo_opt_out == 1){
@@ -81,24 +82,37 @@ trait SearchOrder {
 
                         //  dd($ids);
                     }elseif($channel_name[0] == 'amazon'){
-                        $amazon_account_id = AmazonAccountApplication::where('application_name', explode('(',$channel_name[1])[0])->first();
+                        $amazon_account_id = AmazonAccount::where('account_name', $channel_name[1])->first();
                         $channels[] = 'amazon';
                         $accounts[] = $amazon_account_id->id;
                         //$query->where('created_via', 'amazon')->where('status',$status)->where('account_id', $amazon_account_id->id);
-
+                    }elseif($channel_name[0] == 'shopify'){
+                        $shopify_account_id = ShopifyAccount::where('account_name', $channel_name[1])->first();
+                        $channels[] = 'shopify';
+                        $accounts[] = $shopify_account_id->id;
                     }
-                    //dd($ids);
+                    // dd($accounts);
                     // exit();
 
                 }
                 if($request->get('channel_opt_out') == 1){
-                    $query->whereNotIn('created_via', $channels)->where('status',$status)->whereNotIn('account_id', $accounts);
+                    $query->whereNotIn('created_via', $channels);
+                    if($status != 'all'){
+                        $query->where('status',$status);
+                    }
+                    // $query->whereNotIn('account_id', $accounts);
                 }else{
-                    $query->whereIn('created_via', $channels)->where('status',$status)->where(function($q) use ($accounts){
+                    $query->whereIn('created_via', $channels);
+                    if($status != 'all') {
+                        $query->where('status',$status);
+                    }
+                    $query->where(function($q) use ($accounts){
                         $q->whereNull('account_id')->orWhereIn('account_id', $accounts);
                     });
                     // dd($query);
                 }
+
+                
                 // if($request->get('channels') == 'woocommerce' || $request->get('channels') == 'onbuy'){
                 //     if($request->get('channel_opt_out') == 1){
                 //         $query->whereNotIn('created_via',$channel_search);
@@ -841,7 +855,7 @@ trait SearchOrder {
                 $temp = Order::where('created_via', 'onbuy')->where('account_id', $onbuy_account_id->id)->pluck('id')->toArray();
                 $ids = array_merge($ids,$temp);
             }elseif($channel_name[0] == 'amazon'){
-                $amazon_account_id = AmazonAccountApplication::where('application_name', explode('(',$channel_name[1])[0])->first();
+                $amazon_account_id = AmazonAccount::where('account_name', $channel_name[1])->first();
                 $temp = Order::where('created_via', 'amazon')->where('account_id', $amazon_account_id->id)->pluck('id')->toArray();
                 $ids = array_merge($ids,$temp);
             }

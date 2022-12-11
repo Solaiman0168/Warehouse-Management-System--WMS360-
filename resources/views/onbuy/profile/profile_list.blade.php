@@ -61,7 +61,7 @@
 
 
                 <!---Assigned order content start--->
-                <div class="row m-t-20 order-content">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box onbuy table-responsive shadow">
 

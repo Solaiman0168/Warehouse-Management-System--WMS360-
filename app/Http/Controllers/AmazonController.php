@@ -39,6 +39,8 @@ use App\amazon\AmazonToken;
 use App\Traits\ListingLimit;
 use App\Traits\CommonFunction;
 use App\Channel;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 class AmazonController extends Controller
 {
@@ -47,6 +49,7 @@ class AmazonController extends Controller
     use ActivityLogs;
     use ListingLimit;
     use CommonFunction;
+    use BundleSKUTrait;
 
     protected $applicationInfo = [];
     protected $marketPlaceId = '';
@@ -451,6 +454,7 @@ class AmazonController extends Controller
                 $searchCatalogueIds = $this->amazonActiveCatalogueSeach($searchValue);
                 $total_catalogues = $total_catalogues->whereIn('id',$searchCatalogueIds);
             }
+
             $total_catalogues = $total_catalogues->orderBy('id','DESC')->paginate($pagination)->appends(request()->query());
             $total_decode_catalogues = json_decode(json_encode($total_catalogues));
             $users = User::all();
@@ -533,7 +537,7 @@ class AmazonController extends Controller
             $total_catalogue = $total_catalogue->orderBy('id', 'DESC')->paginate($pagination);
             if($request->has('is_clear_filter')){
                 $search_result = $total_catalogue;
-                $view = view('amazon.catalogue.pending_catalogue_ajax', compact('search_result'))->render();
+                $view = view('amazon.catalogue.pending_catalogue_ajax', compact('search_result','setting'))->render();
                 return response()->json(['html' => $view]);
             }
 
@@ -1757,6 +1761,11 @@ class AmazonController extends Controller
                                             foreach($orderProduct['payload']['order_items'] as $item){
                                                 $variationExist = ProductVariation::where('sku',$item['seller_sku'])->first();
                                                 if($variationExist){
+                                                    $bundleInfo = BundleSku::where('parent_variation_id',$variationExist->id)->get();
+                                                    if(count($bundleInfo) > 0) {
+                                                        $catalogueName = $item['title'];
+                                                        $this->insertOrderedProduct($bundleInfo,$orderPrimaryId,$variationExist->sku,$item['quantity_ordered'],$item['item_price']['amount'],$orderSyncType,null,$catalogueName);
+                                                    }else {
                                                     $productOrderInsertResult = ProductOrder::create([
                                                         'order_id' => $orderPrimaryId,
                                                         'variation_id' => $variationExist->id,
@@ -1768,6 +1777,8 @@ class AmazonController extends Controller
                                                     $check_quantity = new CheckQuantity();
                                                     Log::info('Seller Sku: '.$item['seller_sku']);
                                                     $check_quantity->checkQuantity($item['seller_sku'],null,null,$orderSyncType);
+                                                    $this->bundleSKUSyncQuantity($variationExist->id);
+                                                }
                                                 }
                                             }
                                         }else{

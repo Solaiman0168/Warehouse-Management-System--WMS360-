@@ -14,7 +14,7 @@ class AddLogoToChannelsTable extends Migration
     public function up()
     {
         Schema::table('channels', function (Blueprint $table) {
-            $table->text('logo')->after('channel_type')->nullable();
+            $table->text('logo')->nullable();
         });
     }
 

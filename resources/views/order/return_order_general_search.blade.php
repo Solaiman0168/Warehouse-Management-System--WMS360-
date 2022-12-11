@@ -1,6 +1,13 @@
 @inject('CommonFunction', 'App\Helpers\TraitFromClass')
 @foreach($all_return_order as $return_order)
-    <tr>
+    @php
+        $colorCodeIndex = array_search($return_order->orders->order_number, array_column($shipping_fee_array, 'order_number'));
+        $colorCode = '';
+        if($colorCodeIndex) {
+            $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+        }
+    @endphp
+    <tr class="order_number_{{$return_order->orders->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
         <td class="order-no" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
             <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
                 <span title="Click to view in channel" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{!! \App\Traits\CommonFunction::dynamicOrderLink($return_order->orders->created_via,$return_order->orders) !!}</span>
@@ -88,23 +95,21 @@
         @else
             <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{ucfirst($return_order->orders->created_via)}}</td>
         @endif
-        @if($return_order->orders->payment_method == 'paypal' || $return_order->orders->payment_method == 'PayPal')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
-                <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$return_order->orders->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$return_order->orders->payment_method}}"></a>
-            </td>
-        @elseif($return_order->orders->payment_method == 'Amazon')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$return_order->orders->payment_method}}">
-                @if(!empty($return_order->orders->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$return_order->orders->transaction_id}}" target="_blank">({{$return_order->orders->transaction_id}})</a>@endif
-            </td>
-        @elseif($return_order->orders->payment_method == 'stripe')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$return_order->orders->payment_method}}">
-                @if(!empty($return_order->orders->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$return_order->orders->transaction_id}}" target="_blank">({{$return_order->orders->transaction_id}})</a>@endif
-            </td>
-        @elseif($return_order->orders->payment_method == 'CreditCard')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->orders->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$return_order->orders->payment_method}}" style="width: 65px;height: 50px;"></td>
+        @if ($return_order->orders->payment_method == 'cash')
+        <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$return_order->order_number}}" class="accordion-toggle">
+            <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$return_order->payment_method}}" style="width: 65px;height: 50px;"></a>
+        </td>
         @else
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{ucfirst($return_order->orders->payment_method)}}</td>
+            <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->order_number}}" class="accordion-toggle">
+                <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$return_order->payment_method}}" style="width: 65px;height: 50px;">
+            </td>
         @endif
+        <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
+            <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
+                <span title="Click to Copy" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{{$return_order->orders->ebay_user_id ?? ""}}</span>
+                <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
+            </div>
+        </td>
         <td class="name" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">
             <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
                 <span title="Click to Copy" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{{$return_order->orders->shipping_user_name ?? ''}}</span>
@@ -117,7 +122,7 @@
                 <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
             </div>
         </td>
-        
+
         <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{count($return_order->return_product_save)}}</td>
         <td class="total-price" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{$return_order->orders->total_price}}</td>
         <td class="currency" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$return_order->id}}" class="accordion-toggle">{{$return_order->orders->currency}}</td>
@@ -163,7 +168,7 @@
     </tr>
 
     <tr>
-        <td colspan="18" class="hiddenRow">
+        <td colspan="19" class="hiddenRow">
             <div class="accordian-body collapse" id="demo{{$return_order->id}}">
                 <div class="row">
                     <div class="col-md-12">
@@ -334,6 +339,7 @@
                                                         <h7> : {{$return_order->orders->shipping_country}} </h7>
                                                     </div>
                                                 </div>
+                                                @include('partials.order.ioss_number',['ebay_tax_reference' => $return_order->ebay_tax_reference])
                                             @else
                                                 {!! $return_order->orders->shipping !!}
                                             @endif
@@ -444,8 +450,6 @@
     //         .not(this)
     //         .collapse('toggle')
     // });
-
-
 
     function view_note(id) {
         // var id = $(this).attr('id');
@@ -591,6 +595,14 @@
     $('.filter-content').on('click', function(event){
         event.stopPropagation();
     });
+
+
+     var tr_length = $('.order-table tbody .shipping_fee_order_no_check').length
+    if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+        $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+    }else if(tr_length > 3){
+        $('.order-content .card-box').removeAttr('style')
+    }
 
 
 </script>

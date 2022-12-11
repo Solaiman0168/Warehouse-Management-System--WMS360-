@@ -7,7 +7,12 @@
                 </a>
             </td>
             <td>{{$product_variation['id']}}</td>
-            <td>{{$product_variation['sku']}}</td>
+            <td>
+                <div class="sku_tooltip_container d-flex justify-content-start">
+                    <span title="Click to Copy" onclick="wmsSkuCopied(this);" class="sku_copy_button">{{$product_variation['sku']}}</span>
+                    <span class="wms__sku__tooltip__message" id="wms__sku__tooltip__message">Copied!</span>
+                </div>
+            </td>
             <td>{{$product_variation['actual_quantity']}}</td>
             <td>{{$product_variation['shelf_quantity']}}</td>
             <td><a href="{{asset('product-draft/'.$product_variation['master_catalogue_id'])}}" target="_blank">{{$product_variation['name']}}</a></td>

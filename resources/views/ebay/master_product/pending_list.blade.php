@@ -296,7 +296,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box ebay table-responsive shadow">
 
@@ -824,12 +824,12 @@
                                             }
                                         };
                                         ?>
-{{--                                        <td class="category" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{isset($catalogue->woowms_category) ? \App\WooWmsCategory::find($catalogue->woowms_category)->category_name ?? '' : ''}}  </td>--}}
+                                        <td class="category" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{isset($catalogue->woowms_category) ? \App\WooWmsCategory::find($catalogue->woowms_category)->category_name ?? '' : ''}}  </td>
                                         {{--                                        <td class="text-justify">{{Str::limit(strip_tags($published_product-> description,10, $end = '...') }}</td>--}}
                                         {{--                                        <td>{{$published_product->regular_price}}</td>--}}
                                         {{--                                        <td>{{$published_product->sale_price}}</td>--}}
                                         {{--                                        <td>{{$published_product->low_quantity}}</td>--}}
-{{--                                        <td class="status text-center" style="cursor: pointer; width: 8%" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$catalogue->status ?? ''}}</td>--}}
+                                       <td class="status text-center" style="cursor: pointer; width: 8%" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$catalogue->status ?? ''}}</td>
                                         <td class="stock text-center" style="cursor: pointer; width: 8%" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$catalogue->ProductVariations[0]->stock ?? 0}}</td>
                                         <td class="product text-center" style="cursor: pointer; width: 8%" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$catalogue->product_variations_count ?? 0}}</td>
                                         <td class="creator" style="cursor: pointer; width: 8%" data-toggle="collapse" data-target="#demo{{$catalogue->id}}" id="mtr-{{$catalogue->id}}" onclick="getVariation(this)" class="accordion-toggle">
@@ -872,12 +872,12 @@
 {{--                                                            @endif--}}
 {{--                                                            <div class="align-items-center mr-2"><a class="btn-size catalogue-btn-size add-terms-catalogue-btn" href="{{url('add-additional-terms-draft/'.$catalogue->id)}}" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><img src="{{asset('assets/images/terms-catalogue.png')}}" alt="Add Terms To Catalogue" width="30" height="30" class="filter"></a></div>--}}
                                                             {{-- <div class="align-items-center mr-2"> <a class="btn-size add-terms-catalogue-btn" href="{{url('add-additional-terms-draft/'.$catalogue->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list"></i></a></div> --}}
-                                                            <div class="align-items-center mr-2" onclick="addTermsCatalog({{ $catalogue->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div>
+                                                            {{-- <div class="align-items-center mr-2" onclick="addTermsCatalog({{ $catalogue->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div> --}}
 {{--                                                            <div class="align-items-center"><a class="btn-size invoice-btn invoice-btn-size" href="{{url('catalogue-product-invoice-receive/'.$catalogue->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><img src="{{asset('assets/images/receive-invoice.png')}}" alt="Receive Invoice" width="30" height="30" class="filter"></a></div>--}}
 {{--                                                            <div class="align-items-center"><a class="btn-size catalogue-invoice-btn invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$catalogue->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div>--}}
+                                                            <div class="align-items-center"> <a class="btn-size add-product-btn" href="{{url('catalogue/'.$catalogue->id.'/product')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Manage Variation"><i class="fa fa-chart-bar" aria-hidden="true"></i></a></div>
                                                         </div>
                                                         <div class="action-2">
-                                                            <div class="align-items-center mr-2"> <a class="btn-size add-product-btn" href="{{url('catalogue/'.$catalogue->id.'/product')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Manage Variation"><i class="fa fa-chart-bar" aria-hidden="true"></i></a></div>
 {{--                                                            <div class="align-items-center mr-2"><a class="btn-size duplicate-btn" href="{{url('duplicate-draft-catalogue/'.$catalogue->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Duplicate"><i class="fa fa-clone" aria-hidden="true"></i></a></div>--}}
                                                             <div class="align-items-center mr-2"> <a class="btn-size list-on-ebay-btn" target="_blank" href="{{url('create-ebay-product/'.$catalogue->id)}}" data-toggle="tooltip" data-placement="top" title="List on Ebay"><i class="fab fa-ebay" aria-hidden="true"></i></a></div>
                                                             @if($catalogue->status == 'draft')
@@ -1091,6 +1091,10 @@
                     take = response.take;
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
+
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
                     // console.log(response.ids);
                     // console.log('********');
                     // console.log(ids);
@@ -1147,6 +1151,9 @@
 
                             ids = ids.concat(response.ids);
 
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){

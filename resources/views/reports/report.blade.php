@@ -13,8 +13,8 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <ol class="breadcrumb page-breadcrumb">
-                            <li class="breadcrumb-item">Catalogue</li>
-                            <li class="breadcrumb-item active" aria-current="page">Reports</li>
+                            <li class="breadcrumb-item">Inventory</li>
+                            <li class="breadcrumb-item active" aria-current="page">Export Catalogue Reports</li>
                         </ol>
                     </div>
                 </div>

@@ -84,10 +84,10 @@
                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
-                                        <div class="ml-1"><p>Ebay User Id</p></div>
+                                        <div class="ml-1"><p>User ID</p></div>
                                     </div>
-                                    
-                                    
+
+
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
@@ -318,7 +318,7 @@
 
 
                 {{-- Receive invoice modal --}}
-                <div id="receive-invoice-modal" class="category-modal receive-invoice-modal" style="display: none">
+                {{-- <div id="receive-invoice-modal" class="category-modal receive-invoice-modal" style="display: none">
                     <div class="cat-header dis-return-order-header">
                         <div>
                             <label id="label_name" class="cat-label">Product receive invoice</label>
@@ -327,16 +327,16 @@
                             <i class="fa fa-close" aria-hidden="true"></i>
                         </div>
                     </div>
-                    <div class="cat-body restock-receive-invoice-modal-body">
-                        @if(Session::has('receive_name'))
+                    <div class="cat-body restock-receive-invoice-modal-body"> --}}
+                        {{-- @if(Session::has('receive_name'))
                             {!! Session::get('receive_name') !!}
-                        @endif
-                        <form class="receive-invoice-modal-form" action="{{url('save-catalogue-product-invoice-receive')}}" method="post">
-                            @csrf
+                        @endif --}}
+                        {{-- <form class="receive-invoice-modal-form" action="{{url('save-catalogue-product-invoice-receive')}}" method="post">
+                            @csrf --}}
                             @if(Session::has('invoice_part'))
                                 {!! Session::get('invoice_part') !!}
                             @endif
-                            <div class="form-group row vendor-btn-top">
+                            {{-- <div class="form-group row vendor-btn-top">
                                 <div class="col-md-12 text-center">
                                     <button type="submit" style="color: #fff;"  class="vendor-btn"  class="btn btn-primary receiveInvoiceModalBtn">
                                         <b>Add</b>
@@ -345,7 +345,7 @@
                             </div>
                         </form>
                     </div>
-                </div>
+                </div> --}}
                 {{-- End receive invoice modal --}}
 
 
@@ -583,29 +583,12 @@
                                                         <div class="dropdown-menu filter-content shadow" role="menu">
                                                             <p>Filter Value</p>
                                                             <select class="form-control select2" name="channels[]" multiple>
-                                                                @isset($allChannels)
-                                                                @foreach($allChannels as $channel)
-                                                                        @if(isset($allCondition['channels']))
-                                                                            @php
-                                                                                $existChannel = null;
-                                                                                $getChannel = $channel['account'];
-                                                                            @endphp
-                                                                            @foreach($allCondition['channels'] as $ch)
-                                                                                @if($getChannel == $ch)
-                                                                                    <option value="{{$channel['account']}}" selected>{{$channel['channel']}}</option>
-                                                                                    @php
-                                                                                        $existChannel = 1;
-                                                                                    @endphp
-                                                                                @endif
-                                                                            @endforeach
-                                                                            @if($existChannel == null)
-                                                                                <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                            @endif
-                                                                        @else
-                                                                            <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                        @endif
+                                                                <option value="">Manual</option>
+                                                                @if (count($channelWithAccount) > 0)
+                                                                    @foreach ($channelWithAccount as $channel)
+                                                                        <option value="{{$channel}}" @if(isset($allCondition['channels']) && in_array($channel,$allCondition['channels'])) selected @endif>{{explode('/',$channel)[1] ?? ''}} ({{explode('/',$channel)[0] == 'checkout' ? 'woocommerce' : explode('/',$channel)[0]}})</option>
                                                                     @endforeach
-                                                                @endisset
+                                                                @endif
                                                             </select>
                                                             <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
                                                                 <input id="channel_opt_out" type="checkbox" name="channel_opt_out" value="1" @isset($allCondition['channel_opt_out']) checked @endisset><label for="channel_opt_out">Opt Out</label>
@@ -698,7 +681,7 @@
                                                     </div>
 
                                                 </div>
-                                                <div>Ebay User ID</div>
+                                                <div>User ID</div>
                                             </div>
                                         </th>
                                         <th class="name" style="width: 10%; text-align: center;">
@@ -751,7 +734,7 @@
                                                 <div>City</div>
                                             </div>
                                         </th>
-                                        
+
                                         <th class="order-product filter-symbol" style="text-align: center; width: 10%;">
                                             <div class="d-flex justify-content-center">
                                                 <div class="btn-group">
@@ -1136,7 +1119,14 @@
                                         @endisset
                                         @inject('CommonFunction', 'App\Helpers\TraitFromClass')
                                     @foreach($all_completed_order as $completed_order)
-                                        <tr>
+                                        @php
+                                            $colorCodeIndex = array_search($completed_order->order_number, array_column($shipping_fee_array, 'order_number'));
+                                            $colorCode = '';
+                                            if($colorCodeIndex) {
+                                                $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+                                            }
+                                        @endphp
+                                        <tr class="order_number_{{$completed_order->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
                                             {{--                                                    <td>--}}
                                             {{--                                                        <input type="checkbox" class=" checkBoxClass" id="customCheck{{$completed_order->id}}" name="multiple_order[]" value="{{$completed_order->id}}" required>--}}
                                             {{--                                                    </td>--}}
@@ -1148,11 +1138,14 @@
                                                 @if($completed_order->exchange_order_id)
                                                     (Ex. Order No. &nbsp;<span class="text-danger">{{\App\Order::find($completed_order->exchange_order_id)->order_number ?? ''}}</span>)
                                                 @endif
-                                                <span class="append_note{{$completed_order->id}}">
-                                                    @isset($completed_order->order_note)
-                                                        <label class="label label-success view-note" style="cursor: pointer" id="{{$completed_order->id}}" onclick="view_note({{$completed_order->id}});">View Note</label>
-                                                    @endisset
-                                                </span>
+{{--                                                <span class="append_note{{$completed_order->id}}">--}}
+{{--                                                    @isset($completed_order->order_note)--}}
+{{--                                                        <label class="label label-success view-note" style="cursor: pointer" id="{{$completed_order->id}}" onclick="view_note({{$completed_order->id}});">View Note</label>--}}
+{{--                                                    @endisset--}}
+{{--                                                </span>--}}
+
+                                                @include('partials.order.order_note.order_note',['id' => $completed_order->id,'order_note'=> $completed_order->order_note,'buyer_message' => $completed_order->buyer_message])
+
 
                                                 {{-- Clear filters loader added --}}
                                                 <div id="product_variation_loading" class="variation_load" style="display: none;"></div>
@@ -1240,22 +1233,14 @@
                                             @else
                                                 <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">{{ucfirst($completed_order->created_via)}}</td>
                                             @endif
-                                            @if($completed_order->payment_method == 'paypal' || $completed_order->payment_method == 'PayPal')
-                                                <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
-                                                    <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$completed_order->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$completed_order->payment_method}}"></a>
+                                            @if ($completed_order->payment_method == 'cash')
+                                                <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
+                                                    <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;"></a>
                                                 </td>
-                                            @elseif($completed_order->payment_method == 'Amazon')
-                                                <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$completed_order->payment_method}}">
-                                                    @if(!empty($completed_order->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$completed_order->transaction_id}}" target="_blank">({{$completed_order->transaction_id}})</a>@endif
-                                                </td>
-                                            @elseif($completed_order->payment_method == 'stripe')
-                                                <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$completed_order->payment_method}}">
-                                                    @if(!empty($completed_order->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$completed_order->transaction_id}}" target="_blank">({{$completed_order->transaction_id}})</a>@endif
-                                                </td>
-                                            @elseif($completed_order->payment_method == 'CreditCard')
-                                                <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;"></td>
                                             @else
-                                                <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">{{ucfirst($completed_order->payment_method)}}</td>
+                                                <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
+                                                    <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;">
+                                                </td>
                                             @endif
                                             <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
                                                 <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -1275,18 +1260,22 @@
                                                     <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
                                                 </div>
                                             </td>
-                                            
+
                                             <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">{{count($completed_order->product_variations)}}</td>
                                             @if($shelfUse == 1)
                                                 @php
                                                     $pickedTime = '';
+                                                    $picking_count = 0;
                                                     foreach ($completed_order->product_variations as $variation){
+                                                        $picking_count += $variation->pivot->status;
                                                         //$pickedTime = $variation->pivot->updated_at ? date(('d-m-Y H:i:s'),strtotime($variation->pivot->updated_at)) : '';
                                                         $pickedTime = $CommonFunction->getDateByTimeZone($variation->pivot->updated_at);
                                                     }
                                                 @endphp
                                                 <td class="picker" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
                                                 <span title="{{$pickedTime ?? ''}}">{{$completed_order->picker_info->name ?? ''}}</span>
+                                                {!! (count($completed_order->product_variations) == $picking_count) ? '<span class="label label-success label-status" title="'.$pickedTime.'">Picked</span>' : '<span class="label label-danger label-status">Unpicked</span>'!!}
+                                                {{$picking_count}}/{{count($completed_order->product_variations)}}
                                                     <!-- <a tabindex="0" class="label label-default" role="button" data-toggle="popover" data-placement="top" data-trigger="focus" title="Picked On" data-content="{{$pickedTime ?? ''}}">View Picked Time</a> -->
                                                     <!-- <p>Picked On</p>
                                                     <p class="text-nowrap">{{$pickedTime}}</p> -->
@@ -1494,7 +1483,7 @@
                                         </tr>
 
                                         <tr>
-                                            <td colspan="17" class="hiddenRow">
+                                            <td colspan="18" class="hiddenRow">
                                                 <div class="accordian-body collapse" id="demo{{$completed_order->order_number}}">
                                                     <div class="row">
                                                         <div class="col-12">
@@ -1657,6 +1646,7 @@
                                                                                         <h7> : {{$completed_order->shipping_country}} </h7>
                                                                                     </div>
                                                                                 </div>
+                                                                                @include('partials.order.ioss_number',['ebay_tax_reference' => $completed_order->ebay_tax_reference])
                                                                             </div>
                                                                         </div>
                                                                         <div class="billing">
@@ -1787,25 +1777,7 @@
     </div> <!-- content page -->
 
     <!--Modal Start-->
-    <div class="modal fade" id="orderNoteModalView" tabindex="-1" role="dialog" aria-labelledby="orderNoteLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Order Note</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body-view">
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary update-note">Update</button>
-                    <button type="button" class="btn btn-danger delete-note">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('partials.order.order_note.order_note_modal')
     <!--End Modal Start-->
 
 
@@ -1975,34 +1947,8 @@
 
 
 
-        function view_note(id) {
-            // var id = $(this).attr('id');
-            $.ajax({
-                type: "POST",
-                url:"{{url('view-order-note')}}",
-                data: {
-                    "_token" : "{{csrf_token()}}",
-                    "order_id" : id
-                },
-                success: function (response) {
-                    if(response.data !== 'error'){
-                        var infoModal = $('#orderNoteModalView');
-                        var info = '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                            '<strong>Note : </strong>\n' +
-                            '<p class=""></p>' +
-                            '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                            '<strong>Created By : ' + response.data.user_info.name + '</strong>' +
-                            '<strong class="pull-right">Modified By : ' + response.data.modifier_info.name + ' (' + response.data.updated_at + ')' + '</strong>'
-                        infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        infoModal.modal();
-                        $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                        $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                    }else{
-                        alert('Something went wrong');
-                    }
-                }
-            });
-        }
+        @include('partials.order.order_note.order_note_unread_javascript')
+        @include('partials.order.order_note.order_note_javascript')
         // table column hide and show toggle checkbox
         $("input:checkbox").click(function(){
             let column = "."+$(this).attr("name");
@@ -2395,34 +2341,7 @@
             event.preventDefault();
             return false
         }
-
-    }
-
-    $(document).ready(function(){
-        var returnProductText = $('div#returnOrderSuccessMsg').text()
-        // var id = returnProductText.replace(/[^0-9.]/g, "")
-        // alert(id)
-        if(returnProductText != ''){
-            Swal.fire({
-            icon: 'success',
-            title: 'Return product added successfully. Do you want to restock this product?',
-            showCancelButton: true,
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Restock',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // $('div#receive-invoice-modal-'+id).show()
-                    $('div#receive-invoice-modal').show()
-                } else if (result.isDenied) {
-                    //
-                }
-            })
-        }
-    })
-
-
-    function closeReceiveInvoiceModal(e){
-        $(e).closest('div.receive-invoice-modal').hide()
+        $('button.dispatch-return-order-btn').text('Submiting').append('<i class="fas fa-spinner fa-pulse ml-2"></i>')
     }
 
     $('select.shelver_user_id').first().on('change',function(){
@@ -2432,16 +2351,6 @@
                 $(this).attr('selected','selected')
             }
         })
-    })
-
-    $('button.remove-more-invoice').on('click',function(){
-        var trCount = $('tr.invoice-row').length
-        if(trCount != 1){
-            $(this).closest('tr').remove()
-        }else{
-            //
-        }
-
     })
 
     $('select#invoice_number').on('change',function (event) {
@@ -2494,13 +2403,13 @@
     })
 
 
-     //Modal button receive invoice modal spining btn
-     $('button.receiveInvoiceModalBtn').click(function(){
-        $(this).html(
-            `<span class="mr-2"><i class="fa fa-spinner fa-spin"></i></span>Restocking this product`
-        );
-        $(this).addClass('changeCatalogBTnCss');
-    })
+    var tr_length = $('.order-table tbody .shipping_fee_order_no_check').length
+    // alert(tr_length)
+    if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+        $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+    }else if(tr_length > 3){
+        $('.order-content .card-box').removeAttr('style')
+    }
 
 </script>
 

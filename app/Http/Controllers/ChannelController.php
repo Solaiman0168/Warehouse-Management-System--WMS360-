@@ -95,7 +95,7 @@ class ChannelController extends Controller
     }
 
     public function channelMapField(Request $request){
-        $mappedFields = Mapping::select('id','channel_id','attribute_term_id','mapping_field')->with(['attributeTerms' => function($term){
+        $mappedFields = Mapping::select('id','channel_id','attribute_term_id','mapping_field')->whereHas('attributeTerms')->with(['attributeTerms' => function($term){
             $term->select('id','item_attribute_id','item_attribute_term','item_attribute_term_slug','is_active')->with('itemAttribute:id,item_attribute');
         }])->where('channel_id',$request->channel_id)->get();
         return response()->json($mappedFields);

@@ -6,6 +6,7 @@ use App\shopify\ShopifyAccount;
 use App\shopify\ShopifyMasterProduct;
 use App\woocommerce\WoocommerceCatalogue;
 use PHPShopify\ShopifySDK;
+use DB;
 
 trait Shopify{
     public function getConfig($shopUrl,$apiKey,$password){
@@ -64,6 +65,15 @@ trait Shopify{
         }
         if($request->get('modifier_opt_out')){
             $allCondition['modifier_opt_out'] = $request->get('modifier_opt_out');
+        }
+        if($request->has('stock')){
+            $allCondition['stock'] = $request->get('stock');
+        }
+        if($request->has('stock_opt')){
+            $allCondition['stock_opt'] = $request->get('stock_opt');
+        }
+        if($request->has('stock_opt_out')){
+            $allCondition['stock_opt_out'] = $request->get('stock_opt_out');
         }
         return $allCondition;
     }
@@ -129,6 +139,29 @@ trait Shopify{
                     $query->whereNotIn('account_id', $ids);
                 }else{
                     $query->whereIn('account_id', $ids);
+                }
+            }
+            if($request->has('stock')) {
+                $stock = $request->get('stock');
+                $stockOpt = $request->get('stock_opt') ? $request->get('stock_opt') : null;
+                $query_info = ShopifyMasterProduct::select('shopify_master_products.id',DB::raw('sum(shopify_variations.quantity) stock'))
+                    ->leftJoin('shopify_variations','shopify_master_products.id','=','shopify_variations.shopify_master_product_id')
+                    ->where([['shopify_master_products.deleted_at',null],['shopify_variations.deleted_at',null]]);
+                    if($stockOpt){
+                        $query_info = $query_info->havingRaw('sum(shopify_variations.quantity)'.$stockOpt.$stock);
+                    }else{
+                        $query_info = $query_info->havingRaw('sum(shopify_variations.quantity) = '.$stock);
+                    }
+                    $query_info = $query_info->groupBy('shopify_master_products.id')
+                    ->get();
+                $ids = [];
+                foreach ($query_info as $info){
+                    $ids[] = $info->id;
+                }
+                if($request->get('stock_opt_out') == 1){
+                    $query->whereNotIn('id',$ids);
+                }else{
+                    $query->whereIn('id',$ids);
                 }
             }
         });

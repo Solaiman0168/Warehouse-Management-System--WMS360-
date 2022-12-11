@@ -2,7 +2,14 @@
 
 
         @foreach($all_completed_order as $completed_order)
-            <tr>
+            @php
+                $colorCodeIndex = array_search($completed_order->order_number, array_column($shipping_fee_array, 'order_number'));
+                $colorCode = '';
+                if($colorCodeIndex) {
+                    $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+                }
+            @endphp
+            <tr class="order_number_{{$completed_order->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}>
                 {{--                                                    <td>--}}
                 {{--                                                        <input type="checkbox" class=" checkBoxClass" id="customCheck{{$completed_order->id}}" name="multiple_order[]" value="{{$completed_order->id}}" required>--}}
                 {{--                                                    </td>--}}
@@ -14,11 +21,12 @@
                     @if($completed_order->exchange_order_id)
                         (Ex. Order No. &nbsp;<span class="text-danger">{{\App\Order::find($completed_order->exchange_order_id)->order_number ?? ''}}</span>)
                     @endif
-                    <span class="append_note{{$completed_order->id}}">
-                        @isset($completed_order->order_note)
-                            <label class="label label-success view-note" style="cursor: pointer" id="{{$completed_order->id}}" onclick="view_note({{$completed_order->id}});">View Note</label>
-                        @endisset
-                    </span>
+{{--                    <span class="append_note{{$completed_order->id}}">--}}
+{{--                        @isset($completed_order->order_note)--}}
+{{--                            <label class="label label-success view-note" style="cursor: pointer" id="{{$completed_order->id}}" onclick="view_note({{$completed_order->id}});">View Note</label>--}}
+{{--                        @endisset--}}
+{{--                    </span>--}}
+                    @include('partials.order.order_note.order_note',['id' => $completed_order->id,'order_note'=> $completed_order->order_note,'buyer_message' => $completed_order->buyer_message])
                 </td>
                 @if($completed_order->status == 'processing')
                     <td class="status" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><span class="label label-table label-warning">{{$completed_order->status}}</span></td>
@@ -99,22 +107,14 @@
                 @else
                     <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">{{ucfirst($completed_order->created_via)}}</td>
                 @endif
-                @if($completed_order->payment_method == 'paypal' || $completed_order->payment_method == 'PayPal')
-                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
-                        <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$completed_order->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$completed_order->payment_method}}"></a>
+                @if ($completed_order->payment_method == 'cash')
+                    <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
+                        <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;"></a>
                     </td>
-                @elseif($completed_order->payment_method == 'Amazon')
-                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$completed_order->payment_method}}">
-                        @if(!empty($completed_order->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$completed_order->transaction_id}}" target="_blank">({{$completed_order->transaction_id}})</a>@endif
-                    </td>
-                @elseif($completed_order->payment_method == 'stripe')
-                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$completed_order->payment_method}}">
-                        @if(!empty($completed_order->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$completed_order->transaction_id}}" target="_blank">({{$completed_order->transaction_id}})</a>@endif
-                    </td>
-                @elseif($completed_order->payment_method == 'CreditCard')
-                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;"></td>
                 @else
-                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">{{ucfirst($completed_order->payment_method)}}</td>
+                    <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
+                        <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$completed_order->payment_method}}" style="width: 65px;height: 50px;">
+                    </td>
                 @endif
                 <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$completed_order->order_number}}" class="accordion-toggle">
                     <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -392,7 +392,7 @@
             </tr>
 
             <tr>
-                <td colspan="17" class="hiddenRow">
+                <td colspan="18" class="hiddenRow">
                     <div class="accordian-body collapse" id="demo{{$completed_order->order_number}}">
                         <div class="row">
                             <div class="col-12">
@@ -555,6 +555,7 @@
                                                             <h7> : {{$completed_order->shipping_country}} </h7>
                                                         </div>
                                                     </div>
+                                                    @include('partials.order.ioss_number',['ebay_tax_reference' => $completed_order->ebay_tax_reference])
                                                 </div>
                                             </div>
                                             <div class="billing">
@@ -655,34 +656,8 @@
 
         <script>
 
-            function view_note(id) {
-                // var id = $(this).attr('id');
-                $.ajax({
-                    type: "POST",
-                    url:"{{url('view-order-note')}}",
-                    data: {
-                        "_token" : "{{csrf_token()}}",
-                        "order_id" : id
-                    },
-                    success: function (response) {
-                        if(response.data !== 'error'){
-                            var infoModal = $('#orderNoteModalView');
-                            var info = '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                                '<strong>Note : </strong>\n' +
-                                '<p class=""></p>' +
-                                '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                                '<strong>Created By : ' + response.data.user_info.name + '</strong>' +
-                                '<strong class="pull-right">Modified By : ' + response.data.modifier_info.name + ' (' + response.data.updated_at + ')' + '</strong>'
-                            infoModal.find('.modal-body-view')[0].innerHTML = info;
-                            infoModal.modal();
-                            $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                            $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                        }else{
-                            alert('Something went wrong');
-                        }
-                    }
-                });
-            }
+            @include('partials.order.order_note.order_note_unread_javascript')
+            @include('partials.order.order_note.order_note_javascript')
 
 
             $(document).ready(function () {
@@ -947,6 +922,12 @@
     }
 
 
+    var tr_length = $('.order-table tbody .shipping_fee_order_no_check').length
+    if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+        $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+    }else if(tr_length > 3){
+        $('.order-content .card-box').removeAttr('style')
+    }
 
 
 </script>

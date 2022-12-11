@@ -1,14 +1,14 @@
 
 
 @foreach($search_result as $product_list)
-    <tr>
+    <tr class="search-tr">
         <td class="text-center">
             @if($product_list->status == 'success')
                 <input type="checkbox" class="checkBoxClass" value="{{$product_list->id}}">
             @endif
         </td>
-        <td class="image" style="cursor: pointer; text-align: center !important; width: 6% !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
 
+        <td class="image @if(isset($setting['onbuy']['onbuy_active_product']['image']) && $setting['onbuy']['onbuy_active_product']['image'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['image']) && $setting['onbuy']['onbuy_active_product']['image'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 6% !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             <!--Start each row loader-->
             <div id="product_variation_loading{{$product_list->id}}" class="variation_load" style="display: none;"></div>
             <!--End each row loader-->
@@ -18,11 +18,13 @@
             @else
                 <img src="{{asset('assets/common-assets/no_image.jpg')}}" class="onbuy-image zoom" alt="master-image">
             @endif
-
         </td>
 
+
 {{--                                        <td class="opc" style="text-align: center !important; width: 10%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">--}}
-        <td class="opc" style="text-align: center !important; width: 10%;">
+
+
+        <td class="opc @if(isset($setting['onbuy']['onbuy_active_product']['opc']) && $setting['onbuy']['onbuy_active_product']['opc'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['opc']) && $setting['onbuy']['onbuy_active_product']['opc'] == 1) @else @endif" style="text-align: center !important; width: 10%;">
             <span id="master_opc_{{$product_list->queue_id}}">
                 <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                     <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$product_list->opc}}</span>
@@ -31,7 +33,7 @@
             </span>
         </td>
 
-        <td class="catalogue-id text-center" style="width: 12%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="catalogue-id text-center @if(isset($setting['onbuy']['onbuy_active_product']['catalogue-id']) && $setting['onbuy']['onbuy_active_product']['catalogue-id'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['catalogue-id']) && $setting['onbuy']['onbuy_active_product']['catalogue-id'] == 1) @else @endif" style="width: 12%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             <span id="master_opc_{{$product_list->queue_id}}">
                 <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                     <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$product_list->woo_catalogue_id}}</span>
@@ -39,15 +41,36 @@
                 </div>
             </span>
         </td>
-        <td class="title" style="cursor: pointer; width: 26%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+
+        <td class="product-type @if(isset($setting['onbuy']['onbuy_active_product']['product-type']) && $setting['onbuy']['onbuy_active_product']['product-type'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['product-type']) && $setting['onbuy']['onbuy_active_product']['product-type'] == 1) @else @endif" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->product_type}}</td>
+
+        <td class="title @if(isset($setting['onbuy']['onbuy_active_product']['title']) && $setting['onbuy']['onbuy_active_product']['title'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['title']) && $setting['onbuy']['onbuy_active_product']['title'] == 1) @else @endif" style="cursor: pointer; width: 26%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             <a class="catalogue-name" href="https://seller.onbuy.com/inventory/edit-product-basic-details/{{$product_list->product_id}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Show Details">
                 {!! Str::limit(strip_tags($product_list->product_name),$limit = 100, $end = '...') !!}
             </a>
         </td>
-        <td class="category" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->category_info->name}}(<small>{{$product_list->category_info->category_tree}}</small>)</td>
-        <td class="master_base_price" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->base_price ?? ''}}</td>
-        <td class="product text-center" style="cursor: pointer; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->variation_product_count}}</td>
-        <td class="status" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle"><span class="label label-status label-@if($product_list->status == 'success')success @elseif($product_list->status == 'pending')warning @elseif($product_list->status == 'failed')danger @endif">{{$product_list->status}}</span></td>
+
+        <td class="category @if(isset($setting['onbuy']['onbuy_active_product']['category']) && $setting['onbuy']['onbuy_active_product']['category'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['category']) && $setting['onbuy']['onbuy_active_product']['category'] == 1) @else @endif" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->category_info->name}}(<small>{{$product_list->category_info->category_tree}}</small>)</td>
+
+        <td class="master_base_price @if(isset($setting['onbuy']['onbuy_active_product']['master_base_price']) && $setting['onbuy']['onbuy_active_product']['master_base_price'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['master_base_price']) && $setting['onbuy']['onbuy_active_product']['master_base_price'] == 1) @else @endif" style="cursor: pointer; width: 14%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->base_price ?? ''}}</td>
+
+        <td class="product text-center @if(isset($setting['onbuy']['onbuy_active_product']['product']) && $setting['onbuy']['onbuy_active_product']['product'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['product']) && $setting['onbuy']['onbuy_active_product']['product'] == 1) @else @endif" style="cursor: pointer; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->variation_product_count}}</td>
+        <td class="stock text-center @if(isset($setting['onbuy']['onbuy_active_product']['stock']) && $setting['onbuy']['onbuy_active_product']['stock'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['stock']) && $setting['onbuy']['onbuy_active_product']['stock'] == 1) @else @endif" style="cursor: pointer; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">{{$product_list->variation_product[0]->stock ?? ''}}</td>
+
+        <td class="status @if(isset($setting['onbuy']['onbuy_active_product']['status']) && $setting['onbuy']['onbuy_active_product']['status'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['status']) && $setting['onbuy']['onbuy_active_product']['status'] == 1) @else @endif" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle"><span class="label label-status label-@if($product_list->status == 'success')success @elseif($product_list->status == 'pending')warning @elseif($product_list->status == 'failed')danger @endif">{{$product_list->status}}</span></td>
+
+        <td class="queue-id @if(isset($setting['onbuy']['onbuy_active_product']['queue-id']) && $setting['onbuy']['onbuy_active_product']['queue-id'] == 0) hide @elseif(isset($setting['onbuy']['onbuy_active_product']['queue-id']) && $setting['onbuy']['onbuy_active_product']['queue-id'] == 1) @else @endif" style="width: 10%;">
+            <div class="d-block">
+                <div data-tip="{{$product_list->queue_id}}">
+                    <button type="button" style="cursor: pointer" class="btn btn-success btn-sm" onclick="check_queue_id('{{$product_list->queue_id}}')">Check Status</button>
+                </div>
+                <div>
+                    <span id="status_show_{{$product_list->queue_id}}" class="label label-default label-status"></span>
+                    <span id="error_show_{{$product_list->queue_id}}" class="label label-danger label-status"></span>
+                </div>
+            </div>
+        </td>
+
 {{--                                        <td class="queue-id" style="width: 10%">--}}
 {{--                                            <div class="d-block">--}}
 {{--                                                <div data-tip="{{$product_list->queue_id}}">--}}
@@ -59,17 +82,7 @@
 {{--                                                </div>--}}
 {{--                                            </div>--}}
 {{--                                        </td>--}}
-        <td class="queue-id" style="width: 10%;">
-            <div class="d-block">
-                <div data-tip="{{$product_list->queue_id}}">
-                    <button type="button" style="cursor: pointer" class="btn btn-success btn-sm" onclick="check_queue_id('{{$product_list->queue_id}}')">Check Status</button>
-                </div>
-                <div>
-                    <span id="status_show_{{$product_list->queue_id}}" class="label label-default label-status"></span>
-                    <span id="error_show_{{$product_list->queue_id}}" class="label label-danger label-status"></span>
-                </div>
-            </div>
-        </td>
+
         <td class="actions" style="width: 6%">
             <!--start manage button area-->
             <div class="btn-group dropup">
@@ -104,7 +117,7 @@
         </td> <!-- hide expand td-->
     </tr> <!-- hide expand row-->
 
-    
+
 @endforeach
 
 
@@ -143,6 +156,14 @@
             var catalogueIds = catalogueIdArray();
         });
     });
+
+    var tr_row = $('.onbuy-table tbody .search-tr').length
+    if(tr_row == 0 || tr_row == 1 || tr_row == 2 || tr_row == 3){
+        $('.catalog .card-box').attr('style','padding-bottom: 270px !important')
+    }else{
+        $('.catalog .card-box').removeAttr('style')
+    }
+
 
 </script>
 

@@ -51,12 +51,16 @@ use App\InvoiceProductVariation;
 use App\Invoice;
 use App\Vendor;
 use App\ShippingSetting;
+use App\Warehouse;
+use App\Traits\BundleSKUTrait;
+use App\BundleSku;
 
 
 class OrderController extends Controller
 {
     Use SearchOrder;
     use CommonFunction;
+    use BundleSKUTrait;
     public function __construct()
     {
         $this->middleware('auth');
@@ -155,6 +159,7 @@ class OrderController extends Controller
     public function allOrder(Request $request){
         // $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
         //Start page title and pagination setting
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $shelfUse = $this->shelf_use;
         $settingData = $this->paginationSetting('order','order_awaiting_dispatch');
         $setting = $settingData['setting'];
@@ -280,7 +285,10 @@ class OrderController extends Controller
 
         $all_pending_deocde_order = json_decode(json_encode($all_pending_order));
 
-        $content = view('order.all_order',compact('all_pending_order','all_picker','distinct_channel','distinct_currency','total_pending_order','all_pending_deocde_order','cancel_reasons', 'setting', 'page_title', 'pagination','shelfUse', 'distinct_payment', 'distinct_country', 'allCondition','woocommerceSiteUrl','channels', 'wooChannels', 'onbuyChannels','amazonChannels'));
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+           //dd($shipping_fee_array);
+
+        $content = view('order.all_order',compact('all_pending_order','all_picker','distinct_channel','distinct_currency','total_pending_order','all_pending_deocde_order','cancel_reasons', 'setting', 'page_title', 'pagination','shelfUse', 'distinct_payment', 'distinct_country', 'allCondition','woocommerceSiteUrl','channels', 'wooChannels', 'onbuyChannels','amazonChannels','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
@@ -298,6 +306,7 @@ class OrderController extends Controller
 
       public function index(Request $request)
       {
+          $channelWithAccount = $this->getChannelAndAccountInSameArray();
           // $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
 
           //Start page title and pagination setting
@@ -393,14 +402,10 @@ class OrderController extends Controller
 //          exit();
           $all_pending_deocde_order = json_decode(json_encode($all_pending_order));
 
-          $shipping_fee = ShippingSetting::first();
-          $get_shipping_fee = Order::where('shipping_method', $shipping_fee->aggregate_value, $shipping_fee->shipping_fee)->get();
-          $shipping_fee_array = [];
-          foreach ($get_shipping_fee as $value) {
-              $shipping_fee_array[] = $value->order_number;
-          }
+          $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+          //   dd($shipping_fee_array);
 
-          $content = view('order.receive_order',compact('all_pending_order','all_picker','distinct_channel','distinct_currency','total_pending_order','all_pending_deocde_order','cancel_reasons', 'setting', 'page_title', 'pagination','shelfUse', 'distinct_payment', 'distinct_country', 'allCondition','woocommerceSiteUrl','channels', 'wooChannels', 'onbuyChannels','amazonChannels','shipping_fee_array'));
+          $content = view('order.receive_order',compact('all_pending_order','all_picker','distinct_channel','distinct_currency','total_pending_order','all_pending_deocde_order','cancel_reasons', 'setting', 'page_title', 'pagination','shelfUse', 'distinct_payment', 'distinct_country', 'allCondition','woocommerceSiteUrl','channels', 'wooChannels', 'onbuyChannels','amazonChannels','shipping_fee_array','channelWithAccount'));
           return view('master',compact('content'));
       }
 
@@ -1352,6 +1357,7 @@ class OrderController extends Controller
     {
         $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
         //Start page title and pagination setting
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $shelfUse = $this->shelf_use;
         $settingData = $this->paginationSetting('order','completed_order');
         $setting = $settingData['setting'];
@@ -1396,7 +1402,11 @@ class OrderController extends Controller
         })->distinct()->get(['customer_country'])->where('customer_country', '!=', null);
         $users = User::all();
         $all_completed_order_info = json_decode(json_encode($all_completed_order));
-        $content = view('order.completed_order_list',compact('all_completed_order','all_completed_order_info','allChannels','distinct_currency','users','setting','page_title','pagination','shelfUse','distinct_payment','distinct_country','allCondition','url','return_reason'));
+
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+        //   dd($shipping_fee_array);
+
+        $content = view('order.completed_order_list',compact('all_completed_order','all_completed_order_info','allChannels','distinct_currency','users','setting','page_title','pagination','shelfUse','distinct_payment','distinct_country','allCondition','url','return_reason','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
@@ -1475,6 +1485,7 @@ class OrderController extends Controller
     public function assignedOrderList(Request $request)
     {
         // $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $shelfUse = $this->shelf_use;
         //Start page title and pagination setting
         $settingData = $this->paginationSetting('order', 'assigned_order');
@@ -1552,18 +1563,19 @@ class OrderController extends Controller
         })->distinct()->get(['customer_country'])->where('customer_country', '!=', null);
         $all_decode_assigned_order = json_decode(json_encode($all_assigned_order));
         $cancel_reasons = CancelReason::all();
-        $content = view('order.assigned_order_list',compact('all_assigned_order','total_assigned_order','all_decode_assigned_order','allChannels','distinct_currency','users','cancel_reasons','setting','page_title','pagination','distinct_payment','distinct_country', 'allCondition','pickerInfo'));
+
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+        //   dd($shipping_fee_array);
+
+        $content = view('order.assigned_order_list',compact('all_assigned_order','total_assigned_order','all_decode_assigned_order','allChannels','distinct_currency','users','cancel_reasons','setting','page_title','pagination','distinct_payment','distinct_country', 'allCondition','pickerInfo','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
     public function saveReturnOrder(Request $request){
 
-        // dd($request->all());
-
         $validation = $request->validate([
             'return_product_info' => 'required',
             'return_reasone' => 'required'
-//            'return_cost' => 'required'
         ]);
 
         $return_order_info = ReturnOrder::create([
@@ -1572,9 +1584,7 @@ class OrderController extends Controller
             'return_reason' => $request->return_reasone,
             'return_cost' => $request->return_cost ?? 0
         ]);
-        // dd($return_order_info->id);
         $return_order = ReturnOrder::find(json_decode($return_order_info->id));
-        // dd($return_order->id);
         foreach ($request->return_product_info as $return_product){
             if(isset($return_product['product_id'])) {
                 $datas['variation_id'] = $return_product['product_id'];
@@ -1584,31 +1594,25 @@ class OrderController extends Controller
                 $datas['status'] = 0;
                 $return_order->return_product_save()->attach($return_order->id, $datas);
             }
-        }
+        } 
 
         $catalogue = ProductOrder::where('order_id', $return_order->order_id)->first();
-        // dd($catalogue->name);
         $order_id = ReturnOrderProduct::select('variation_id')->where('return_order_id',$return_order->id)->get();
-        // dd($order_id);
         if(isset($order_id)){
             $ids = [];
             foreach ($order_id as $id){
                 $ids[] = $id->variation_id;
             }
-            // dd($ids);
             $allInvoiceIds = [];
             $supplierIds = [];
             $invoiceVariationInfo = InvoiceProductVariation::whereIn('product_variation_id',$ids)->get()->toArray();
-            // dd($allInvoiceNumbers);
 
             if(count($invoiceVariationInfo) > 0){
                 foreach($invoiceVariationInfo as $invoice){
                     $allInvoiceIds[] = $invoice['invoice_id'];
                 }
             }
-            // dd($allInvoiceIds);
             $invoiceNumberInfo = Invoice::whereIn('id',$allInvoiceIds)->get()->toArray();
-            // dd($invoiceNumberInfo);
             if(count($invoiceNumberInfo) > 0){
                 foreach($invoiceNumberInfo as $info){
                     $allInvoiceNumbers[] = [
@@ -1618,230 +1622,30 @@ class OrderController extends Controller
                     if(!in_array($info['vendor_id'],$supplierIds)){
                         $supplierIds[] = $info['vendor_id'];
                     }
-                    // dd($allInvoiceNumbers);
                 }
             }
 
-            // dd($supplierIds);
-            $vendors = Vendor::whereIn('id',$supplierIds)->get()->all();
-            // dd($vendors);
-            $multiple_select_option = '';
-            if(count($allInvoiceNumbers) > 1){
-                $multiple_select_option = '<option value="">Select Invoice</option>';
-            }
-            $multiple_select_option_supplier = '';
-            if(count($vendors) > 1){
-                $multiple_select_option_supplier = '<option value="">Select Supplier</option>';
-            }
-            // dd($multiple_select_option_supplier);
-            $select_invoice = '';
-            foreach($allInvoiceNumbers as $invoiceNumber){
-                $select_invoice .= '<option value="'.$invoiceNumber['invoice_number'].'" id="'.$invoiceNumber['vendor_id'].'">'.$invoiceNumber['invoice_number'].'</option>';
-            }
-            // dd($select_invoice);
-            $select_supplier = '';
-            foreach($vendors as $vendor){
-                $supplier_id = $vendor->id ?? '';
-                $supplier_name = $vendor->company_name ?? '';
-                $select_supplier .= '<option value="'.$supplier_id.'">'.$supplier_name.'</option>';
-            }
-            $shelfUse = Client::first()->shelf_use;
-            $shelf_use = '';
-            if($shelfUse == 1){
-                $shelf_use = '<th class="text-center" id="shelver_th" style="width: 15%">
-                                    <label class="required">Shelver</label>
-                               </th>';
-            }
-            // dd($shelf_use);
-            $variation_ids = [];
-            foreach($order_id as $id){
-                $variation_ids[] = $id->variation_id;
-            }
-            // dd($variation_ids);
-
-            $variation_info = ProductVariation::whereIn('id',$variation_ids)->get();
-            // dd($variation_info);
-
-            // $select_sku = '';
-            // if(count($variation_info) > 1){
-            //     $select_sku = '<option value="">Select SKU</option>';
-            // }
-
-            if(isset($variation_info)){
-                foreach($variation_info as $attribute_list){
-                    $product_draft_id = $attribute_list->product_draft_id ?? '';
-                }
-            }
-
-            $catalogue_name = $catalogue->name ?? '';
-            $variation_cost_price = $attribute_list->cost_price ?? '';
-            $name_part = '<div class="form-group row mt-3">
-                                <div class="col-md-1"></div>
-                                <h5 class="col-md-2">Catalogue : </h5>
-                                <div class="col-md-8">
-                                    <h5>'.$catalogue_name.'</h5>
-                                </div>
-                                <div class="col-md-1"></div>
-                            </div>
-                            <input type="hidden" name="cost_price" id="cost_price" value="'.$variation_cost_price.'">';
-            // dd($name_part);
-            $var_id = $return_order_info->order_id ?? null;
-            // dd($var_id);
+            $shelfUse = Client::first()->shelf_use;  
+            $main_order_id = $return_order_info->order_id ?? null;
             $return_id = $return_order_info->id ?? null;
-            $return_order_info = ReturnOrderProduct::where('return_order_id', $return_id)->whereIn('variation_id',$variation_ids)->get();
-            // dd($return_order_info);
-            $all_shelver = Role::with(['users_list'])->where('id',4)->first();
-            $current_date = \Illuminate\Support\Carbon::now();
-            $invoice_part = '<div class="form-group row">
-                                    <div class="col-md-1"></div>
-                                    <label for="invoice_no" class="col-md-2 col-form-label required">Invoice No</label>
-                                    <div class="col-md-8">
-                                        <select class="form-control" name="invoice_number" id="invoice_number" required>
-                                            '.$multiple_select_option.'
-                                            '.$select_invoice.'
-                                        </select>
-                                    </div>
-                                    <div class="col-md-1"></div>
-                                </div>
-                                <input type="hidden" name="return_order_id" id="return_order_id" value="'.$var_id.'">
-                                <input type="hidden" name="pk_return_order_id" id="pk_return_order_id" value="'.$return_id.'">
-                                <div class="form-group row">
-                                    <div class="col-md-1"></div>
-                                    <label for="vendor" class="col-md-2 col-form-label required">Supplier</label>
-                                    <div class="col-md-8">
-                                        <select name="vendor_id" class="form-control" required>
-                                            '.$multiple_select_option_supplier.'
-                                            '.$select_supplier.'
-                                        </select>
-                                    </div>
-                                    <div class="col-md-1"></div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-md-1"></div>
-                                    <label for="date" class="col-md-2 col-form-label required">Date</label>
-                                    <div class="col-md-8">
-                                        <div class="input-group">
-                                            <input name="receive_date" type="text" class="form-control" placeholder="MM/DD/YYYY" value="'.$current_date.'" id="datepicker-autoclose" required>
-                                            <div class="input-group-append">
-                                                <span class="input-group-text"><i class="md md-event-note"></i></span>
-                                            </div>
-                                        </div><!-- input-group -->
-                                    </div>
-                                    <div class="col-md-1"></div>
-                                </div>
-                                <input type="hidden" name="invoice_type" value="'.$return_id.'">
-                                <!--table start--->
-                                <div class="row m-t-40">
-                                    <input type="hidden" id="master_catalogue_id" value="'.$product_draft_id.'">
-                                    <div class="col-md-12 table-responsive">
-                                        <div id="flash"></div>
-                                        <table class="table table-bordered table-hover table-sortable receive-invoice-modal-table w-100" >
-                                            <thead>
-                                                <tr>
-                                                    <th class="text-center" style="width: 15%">
-                                                        <label class="required"> SKU </label>
-                                                    </th>
-                                                    <th class="text-center" style="width: 15%">
-                                                        <label>Variation</label>
-                                                    </th>
-                                                    <th class="text-center" style="width: 15%">QR</th>
-                                                    <th class="text-center" style="width: 15%">
-                                                        <label class="required">Quantity</label>
-                                                    </th>
-                                                    <th class="text-center" style="width: 15%">
-                                                        <label class="required">Unit Cost</label>
-                                                    </th>
-                                                    '.$shelf_use.'
-                                                    <th class="text-center" style="width: 10%">
-                                                        <label>Action</label>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>';
+            $vendors = Vendor::whereIn('id',$supplierIds)->get()->all();
+            $variationId = null;
+            $singleVariationInfo = null;
+            $return_products_Sku = null;
 
-                                            if(isset($variation_info)){
-                                                foreach($variation_info as $attribute_list){
-                                                    $variation = '';
-                                                    $sku_data = '';
-                                                    $return_qty = '';
-                                                    $shelver_name = '';
-                                                    $return_product_variation_id = $attribute_list->id ?? '';
-                                                    $return_product_variation_sku = $attribute_list->sku ?? '';
-                                                    $return_product_variation_cost_price = $attribute_list->cost_price ?? '';
-                                                    $product_draft_id = $attribute_list->product_draft_id ?? '';
-                                                    $qr_code_url = url("/print-barcode/".$return_product_variation_id);
-                                                    foreach(\Opis\Closure\unserialize($attribute_list->attribute) as $attribute){
-                                                        // $variation .= $attribute['attribute_name'].'->'.$attribute['terms_name'].',';
-                                                        $variation .= '<span>
-                                                                            <label>
-                                                                                <b class="variation-color">'.$attribute['attribute_name'].'</b> <i aria-hidden="true" class="fas fa-long-arrow-alt-right"></i> <span class="terms-name">'.$attribute['terms_name'].',</span>
-                                                                            </label>
-                                                                       </span>';
-                                                    }
-
-                                                    foreach($return_order_info as $return_order_data){
-                                                        $return_order_qty = $return_order_data->return_product_quantity ?? '';
-                                                        $return_qty .= $return_order_qty;
-                                                    }
-                                                    if($shelfUse == 1){
-                                                        if(count($all_shelver->users_list) > 1){
-                                                            $select_multiple_option = '<option value="">Select Shelver</option>';
-                                                        }
-                                                        if(count($all_shelver->users_list) > 0){
-                                                            foreach($all_shelver->users_list as $shelver){
-                                                                $shelver_name .= '<option value="'.$shelver->id.'">'.$shelver->name.'</option>';
-                                                            }
-                                                            $shelver_td = '<td class="shelver-td" style="width: 15%; vertical-align: middle">
-                                                                    <select id="shelver_user_id" class="form-control shelver_user_id" name="shelver_user_id[]" required>
-                                                                        '.$select_multiple_option.'
-                                                                        '.$shelver_name.'
-                                                                    </select>
-                                                                    <span class="text-danger hide">Select Shelver</span>
-                                                                </td>';
-                                                        }
-
-                                                    }
-
-                                                    $invoice_part .= '<tr class="invoice-row">
-                                                        <td class="text-center" style="width: 15%; vertical-align: middle">
-                                                            <select class="form-control product-unit-cost" name="product_variation_id[]" id="product_variation_id" required>
-                                                                <option value="'.$return_product_variation_id.'">'.$return_product_variation_sku.'</option>
-                                                            </select>
-                                                        <td class="text-center" style="width: 15%; vertical-align: middle">
-                                                            '.$variation.'
-                                                        </td>
-                                                        <td class="text-center" style="width: 15%; vertical-align: middle">
-                                                            <a target="_blank" title="Click to print" href="'.$qr_code_url.'">
-                                                                '.\SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($return_product_variation_sku).'
-                                                            </a>
-                                                        </td>
-                                                        <td class="text-center qty" style="width: 15%; vertical-align: middle">
-                                                            <input type="text" id="quantity" name="quantity[]" class="receive-invoice-modal-quantity text-center" style="width: 100px" value="'.$return_order_qty.'" required>
-                                                        </td>
-                                                        <td class="text-center unit-cost" style="width: 15%; vertical-align: middle">
-                                                            <input type="text" name="price[]" class="receive-invoice-modal-unit-price text-center" style="width: 100px" value="'.$return_product_variation_cost_price.'" required>
-                                                        </td>';
-                                                        if(isset($shelver_td)){
-                                                            $invoice_part .= $shelver_td;
-                                                        }
-                                                        $invoice_part .= '<td class="text-center" style="width: 10%; vertical-align: middle">
-                                                            <button type="button" class="btn btn-danger remove-more-invoice">Remove</button>
-                                                        </td>';
-                                                        $invoice_part .= '</tr>';
-                                                }
-                                            }
-
-                                            $invoice_part .= '</tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                ';
+            $product_variations = ReturnOrder::whereHas('orders', function($order){
+                $this->channel_restriction_order_session($order);
+            })->with(['return_product_save' => function($query){
+                $query->wherePivot('deleted_at','=', null)->withTrashed();
+            }])->where('id',$return_id)->get();
+            
+            $invoice_part = $this->productInvoiceReceiveModalData($catalogue,$vendors,$allInvoiceNumbers,$shelfUse,$order_id,$product_variations,$main_order_id,$return_id,$variationId,$singleVariationInfo,$return_products_Sku,'dispatched_catalog');          
             // dd($invoice_part);
-
          }
 
 
-        return back()->with('return_order_success_msg', 'Return product added successfully')->with('receive_name',$name_part)->with('invoice_part',$invoice_part);
+        // return back()->with('return_order_success_msg', 'Return product added successfully')->with('receive_name',$name_part)->with('invoice_part',$invoice_part);
+        return back()->with('return_order_success_msg' , 'Return product added successfully')->with('invoice_part',$invoice_part);
     }
 
 
@@ -1863,6 +1667,7 @@ class OrderController extends Controller
     {
         $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
         //Start page title and pagination setting
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $settingData = $this->paginationSetting('order','return_order');
         $setting = $settingData['setting'];
         $page_title = '';
@@ -1909,7 +1714,11 @@ class OrderController extends Controller
 //        echo "<pre>";
 //        print_r($all_decode_return_product);
 //        exit();
-        $content = view('order.return_order_list',compact('all_return_order','return_reason','all_decode_return_product','total_return_order','allChannels','distinct_currency','users','setting', 'page_title','pagination','distinct_payment','distinct_country','distinct_return_reason','url','allCondition'));
+
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+        //   dd($shipping_fee_array);
+
+        $content = view('order.return_order_list',compact('all_return_order','return_reason','all_decode_return_product','total_return_order','allChannels','distinct_currency','users','setting', 'page_title','pagination','distinct_payment','distinct_country','distinct_return_reason','url','allCondition','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
@@ -2055,20 +1864,44 @@ class OrderController extends Controller
             $missing_sku = '';
             foreach ($request->sku as $key => $value){
                 $variation_info = ProductVariation::where('sku',$value)->first();
-                if($variation_info) {
-                    $draft_product_name = ProductDraft::find($variation_info->product_draft_id)->name;
-                    $variation_arr_info = ProductOrder::create([
-                        'order_id' => $order_number,
-                        'variation_id' => $variation_info->id,
-                        'name' => $draft_product_name,
-                        'quantity' => $request->quantity[$key],
-                        'price' => $request->price[$key],
-                        'status' => 0
-                    ]);
-
-                    $check_quantity = new CheckQuantity();
-                    $check_quantity->checkQuantity($value,null,null,'Manual Order Create');
-
+                $bundleInfo = BundleSku::where('parent_variation_id',$variation_info->id)->get();
+                if(count($bundleInfo) > 0) {
+                    $this->insertOrderedProduct($bundleInfo,$order_number,$value,$request->quantity[$key],$request->price[$key],'Manual Order Create');
+                    // foreach($bundleInfo as $bundle) {
+                    //     $childVariationInfo = ProductVariation::find($bundle->child_variation_id);
+                    //     if($childVariationInfo) {
+                    //         $child_draft_product_name = ProductDraft::find($childVariationInfo->product_draft_id)->name;
+                    //         $child_variation_arr_info = ProductOrder::create([
+                    //             'order_id' => $order_number,
+                    //             'variation_id' => $bundle->child_variation_id,
+                    //             'name' => $child_draft_product_name.' (Bundle Parent SKU: '.$value.')',
+                    //             'quantity' => $request->quantity[$key] * $bundle->quantity,
+                    //             'price' => $request->price[$key],
+                    //             'status' => 0
+                    //         ]);
+        
+                    //         $check_quantity = new CheckQuantity();
+                    //         $check_quantity->checkQuantity($childVariationInfo->sku,null,null,'Manual Order Create');
+                    //         $this->bundleSKUSyncQuantity($bundle->child_variation_id);
+                    //     }
+                    // }
+                }else {
+                    if($variation_info) {
+                        $draft_product_name = ProductDraft::find($variation_info->product_draft_id)->name;
+                        $variation_arr_info = ProductOrder::create([
+                            'order_id' => $order_number,
+                            'variation_id' => $variation_info->id,
+                            'name' => $draft_product_name,
+                            'quantity' => $request->quantity[$key],
+                            'price' => $request->price[$key],
+                            'status' => 0
+                        ]);
+    
+                        $check_quantity = new CheckQuantity();
+                        $check_quantity->checkQuantity($value,null,null,'Manual Order Create');
+                        $this->bundleSKUSyncQuantity($variation_info->id);
+                
+                
 //                    $new_update_quantity = $variation_info->actual_quantity - $request->quantity[$key];
 //                    $variation_info->actual_quantity = $new_update_quantity;
 //                    $result = $variation_info->save();
@@ -2118,6 +1951,7 @@ class OrderController extends Controller
                 }else{
                     $missing_sku .= $value.',';
                 }
+            }
             }
 //            $order_product_insert_info = ProductOrder::insert($variation_arr_info);
             if($missing_sku != ''){
@@ -2359,6 +2193,34 @@ class OrderController extends Controller
         $picked_product = [];
         $action_name = 'Exchange Product';
         if($order_product_id != null && $exchange_product_id != null) {
+            $variation_info = $exchange_product_id;
+            $bundleInfo = BundleSku::where('parent_variation_id',$variation_info->id)->get();
+            if(count($bundleInfo) > 0) {
+                $existOrderInfo = ProductOrder::find($request->product_order_id);
+                $catalogueName = $request->catalogue_title ?? null;
+                $this->insertOrderedProduct($bundleInfo,$existOrderInfo->order_id,$exchangedSku,$request->exchange_quantity,$request->product_price,$action_name,null,$catalogueName);
+                // foreach($bundleInfo as $bundle) {
+                //     $childVariationInfo = ProductVariation::find($bundle->child_variation_id);
+                //     if($childVariationInfo) {
+                //         $child_draft_product_name = ProductDraft::find($childVariationInfo->product_draft_id)->name;
+                //         $child_variation_arr_info = ProductOrder::create([
+                //             'order_id' => $existOrderInfo->order_id,
+                //             'variation_id' => $bundle->child_variation_id,
+                //             'name' => $request->catalogue_title ? $request->catalogue_title : $child_draft_product_name.' (Bundle Parent SKU: '.$exchangedSku.')',
+                //             'quantity' => $request->exchange_quantity * $bundle->quantity,
+                //             'price' => $childVariationInfo->sale_price * ($request->exchange_quantity * $bundle->quantity),
+                //             'status' => 0
+                //         ]);
+    
+                //         $check_quantity = new CheckQuantity();
+                //         $check_quantity->checkQuantity($childVariationInfo->sku,null,null,$action_name);
+                //         $this->bundleSKUSyncQuantity($bundle->child_variation_id);
+                //     }
+                // }
+                $check_quantity = new CheckQuantity();
+                $check_quantity->checkQuantity($orderedSku, $request->order_quantity, null, $action_name);
+                $existOrderDelete = $existOrderInfo->delete();
+            }else {
             if($orderedSku == $exchangedSku){
                 if($request->exchange_quantity == $request->order_quantity){
                     return back()->with('error','Exchange Quantity Must Be Less Than Or Greater Than Ordered Quantity');
@@ -2366,13 +2228,16 @@ class OrderController extends Controller
                 $check_quantity = new CheckQuantity();
                 $incrementalQuantity = $request->order_quantity - $request->exchange_quantity;
                 $check_quantity->checkQuantity($orderedSku, $incrementalQuantity, null, $action_name);
+                $this->bundleSKUSyncQuantity($order_product_id->id);
             }else{
                 $check_quantity = new CheckQuantity();
                 $check_quantity->checkQuantity($orderedSku, $request->order_quantity, null, $action_name);
+                $this->bundleSKUSyncQuantity($order_product_id->id);
 
                 $check_quantity2 = new CheckQuantity();
                 $exChangeQnty = 0 - $request->exchange_quantity;
                 $check_quantity2->checkQuantity($exchangedSku, $exChangeQnty, null, $action_name);
+                $this->bundleSKUSyncQuantity($exchange_product_id->id);
             }
             // $woo_comm_ordered_product_exist_check = WoocommerceVariation::where('sku',$orderedSku)->first();
             // $woo_comm_exchanged_product_exist_check = WoocommerceVariation::where('sku',$exchangedSku)->first();
@@ -2483,9 +2348,11 @@ class OrderController extends Controller
                 $content = view('order.cancel_order_not_picked', compact('picked_product', 'route'));
                 return view('master', compact('content'));
             }
+            }
             // $increment = ProductVariation::find($order_product_id->id)->update(['actual_quantity'=> $new_ordered_product_update_quantity]);
             // $decrement = ProductVariation::find($exchange_product_id->id)->update(['actual_quantity' => $new_exchanged_product_update_quantity]);
-            return back()->with('success_msg', 'Order Product Exchange Successfully');
+            //return back()->with('success_msg', 'Order Product Exchange Successfully');
+            return redirect('order/list')->with('success','Order Product Exchange Successfully');
         }
         else{
             return back()->with('error','Please check for orderd and exchaged product availability ?');
@@ -2557,6 +2424,7 @@ class OrderController extends Controller
   public function holdOrderList(Request $request)
     {
         //Start page title and pagination setting
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $shelfUse = $this->shelf_use;
         $settingData = $this->paginationSetting('order','hold_order');
         $setting = $settingData['setting'];
@@ -2607,7 +2475,11 @@ class OrderController extends Controller
 
         $all_decode_hold_order = json_decode(json_encode($all_hold_order));
         $cancel_reasons = CancelReason::all();
-        $content = view('order.hold_order_list',compact('all_hold_order','all_picker','all_decode_hold_order','allChannels','distinct_currency','cancel_reasons','setting','page_title','pagination','shelfUse','distinct_payment','distinct_country','distinct_status', 'allCondition','userInfo'));
+
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+        //   dd($shipping_fee_array);
+
+        $content = view('order.hold_order_list',compact('all_hold_order','all_picker','all_decode_hold_order','allChannels','distinct_currency','cancel_reasons','setting','page_title','pagination','shelfUse','distinct_payment','distinct_country','distinct_status', 'allCondition','userInfo','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
@@ -2857,8 +2729,165 @@ class OrderController extends Controller
                 $order_info = json_decode(json_encode($order_info));
             }
         }
+        $warehouseInfo = [];
+        if(($orderFilterType == 'group_by_warehouse') && !$request->has('warehouse_id')){
+            if($shelfUse == 1) {
+                $orderInfo = Order::select('orders.id AS o_id', 'orders.order_number', 'orders.created_via', 'orders.currency', 'orders.status', 'orders.date_created', 'product_orders.variation_id', 'product_orders.name',
+                    'product_shelfs.quantity', 'product_shelfs.shelf_id', 'shelfs.id', 'shelfs.shelf_name','shelfs.warehouse_id')
+                    ->leftJoin('product_orders', 'orders.id', '=', 'product_orders.order_id')
+                    ->join('product_shelfs', 'product_orders.variation_id', '=', 'product_shelfs.variation_id')
+                    ->join('shelfs', 'product_shelfs.shelf_id', '=', 'shelfs.id')
+                    ->where('orders.status', 'processing')
+                    ->where(function($order){
+                        $this->channel_restriction_order_session($order);
+                    })
+                    ->where('product_shelfs.quantity', '!=', 0)
+                    ->groupBy('orders.order_number')
+                    ->groupBy('shelfs.warehouse_id')
+                    ->get()->all();
+                    $warehouseIds = [];
+                    $warehouseOrderIds = [];
+                    if(count($orderInfo) > 0) {
+                        foreach($orderInfo as $info) {
+                            $mathcKey = array_search($info->warehouse_id, $warehouseIds);
+                            if($mathcKey) {
+                                if($warehouseIds[$mathcKey] == $info->warehouse_id) {
+                                    $orderNumber = $info->order_number;
+                                }
+                            }else {
+                                $warehouseIds[] = $info->warehouse_id;
+                                $orderNumber = $info->order_number;
+                            }
+                            $warehouseOrderIds[$info->warehouse_id][] = $orderNumber;
+                        }
+                    }
+                    if(count($warehouseOrderIds) > 0) {
+                        foreach($warehouseOrderIds as $warehouse_id => $order_numbers) {
+                            $warehouse_info = Warehouse::find($warehouse_id);
+                            $multiple_customer_order = Order::with(['product_variations'])->whereIn('order_number',$order_numbers)->get();
+                            if(count($multiple_customer_order) > 0) {
+                                $orderPicked = [];
+                                $singleOrderInfo = [];
+                                $assignedOrder = [];
+                                foreach($multiple_customer_order as $cus_order) {
+                                    $picking_count = 0;
+                                    foreach($cus_order->product_variations as $sin_order){
+                                        $picking_count += $sin_order->pivot->status;
+                                    }
+                                    if(count($cus_order->product_variations) == $picking_count){
+                                        $orderPicked[] = $cus_order->order_number;
+                                    }
+                                    if($cus_order->picker_id) {
+                                        $assignedOrder[] = $cus_order->order_number;
+                                    }
 
-        $content = view('order.shelf_wise_order',compact('order_info','customer_order_by_phone_post','shelfUse','groupBySku','catalogueOrderArr','orderFilterType','pickerInfo','unserializeCombinedOrderSettingInfo'));
+                                    $singleOrderInfo[] = Order::with(['product_variations' => function ($query) {
+                                        $query->with(['shelf_quantity' => function($query){
+                                            $query->orderBy('shelf_name','ASC')->wherePivot('quantity','>',0);
+                                        },'master_single_image']);
+                                    }])->find($cus_order->id);
+                                }
+                            }
+                            $order_info[$warehouse_id] = [
+                                'warehouse_info' => $warehouse_info,
+                                'picked_order' => count($orderPicked),
+                                'unpicked_order' => count($order_numbers) - count($orderPicked),
+                                'assigned_order' => count($assignedOrder),
+                                'total_order' => count($order_numbers),
+                                'order_numbers' => $order_numbers,
+                                'order_info' => $singleOrderInfo
+                            ];
+                        }
+                    }
+                $order_info = $order_info;
+                $warehouseInfo = Warehouse::where('status',1)->get();
+            }
+        }
+        $allCondition = [];
+        if(($orderFilterType == 'group_by_warehouse') && $request->has('warehouse_id')) {
+            $warehouseId = $request->get('warehouse_id');
+            // $productOrder1 = Order::whereHas('orderedProduct.shelf_product.shelf_info', function($query) use ($warehouseId,$request) {
+            //     if(!$request->has('warehouse_id_opt_out')) {
+            //         $query->where('warehouse_id',$warehouseId);
+            //     }else {
+            //         $query->where('warehouse_id','!=',$warehouseId);
+            //     }
+            //     $query->groupBy('warehouse_id');
+            // })->where('status','processing')->pluck('order_number')->toArray();
+            $productOrder1 = Order::whereHas('orderedProduct.shelf_product', function($q) use ($warehouseId,$request) {
+                $q->where('quantity','>',0)->whereHas('shelf_info', function($query) use ($warehouseId,$request) {
+                if(!$request->has('warehouse_id_opt_out')) {
+                    $query->where('warehouse_id',$warehouseId);
+                }else {
+                    $query->where('warehouse_id','!=',$warehouseId);
+                }
+                $query->groupBy('warehouse_id');
+                });
+            })->where('status','processing')->pluck('order_number')->toArray();
+            $productOrder2 = Order::whereHas('orderedProduct.shelf_product', function($q) use ($warehouseId,$request) {
+                $q->where('quantity','>',0)->whereHas('shelf_info', function($query) use ($warehouseId,$request) {
+                if(!$request->has('warehouse_id_opt_out')) {
+                    $query->where('warehouse_id','!=',$warehouseId);
+                }else {
+                    $query->where('warehouse_id',$warehouseId);
+                }
+                $query->groupBy('warehouse_id');
+                });
+            })->where('status','processing')->pluck('order_number')->toArray();
+            // $productOrder2 = Order::whereHas('orderedProduct.shelf_product.shelf_info', function($query)  use ($warehouseId,$request) {
+            //     if(!$request->has('warehouse_id_opt_out')) {
+            //         $query->where('warehouse_id','!=',$warehouseId);
+            //     }else {
+            //         $query->where('warehouse_id',$warehouseId);
+            //     }
+            //     $query->groupBy('warehouse_id');
+            // })->where('status','processing')->pluck('order_number')->toArray();
+            $orderInumbers = array_diff($productOrder1,$productOrder2);
+
+            $warehouse_info = Warehouse::find($warehouseId);
+            $multiple_customer_order = Order::with(['product_variations'])->whereIn('order_number',$orderInumbers)->get();
+            $orderPicked = [];
+            $singleOrderInfo = [];
+            $assignedOrder = [];
+            if(count($multiple_customer_order) > 0) {
+                foreach($multiple_customer_order as $cus_order) {
+                    $picking_count = 0;
+                    foreach($cus_order->product_variations as $sin_order){
+                        $picking_count += $sin_order->pivot->status;
+                    }
+                    if(count($cus_order->product_variations) == $picking_count){
+                        $orderPicked[] = $cus_order->order_number;
+                    }
+                    if($cus_order->picker_id) {
+                        $assignedOrder[] = $cus_order->order_number;
+                    }
+
+                    $singleOrderInfo[] = Order::with(['product_variations' => function ($query) {
+                        $query->with(['shelf_quantity' => function($query){
+                            $query->orderBy('shelf_name','ASC')->wherePivot('quantity','>',0);
+                        },'master_single_image']);
+                    }])->find($cus_order->id);
+                }
+            }
+            if($request->has('warehouse_id_opt_out')) {
+                $allCondition['warehouse_id_opt_out'] = true;
+            }
+            $allCondition['warehouse_id'] = $warehouseId;
+            $order_info[$warehouseId] = [
+                'warehouse_info' => $warehouse_info,
+                'picked_order' => count($orderPicked),
+                'unpicked_order' => count($orderInumbers) - count($orderPicked),
+                'assigned_order' => count($assignedOrder),
+                'total_order' => count($orderInumbers),
+                'order_numbers' => $orderInumbers,
+                'order_info' => $singleOrderInfo,
+                'opt_out' => $request->has('warehouse_id_opt_out'),
+            ];
+            $warehouseInfo = Warehouse::where('status',1)->get();
+            //dd($order_info);
+        }
+
+        $content = view('order.shelf_wise_order',compact('order_info','customer_order_by_phone_post','shelfUse','groupBySku','catalogueOrderArr','orderFilterType','pickerInfo','unserializeCombinedOrderSettingInfo','warehouseInfo','allCondition'));
         return view('master',compact('content'));
     }
 
@@ -3047,7 +3076,11 @@ class OrderController extends Controller
                     ->whereIn('order_id',$order_ids)
                     ->get();
             }
-            echo view('order.return_order_general_search',compact('all_return_order','shelfUse'));
+
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+
+            echo view('order.return_order_general_search',compact('all_return_order','shelfUse','shipping_fee_array'));
         }
         $field = ['orders.order_number','orders.customer_name','orders.ebay_user_id','orders.customer_city','product_orders.name','orders.shipping_post_code','product_variation.sku'];
         $query_result = Order::select('orders.order_number')
@@ -3087,7 +3120,9 @@ class OrderController extends Controller
 
         if($request->order_search_status == 'processing'){
             $all_processing_order = $all_filter_order;
-            echo view('order.processing_order_general_search',compact('all_processing_order','shelfUse'));
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+            echo view('order.processing_order_general_search',compact('all_processing_order','shelfUse','shipping_fee_array'));
         }
         elseif($request->order_search_status == 'all-order'){
             $all_processing_order = $all_filter_order;
@@ -3095,16 +3130,22 @@ class OrderController extends Controller
         }
         elseif($request->order_search_status == 'assign-processing'){
             $all_assigned_order = $all_filter_order;
-            echo view('order.assigned_order_general_search',compact('all_assigned_order','shelfUse'));
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+            echo view('order.assigned_order_general_search',compact('all_assigned_order','shelfUse','shipping_fee_array'));
         }
         elseif($request->order_search_status == 'completed'){
             $all_completed_order_info = $all_filter_order;
             $all_completed_order = $all_filter_order;
-            echo view('order.completed_order_general_search',compact('all_completed_order','all_completed_order_info','shelfUse'));
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+            echo view('order.completed_order_general_search',compact('all_completed_order','all_completed_order_info','shelfUse','shipping_fee_array'));
         }
         elseif($request->order_search_status == 'on-hold'){
             $all_hold_order = $all_filter_order;
-            echo view('order.hold_order_general_search',compact('all_hold_order','shelfUse'));
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+            echo view('order.hold_order_general_search',compact('all_hold_order','shelfUse','shipping_fee_array'));
         }
 
         elseif($request->order_search_status == 'cancelled'){
@@ -3117,7 +3158,9 @@ class OrderController extends Controller
                 $query->select(['id','order_id','note']);
             },'orderCancelReason'])->where($condition)
                 ->whereIn('order_number',$query_result)->orderByDesc('date_created')->paginate(50);
-            echo view('order.cancelled_order_general_search',compact('searchCancelledOrderList','shelfUse'));
+            $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+            //  dd($shipping_fee_array);
+            echo view('order.cancelled_order_general_search',compact('searchCancelledOrderList','shelfUse','shipping_fee_array'));
         }
 
     }
@@ -3200,9 +3243,35 @@ class OrderController extends Controller
                 //     }
                 // }
                 if($info->actual_quantity < $request->quantity[$i]){
-                    return back()->with('error','Available quantity is '.$info->actual_quantity.' for this product');
+                    return response()->json(['success' => false, 'msg' => 'Available quantity is <span class="text-success">'.$info->actual_quantity.'</span> for sku <span class="text-success">'.$request->product_sku[$i].'</span>']);
+                    //return back()->with('error','Available quantity is '.$info->actual_quantity.' for this product');
                 }
                 if($info) {
+                    $variation_info = ProductVariation::where('sku',$sku)->first();
+                    $bundleInfo = BundleSku::where('parent_variation_id',$variation_info->id)->get();
+                    if(count($bundleInfo) > 0) {
+                        $this->insertOrderedProduct($bundleInfo,$request->order_id,$sku,$request->quantity[$i],$request->price[$i],'Add Product In Exist/Empty Order',null);
+                        // foreach($bundleInfo as $bundle) {
+                        //     $childVariationInfo = ProductVariation::find($bundle->child_variation_id);
+                        //     if($childVariationInfo) {
+                        //         $child_draft_product_name = ProductDraft::find($childVariationInfo->product_draft_id)->name;
+                        //         $child_variation_arr_info = ProductOrder::create([
+                        //             'order_id' => $request->order_id,
+                        //             'variation_id' => $bundle->child_variation_id,
+                        //             'name' => $child_draft_product_name.' (Bundle Parent SKU: '.$sku.')',
+                        //             'quantity' => $request->quantity[$i] * $bundle->quantity,
+                        //             'price' => $childVariationInfo->sale_price * $request->quantity[$i] * $bundle->quantity,
+                        //             'status' => 0
+                        //         ]);
+            
+                        //         $check_quantity = new CheckQuantity();
+                        //         $check_quantity->checkQuantity($childVariationInfo->sku,null,null,'Manual Order Create');
+                        //         $this->bundleSKUSyncQuantity($bundle->child_variation_id);
+                        //     }
+                        // }
+                    }else {
+
+                    
                     $updated_quantity = $info->actual_quantity - $request->quantity[$i];
                     $data = ProductOrder::create([
                         'order_id' => $request->order_id,
@@ -3272,18 +3341,22 @@ class OrderController extends Controller
 //                        }
 //                    }
                     $check_quantity = new CheckQuantity();
-                    $check_quantity->checkQuantity($sku, null, null, 'Add Product In Empty Order');
+                    $check_quantity->checkQuantity($sku, null, null, 'Add Product In Exist/Empty Order');
+                    $this->bundleSKUSyncQuantity($info->id);
+                    }
                 }
 
                 $i++;
             }
-            return back()->with('success','Product added in this order succesfully');
+            return response()->json(['success' => true,'msg' => 'Successfully Added Product To Order']);
+            //return back()->with('success','Product added in this order succesfully');
 //            echo "<pre>";
 //            print_r($data);
 //            exit();
 
         }catch (\Exception $exception){
-            return back()->with('error',$exception->getMessage());
+            return response()->json(['success' => false,'msg' => 'Something went wrong']);
+            //return back()->with('error',$exception->getMessage());
         }
     }
 
@@ -3359,6 +3432,7 @@ class OrderController extends Controller
                            $variation_info = ProductVariation::find($product->variation_id);
                            $check_quantity = new CheckQuantity();
                            $check_quantity->checkQuantity($variation_info->sku, $product->quantity, null, 'Cancel Order');
+                           $this->bundleSKUSyncQuantity($variation_info->id);
                     //    }
 
 //                        if ($variation_info) {
@@ -3627,6 +3701,7 @@ class OrderController extends Controller
     public function cancelledOrderList(Request $request)
     {
         //Start page title and pagination setting
+        $channelWithAccount = $this->getChannelAndAccountInSameArray();
         $shelfUse = $this->shelf_use;
         $settingData = $this->paginationSetting('order','cancelled_order');
         $setting = $settingData['setting'];
@@ -3676,7 +3751,11 @@ class OrderController extends Controller
 //        echo '<pre>';
 //        print_r($cancelledOrderList);
 //        exit();
-        $content = view('order.cancelled_order_list',compact('cancelledOrderList','all_cancelledOrderList','setting','page_title','pagination','shelfUse','allChannels','distinct_currency','distinct_payment','distinct_country','cancel_reasons', 'allCondition', 'allOrderCancelReason'));
+
+        $shipping_fee_array = $this->getShippingFeeOrderNoArrayValue();
+        //   dd($shipping_fee_array);
+
+        $content = view('order.cancelled_order_list',compact('cancelledOrderList','all_cancelledOrderList','setting','page_title','pagination','shelfUse','allChannels','distinct_currency','distinct_payment','distinct_country','cancel_reasons', 'allCondition', 'allOrderCancelReason','shipping_fee_array','channelWithAccount'));
         return view('master',compact('content'));
     }
 
@@ -3714,6 +3793,7 @@ class OrderController extends Controller
                     if ($variation_info) {
                         $check_quantity = new CheckQuantity();
                         $check_quantity->checkQuantity($variation_info->sku, $orderProductRowInfo->quantity,null,'Delete Ordered Product');
+                        $this->bundleSKUSyncQuantity($variation_info->id);
                         // $updated_new_quantity = $variation_info->actual_quantity + $orderProductRowInfo->quantity;
                         // $woocommerceStatus = WoocommerceAccount::where('status', 1)->first();
                         // if($woocommerceStatus){
@@ -4044,6 +4124,13 @@ class OrderController extends Controller
             elseif($request->order_filter_type == 'assigned-order'){
                 $orderProduct = $this->getUnpickedOrderIds($request->multiple_order);
                 $orderAssingToPicker = Order::whereIn('id',$orderProduct)->where('status','processing')->update(['picker_id' => $request->picker_id, 'assigner_id' => Auth::id()]);
+                return response()->json(['type' => 'success', 'message' => 'Order Assigned Successfully']);
+            }
+            elseif($request->order_filter_type == 'group_by_warehouse'){
+                foreach($request->multiple_order as $multi_order) {
+                    $orderNumbers = explode(',',$multi_order);
+                    $orderAssingToPicker = Order::whereIn('order_number',$orderNumbers)->where('status','processing')->where('picker_id',null)->update(['picker_id' => $request->picker_id, 'assigner_id' => Auth::id()]);
+                }
                 return response()->json(['type' => 'success', 'message' => 'Order Assigned Successfully']);
             }
         }catch(\Exception $exception){

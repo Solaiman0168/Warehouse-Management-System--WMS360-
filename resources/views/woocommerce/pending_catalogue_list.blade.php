@@ -48,7 +48,7 @@
                                         </div>
                                         <div class="ml-1"><p>ID</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2 mt-xs-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="catalogue-name" class="onoffswitch-checkbox" id="catalogue-name" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_pending_product']['catalogue-name'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_pending_product']['catalogue-name'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="catalogue-name">
@@ -68,7 +68,27 @@
                                         </div>
                                         <div class="ml-1"><p>Category</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2 mt-xs-10">
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="rrp" class="onoffswitch-checkbox" id="rrp" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['rrp']) && $setting['woocommerce']['woocommerce_pending_product']['rrp'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['rrp']) && $setting['woocommerce']['woocommerce_pending_product']['rrp'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="rrp">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>RRP</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="base_price" class="onoffswitch-checkbox" id="base_price" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['base_price']) && $setting['woocommerce']['woocommerce_pending_product']['base_price'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['base_price']) && $setting['woocommerce']['woocommerce_pending_product']['base_price'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="base_price">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>Base Price</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="sold" class="onoffswitch-checkbox" id="sold" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['sold']) && $setting['woocommerce']['woocommerce_pending_product']['sold'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['sold']) && $setting['woocommerce']['woocommerce_pending_product']['sold'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="sold">
@@ -78,7 +98,9 @@
                                         </div>
                                         <div class="ml-1"><p>Sold</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mt-sm-10">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="stock" class="onoffswitch-checkbox" id="stock" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['stock']) && $setting['woocommerce']['woocommerce_pending_product']['stock'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['stock']) && $setting['woocommerce']['woocommerce_pending_product']['stock'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="stock">
@@ -88,9 +110,7 @@
                                         </div>
                                         <div class="ml-1"><p>Stock</p></div>
                                     </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center mt-sm-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="product" class="onoffswitch-checkbox" id="product" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['product']) && $setting['woocommerce']['woocommerce_pending_product']['product'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['product']) && $setting['woocommerce']['woocommerce_pending_product']['product'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="product">
@@ -140,7 +160,9 @@
                                         </div>
                                         <div class="ml-1"><p>QR</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2 mt-sm-10">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mt-sm-10">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="variation" class="onoffswitch-checkbox" id="variation" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['variation']) && $setting['woocommerce']['woocommerce_pending_product']['variation'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['variation']) && $setting['woocommerce']['woocommerce_pending_product']['variation'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="variation">
@@ -150,9 +172,7 @@
                                         </div>
                                         <div class="ml-1"><p>Variation</p></div>
                                     </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center mt-sm-10">
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="ean" class="onoffswitch-checkbox" id="ean" tabindex="0" @if(isset($setting['woocommerce']['woocommerce_pending_product']['ean']) && $setting['woocommerce']['woocommerce_pending_product']['ean'] == 1) checked @elseif(isset($setting['woocommerce']['woocommerce_pending_product']['ean']) && $setting['woocommerce']['woocommerce_pending_product']['ean'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="ean">
@@ -272,7 +292,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
 
@@ -386,7 +406,7 @@
                             <!--End WooCommerce upload csv-->
 
                             <!--Start Table-->
-                            <table class="draft_search_result product-draft-table w-100">
+                            <table class="draft_search_result product-draft-table catalog-table w-100">
                                 <!--start table head-->
                                 <thead style="background-color: {{$setting->master_draft_catalogue->table_header_color ?? '#c5bdbd'}}; color: {{$setting->master_draft_catalogue->table_header_text_color ?? '#292424'}}">
                                 <form action="{{url('all-column-search')}}" method="post">
@@ -1111,6 +1131,7 @@
                     $("#ajax_loader").show();
                 },
                 success: function(response){
+                    // console.log(response)
                     if (response.ids.length === 0) {
                         $(document).ready(function() {
                             Swal.fire(
@@ -1125,6 +1146,10 @@
                     take = response.take;
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
+
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+
                     // console.log(response.ids);
                     // console.log('********');
                     // console.log(ids);

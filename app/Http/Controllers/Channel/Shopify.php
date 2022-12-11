@@ -35,7 +35,7 @@ class Shopify implements EChannel
                         'stock_quantity' => $quantity,
                     ];
 
-                        $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Shopify',1,$sku,$variation_data,null,Auth::user()->name ?? 'Quantity Sync',$shopify_variation_result->quantity,$quantity,Carbon::now(),1,0);
+                        $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Shopify',1,$sku,$variation_data,null,Auth::user()->name ?? 'Cron Job',$shopify_variation_result->quantity,$quantity,Carbon::now(),1,0);
                         // $account_info = ShopifyVariation::with('masterProduct')->where('sku' ,$sku)->get()->first();
 
                         $shopify_account_info = ShopifyAccount::find($master_info->account_id);
@@ -86,7 +86,7 @@ class Shopify implements EChannel
 
             }
         }catch (Exception $exception){
-                        $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Shopify',1,$sku,$variation_data,$woocom_put_result,Auth::user()->name ?? 'Quantity Sync',$woo_variation_result->actual_quantity,$quantity,Carbon::now(),'Error');
+                        $logInsertData = $this->paramToArray(url()->full(),$change_reason,'Shopify',1,$sku,$variation_data,$woocom_put_result,Auth::user()->name ?? 'Cron Job',$woo_variation_result->actual_quantity,$quantity,Carbon::now(),'Error');
         //                                continue;
 
         }

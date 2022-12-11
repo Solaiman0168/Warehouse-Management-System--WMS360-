@@ -211,6 +211,19 @@
                 })
         });
 
+        function onOff(id){
+            console.log(document.getElementById(id).value);
+            var value_clicked = $('#'+id).val();
+            if(value_clicked == 1){
+                document.getElementById(id).value = 0;
+                document.getElementById(id).checked = false;
+            }
+            else{
+                document.getElementById(id).value = 1;
+                document.getElementById(id).checked = true;
+            }
+        }
+
     </script>
 
 @endsection

@@ -25,4 +25,8 @@ class ProductOrder extends Model
     public function returnOrder(){
         return $this->belongsTo('App\ReturnOrder','order_id','order_id');
     }
+
+    public function shelf_product() {
+        return $this->hasMany('App\ShelfedProduct','variation_id','variation_id');
+    }
 }

@@ -32,10 +32,14 @@ use Illuminate\Support\Carbon;
 use DB;
 use App\EbayAccount;
 use App\Http\Controllers\CheckQuantity\CheckQuantity;
+use App\Traits\CommonFunction;
 use function foo\func;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
+    use CommonFunction;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -433,9 +437,9 @@ class InvoiceController extends Controller
 
     public function getQuantity(Request $request){
 
-
+        // dd($request->all());
         try {
-            if (isset($request->master_catalogue_id)) {
+            if (isset($request->master_catalogue_id) && $request->master_catalogue_id != null) {
                 $catalogueWithVariation = ProductVariation::where('product_draft_id',$request->master_catalogue_id)->get();
                 $invoiceReceiveInfo = [];
                 if(count($catalogueWithVariation) > 0){
@@ -457,19 +461,56 @@ class InvoiceController extends Controller
                 $all_shelver = Role::select('id','role_name')->with(['users_list:id,name'])->where('id',4)->first();
                 return response()->json(['invoice_info' => $invoiceReceiveInfo,'logged_in_shelver_id' => Auth::id(),'shelver_info' => $all_shelver]);
             }
+            if(isset($request->return_order_id) && $request->return_order_id != null){
+                $return_order_info = ReturnOrder::whereHas('orders', function($order){
+                    $this->channel_restriction_order_session($order);
+                })->with(['return_product_save' => function($query){
+                    $query->wherePivot('deleted_at','=', null)->withTrashed();
+                }])->where('id',$request->return_order_id)->get();
+                $invoiceReceiveInfo = [];
+                if(count($return_order_info) > 0){
+                    foreach ($return_order_info as $return_order) {
+                        foreach ($return_order->return_product_save as $variation) {
+                            $p_variation = '';
+                            $qr_code_url = url("/print-barcode/".$variation->id);
+                            if(isset($variation->attribute) && is_array(unserialize($variation->attribute))){
+                                foreach(unserialize($variation->attribute) as $attr){
+                                    $p_variation .= $attr['attribute_name'].'->'.$attr['terms_name'].',';
+                                }
+                            }
+                            $invoiceReceiveInfo [] = [
+                                'variation_id' => $variation->id,
+                                'sku' => $variation->sku,
+                                'variation' => rtrim($p_variation,','),
+                                'return_qty' => $variation->pivot->return_product_quantity,
+                                'cost_price' => $variation->cost_price,
+                                'qr' => '<a target="_blank" title="Click to print" href="'.$qr_code_url.'">
+                                            '.\SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($variation->sku).'
+                                        </a>'
+                            ];
+                        }
+                    }
+                }
+                $all_shelver = Role::select('id','role_name')->with(['users_list:id,name'])->where('id',4)->first();
+                return response()->json(['invoice_info' => $invoiceReceiveInfo,'logged_in_shelver_id' => Auth::id(),'shelver_info' => $all_shelver]);
+            }
             if (isset($request->order_id)) {
                 $result = ReturnOrder::select('id')->where('order_id', $request->order_id)->get()->first();
 
                 $return_order_result = ReturnOrderProduct::where(['return_order_id' => $result->id, 'variation_id' => $request->product_variation_id])->get()->first();
             }
             $product_price = ProductVariation::find($request->product_variation_id);
+            $qr_code_url = url("/print-barcode/".$product_price->id);
+            $product_qr_code = '<a target="_blank" title="Click to print" href="'.$qr_code_url.'">
+                                    '.\SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($product_price->sku).'
+                                </a>';
             $variation = '';
             foreach (\Opis\Closure\unserialize($product_price->attribute) as $attribute_value){
                 $variation .= $attribute_value['attribute_name'].' -> '.$attribute_value['terms_name'].' , ';
             }
             $all_variation = rtrim($variation, ', ');
             if (isset($request->order_id)){
-                return response()->json(['quantity' => $return_order_result->return_product_quantity ?? '', 'cost_price' => $product_price->cost_price, 'variation' => $all_variation]);
+                return response()->json(['quantity' => $return_order_result->return_product_quantity ?? '', 'cost_price' => $product_price->cost_price, 'variation' => $all_variation, 'qr_code' => $product_qr_code]);
             }else{
                 return response()->json(['variation' => $all_variation, 'cost_price' => $product_price->cost_price]);
             }
@@ -487,21 +528,44 @@ class InvoiceController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show()
+    public function show(Request $request)
     {
         if(Auth::check() && in_array('1',explode(',',Auth::user()->role))) {
-            $pending_products = InvoiceProductVariation::where([['shelving_status', 0]])->orderBy('id', 'desc')->paginate(50);
+            $search_value = $request->search_value;
+            $pending_products = InvoiceProductVariation::where([['shelving_status', 0]]);
+            if($request->is_search){
+                $invoice_info = Invoice::where('invoice_number', $search_value)->where('deleted_at', NULL)->first()->toArray();
+                $invoice_product_variation_info = InvoiceProductVariation::where('invoice_id', $invoice_info['id'])->where('deleted_at', NULL)->get()->toArray();
+                $invoice_product_ids = [];
+                foreach ($invoice_product_variation_info as $invoice_product) {
+                    $invoice_product_ids[] = $invoice_product['id'];
+                }
+                $pending_products = $pending_products->whereIn('id', $invoice_product_ids);
+            }
+            $pending_products = $pending_products->orderBy('id', 'desc')->paginate(50);
             $shelver_list = Role::with(['users_list'])->where('id', 4)->first();
         }else{
-            $pending_products = InvoiceProductVariation::where([['shelving_status', 0], ['shelver_user_id' => Auth::user()->id]])->orderBy('id', 'desc')->paginate(50);
+            $search_value = $request->search_value;
+            $pending_products = InvoiceProductVariation::where([['shelving_status', 0], ['shelver_user_id' => Auth::user()->id]]);
+            if($request->is_search){
+                $invoice_info = Invoice::where('invoice_number', $search_value)->where('deleted_at', NULL)->first()->toArray();
+                $invoice_product_variation_info = InvoiceProductVariation::where('invoice_id', $invoice_info['id'])->where('deleted_at', NULL)->get()->toArray();
+                $invoice_product_ids = [];
+                foreach ($invoice_product_variation_info as $invoice_product) {
+                    $invoice_product_ids[] = $invoice_product['id'];
+                }
+                $pending_products = $pending_products->whereIn('id', $invoice_product_ids);
+            }
+            $pending_products = $pending_products->orderBy('id', 'desc')->paginate(50);
             $shelver_list = Role::with(['users_list'])->where('id', 4)->first();
         }
+        
         $shelfUse = $this->clientInfo();
         $decode_InvoiceProductVariation = json_decode(json_encode($pending_products));
-//        echo '<pre>';
-//        print_r($decode_InvoiceProductVariation);
-//        exit();
-        $content = view('invoice.pending_receive',compact('pending_products','shelver_list', 'decode_InvoiceProductVariation','shelfUse'));
+    //    echo '<pre>';
+    //    print_r($decode_InvoiceProductVariation);
+    //    exit();
+        $content = view('invoice.pending_receive',compact('pending_products','shelver_list', 'decode_InvoiceProductVariation','shelfUse','search_value'));
         return view('master',compact('content'));
     }
 
@@ -510,29 +574,32 @@ class InvoiceController extends Controller
         try{
             $search_value = $request->search_value;
             if(Auth::check() && in_array('1',explode(',',Auth::user()->role))) {
-                $pending_products = InvoiceProductVariation::
-                    where([['invoice_product_variation.shelving_status', 0], ['invoice_product_variation.product_type','!=', 0]])
-                    ->leftJoin('invoices', 'invoice_product_variation.invoice_id', '=', 'invoices.id')
-                    ->select('invoice_product_variation.*', 'invoices.id', 'invoices.invoice_number')
-                    ->where('invoices.invoice_number', $search_value)
-                    ->groupBy('invoice_product_variation.id')
-                    ->paginate(50);
+                $invoice_info = Invoice::where('invoice_number', $search_value)->where('deleted_at', NULL)->first()->toArray();
+                $invoice_product_variation_info = InvoiceProductVariation::where('invoice_id', $invoice_info['id'])->where('deleted_at', NULL)->get()->toArray();
+                $invoice_product_ids = [];
+                foreach ($invoice_product_variation_info as $invoice_product) {
+                    $invoice_product_ids[] = $invoice_product['id'];
+                }
+                $pending_products = InvoiceProductVariation::where([['shelving_status', 0]])->whereIn('id', $invoice_product_ids)->orderBy('id', 'desc')->paginate(50);
                 $shelver_list = Role::with(['users_list'])->where('id', 4)->first();
+                // dd($pending_products);
             }else{
-                $pending_products = InvoiceProductVariation::
-                    where([['invoice_product_variation.shelving_status', 0], ['invoice_product_variation.product_type','!=', 0]])
-                    ->leftJoin('invoices', 'invoice_product_variation.invoice_id', '=', 'invoices.id')
-                    ->select('invoice_product_variation.*', 'invoices.id', 'invoices.invoice_number')
-                    ->where('invoices.invoice_number', $search_value)
-                    ->groupBy('invoice_product_variation.id')
-                    ->paginate(50);
+                $invoice_info = Invoice::where('invoice_number', $search_value)->where('deleted_at', NULL)->first()->toArray();
+                $invoice_product_variation_info = InvoiceProductVariation::where('invoice_id', $invoice_info['id'])->where('deleted_at', NULL)->get()->toArray();
+                $invoice_product_ids = [];
+                foreach ($invoice_product_variation_info as $invoice_product) {
+                    $invoice_product_ids[] = $invoice_product['id'];
+                }
+                $pending_products = InvoiceProductVariation::where([['shelving_status', 0]])->whereIn('id', $invoice_product_ids)->orderBy('id', 'desc')->paginate(50);
                 $shelver_list = Role::with(['users_list'])->where('id', 4)->first();
+                // dd($pending_products);
             }
+          
             $shelfUse = $this->clientInfo();
             $decode_InvoiceProductVariation = json_decode(json_encode($pending_products));
-//            echo '<pre>';
-//            print_r($decode_InvoiceProductVariation);
-//            exit();
+        //    echo '<pre>';
+        //    print_r($decode_InvoiceProductVariation);
+        //    exit();
             return view('invoice.pending_receive',compact('pending_products','shelver_list', 'decode_InvoiceProductVariation','shelfUse','search_value'));
         }catch (\Exception $exception) {
             return $exception->getMessage();
@@ -750,6 +817,42 @@ class InvoiceController extends Controller
 
     }
 
+    public function selectedProductPrint(Request $request){
+        // dd($request->all());
+        $product_variation = [];
+        foreach ($request->variation_ids as $key => $value) {
+            $product_variation[] = ProductVariation::where('id', $value)->first();
+        }
+
+        $product_draft = ProductDraft::where('id', $product_variation[0]->product_draft_id)->first();
+        $brand_name = Brand::find($product_draft->brand_id)->name ?? '';
+
+        $data = '';
+        foreach ($product_variation as $key => $variation) {
+            $attribute_value = '';
+            foreach (\Opis\Closure\unserialize($variation->attribute) as $attribute){
+                $attribute_value = $attribute_value ."<span style='font-size: 10px;padding-left: 0px;display: inline-block;'><b>".$attribute["attribute_name"] .': '.$attribute["terms_name"]." </b><span><br>";
+            }
+            // dd($variation->id);
+            $data .= "<div style='height: 100px; width: 180px;'>
+            <div style='height: 65px; width: 66px;float: left;padding: 0 !important;margin: 0 !important;'>".\SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)
+            ->generate($variation->sku)."
+            </div>
+            <div style='height: 65px; width: 106px;float: left;padding-left: 0px !important;margin: 0 !important; font-size: 18px'>
+            <span style='font-size: 15px;padding-left: 0px;clear: both;display: inline-block;
+                  overflow: hidden;white-space: nowrap;'>".$brand_name."</b><span><br>".
+            $attribute_value.
+
+            "</div>
+            <div style = 'height: 10px;padding: 0 !important;margin: 0 !important;display: inline-block;'><span style='font-size: 20px;'><b>$variation->sku</b></span></div>
+        </div><br>
+         ";
+        }
+
+        return view('product_draft.view_selected_barcode',compact('data'))->render();
+
+    }
+
     public function bar128($text){
 
         global $char128asc,$char128charWidth,$char128wid;
@@ -898,7 +1001,8 @@ class InvoiceController extends Controller
      */
     public function catalogueProductInvoiceReceive($id,$var_id = null,$type = null,$return_id = null, $variationId = null){
         try {
-            $catalogue_name = ProductDraft::find($id);
+            // dd($id,$var_id,$type,$return_id,$variationId);
+            $catalogue_name = ProductDraft::find($id); 
             $vendors = Vendor::get()->all();
             $all_shelver = Role::with(['users_list'])->where('id',4)->first();
             $variation = '';
@@ -906,9 +1010,13 @@ class InvoiceController extends Controller
             $singleVariationInfo = [];
             $shelfUse = Client::first()->shelf_use;
             $allInvoiceNumbers = [];
+            $main_order_id = null;
+            $order_id = null;
+            $product_variations = null;
+            $return_products_Sku = null;
             if($var_id != null){
                 if($return_id == null) {
-                    $product_variations = ProductVariation::select('id','sku','cost_price')->where('product_draft_id',$id)->orderBy('created_at','DESC')->get()->all();
+                    $product_variations = ProductVariation::select('id','sku','cost_price','attribute')->where('product_draft_id',$id)->orderBy('created_at','DESC')->get()->all();
                     $variation_info = ProductVariation::find($var_id);
                     $variation = '';
                     if($variation_info){
@@ -921,7 +1029,8 @@ class InvoiceController extends Controller
                         $singleVariationInfo['cost_price'] = $variation_info->cost_price;
                     }
                 }else{
-                    $order_id = ReturnOrderProduct::select('variation_id')->where('return_order_id',$return_id)->get();
+                    $main_order_id = $var_id;
+                    $order_id = ReturnOrderProduct::select('variation_id','return_product_quantity')->where('return_order_id',$return_id)->get();
                     $variation_info = ProductVariation::find($var_id);
                     $variation = '';
                     if($variation_info){
@@ -938,28 +1047,70 @@ class InvoiceController extends Controller
                             $ids[] = $id->variation_id;
                         }
                         $implode_id = implode(',',$ids);
-                        $product_variations = ProductVariation::select('id','sku','cost_price','attribute')->whereIn('id',$ids)
-                            ->orderByRaw("FIELD(id, $implode_id)")
-                            ->orderBy('created_at','DESC')
-                            ->get()->all();
-                        if($variationId){
-                            $singleOrderVariationInfo = ProductVariation::find($variationId);
-                            foreach (\Opis\Closure\unserialize($singleOrderVariationInfo->attribute) as $attribute){
+                        
+                        // $product_variations = ProductVariation::select('id','sku','cost_price','attribute')->whereIn('id',$ids)
+                        //     ->orderByRaw("FIELD(id, $implode_id)")
+                        //     ->orderBy('created_at','DESC')
+                        //     ->get()->all();
+
+                        if($variationId == null){
+                            $product_variations = ReturnOrder::whereHas('orders', function($order){
+                                $this->channel_restriction_order_session($order);
+                            })->with(['return_product_save' => function($query){
+                                $query->wherePivot('deleted_at','=', null)->withTrashed();
+                            }])->where('id',$return_id)->get();
+                        }
+                       
+
+                        if(isset($variationId) && $variationId != null){
+                            $return_order_variations = ReturnOrder::whereHas('orders', function($order){
+                                $this->channel_restriction_order_session($order);
+                            })->with(['return_product_save' => function($query){
+                                $query->wherePivot('deleted_at','=', null)->withTrashed();
+                            }])->where('id',$return_id)->get();
+
+                            $return_products_Sku = [];
+                            foreach ($return_order_variations as $return_order) {
+                                foreach ($return_order->return_product_save as $variation) {
+                                    $return_products_Sku[] = [
+                                        'id' => $variation->id,
+                                        'sku' => $variation->sku
+                                    ];
+                                }
+                            }
+                            $variation='';
+                            foreach (\Opis\Closure\unserialize(ProductVariation::find($variationId)->attribute) as $attribute){
                                 $variation .= $attribute['attribute_name'].' -> '.$attribute['terms_name'].',';
                             }
                             $singleVariationInfo['variation'] = rtrim($variation, ',');
-                            $singleVariationInfo['cost_price'] = $singleOrderVariationInfo->cost_price;
+                            $singleVariationInfo['id'] = ProductVariation::find($variationId)->id;
+                            $singleVariationInfo['sku'] = ProductVariation::find($variationId)->sku;
+                            $singleVariationInfo['cost_price'] = ProductVariation::find($variationId)->cost_price;
                             $singleVariationInfo['return_quantity'] = ReturnOrderProduct::where('return_order_id',$return_id)->where('variation_id',$variationId)->first()->return_product_quantity;
-                        }else{
-                            if(count($product_variations) == 1){
-                                foreach (\Opis\Closure\unserialize($product_variations[0]->attribute) as $attribute){
-                                    $variation .= $attribute['attribute_name'].' -> '.$attribute['terms_name'].',';
-                                }
-                                $singleVariationInfo['variation'] = rtrim($variation, ',');
-                                $singleVariationInfo['cost_price'] = $product_variations[0]->cost_price;
-                                $singleVariationInfo['return_quantity'] = ReturnOrderProduct::where('return_order_id',$return_id)->where('variation_id',$product_variations[0]->id)->first()->return_product_quantity;
-                            }
                         }
+                        
+
+                        // dd($product_variations);
+
+                        // if($variationId){
+                        //     $singleOrderVariationInfo = ProductVariation::find($variationId);
+                        //     foreach (\Opis\Closure\unserialize($singleOrderVariationInfo->attribute) as $attribute){
+                        //         $variation .= $attribute['attribute_name'].' -> '.$attribute['terms_name'].',';
+                        //     }
+                        //     $singleVariationInfo['variation'] = rtrim($variation, ',');
+                        //     $singleVariationInfo['cost_price'] = $singleOrderVariationInfo->cost_price;
+                        //     $singleVariationInfo['return_quantity'] = ReturnOrderProduct::where('return_order_id',$return_id)->where('variation_id',$variationId)->first()->return_product_quantity;
+                        // }else{
+                        //     if(count($product_variations) == 1){
+                        //         foreach (\Opis\Closure\unserialize($product_variations[0]->attribute) as $attribute){
+                        //             $variation .= $attribute['attribute_name'].' -> '.$attribute['terms_name'].',';
+                        //         }
+                        //         $singleVariationInfo['variation'] = rtrim($variation, ',');
+                        //         $singleVariationInfo['cost_price'] = $product_variations[0]->cost_price;
+                        //         $singleVariationInfo['return_quantity'] = ReturnOrderProduct::where('return_order_id',$return_id)->where('variation_id',$product_variations[0]->id)->first()->return_product_quantity;
+                        //     }
+                        // }
+
                         $allInvoiceIds = [];
                         $supplierIds = [];
                         $invoiceVariationInfo = InvoiceProductVariation::whereIn('product_variation_id',$ids)->get()->toArray();
@@ -1000,13 +1151,25 @@ class InvoiceController extends Controller
                 }
 
             }else{
-                $product_variations = ProductVariation::select('id','sku')->where('product_draft_id',$id)->get()->all();
-
+                $product_variations = ProductVariation::select('id','sku','cost_price','attribute')->where('product_draft_id',$id)->get()->all();
+                $order_id = null;
             }
+
             $variationId = $variationId ? $variationId : (!$return_id ? $var_id : null);
             $conditions = Condition::all();
-            $content = view('invoice.catalogue_product_invoice_receive',compact('id','vendors','all_shelver','product_variations','catalogue_name','var_id','singleVariationInfo','return_id','variation_info','conditions','shelfUse','allInvoiceNumbers','variationId'));
-            return view('master',compact('content'));
+
+            $cost_price = $variation_info->cost_price ?? null;
+            
+            $invoice_part = $this->productInvoiceReceiveModalData($catalogue_name,$vendors,$allInvoiceNumbers,$shelfUse,$order_id,$product_variations,$main_order_id,$return_id,$variationId,$singleVariationInfo,$return_products_Sku,'not_dispatched_catalog');          
+
+            return response()->json(['invoice_part' => $invoice_part]);
+            
+
+            // if($request->has('manage-variation')){
+            //     $content = view('invoice.catalogue_product_invoice_receive',compact('id','vendors','all_shelver','product_variations','catalogue_name','var_id','singleVariationInfo','return_id','variation_info','conditions','shelfUse','allInvoiceNumbers','variationId'));
+            //     return view('master',compact('content'));
+            // }
+        
         }catch (\Exception $exception){
             return $exception->getMessage();
             // return redirect('exception')->with('exception',$exception->getMessge());
@@ -1043,6 +1206,7 @@ class InvoiceController extends Controller
      * Modified Content : Sync quantity in different channel depending on client app use
      */
     public function saveCatalogueProductInvoiceReceive(Request $request){
+        // dd($request->all());
         try {
             $invoice_result = Invoice::select('id')->where('invoice_number',$request->invoice_number)->get()->first();
             $shelf_use = $this->clientInfo();
@@ -1096,7 +1260,7 @@ class InvoiceController extends Controller
                 $update = Invoice::where('id',$invoice_create_result->id)->update([
                     'invoice_total_price' => $total_price
                 ]);
-                return back()->with('success','Product successfully received at invoice number: '.$request->invoice_number);
+                return redirect('awaiting-shelving')->with('invoice_success_message','Product successfully received at invoice number: '.$request->invoice_number);
             }else{
                 $total_price = 0;
                 if(count($request->product_variation_id) > 0) {
@@ -1135,7 +1299,7 @@ class InvoiceController extends Controller
                 $update = Invoice::where('id',$invoice_result->id)->update([
                     'invoice_total_price' => ($before_total + $total_price)
                 ]);
-                return back()->with('success','Product successfully received at invoice number: '.$request->invoice_number);
+                return redirect('awaiting-shelving')->with('invoice_success_message','Product successfully received at invoice number: '.$request->invoice_number);
             }
         }catch (\Exception $exception){
             return redirect('exception')->with('exception',$exception->getMessage());

@@ -23,4 +23,5 @@ class ShopifyMasterProduct extends Model
         return $this->belongsTo('App\shopify\ShopifyAccount', 'account_id', 'id')->select('id', 'account_name','account_logo','shop_url');
 
     }
+
 }

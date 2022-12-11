@@ -13,6 +13,8 @@ use PHPUnit\Exception;
 use App\DefectedProduct;
 use App\DefectProductAction;
 use App\DefectedProductReason;
+use App\Invoice;
+use App\ProductVariation;
 
 
 class InvoiceProductVariationController extends Controller
@@ -75,8 +77,38 @@ class InvoiceProductVariationController extends Controller
         $invoice_product = InvoiceProductVariation::find($id);
         $users = User::get()->all();
         $conditions = Condition::all();
-        $content = view('invoice_product.invoice_product_edit',compact('invoice_product','users','shelfUse','conditions'));
-        return view('master',compact('content'));
+        $selectedShelverArray = [];
+        $shelverArray = [];
+        $invoiceArray = [];
+        if(isset($invoice_product->shelver_user_id)){
+            $shelver = User::find($invoice_product->shelver_user_id)->name;
+            $selectedShelverArray[$invoice_product->shelver_user_id] = $shelver;
+            foreach ($users as $user) {
+                if (User::find($invoice_product->shelver_user_id)->name != $user->name){
+                    $shelverArray[$user->id] = $user->name;
+                }
+            }
+        }else{
+            foreach ($users as $user) {
+                $shelverArray[$user->id] = $user->name;
+            }
+        }
+        // dd($shelverArray);
+        $invoiceArray = [
+            'invoice_no' => Invoice::find($invoice_product->invoice_id)->invoice_number ?? null,
+            'sku' => ProductVariation::find($invoice_product->product_variation_id)->sku ?? null,
+            'selected_shelver' => $selectedShelverArray ?? null,
+            'shelver' => $shelverArray ?? null,
+            'quantity' => $invoice_product->quantity,
+            'price' => $invoice_product->price,
+            'total_price' => $invoice_product->total_price,
+            'shelfUse' => $shelfUse
+        ];
+        // dd($invoiceArray);
+
+        // $content = view('invoice_product.invoice_product_edit',compact('invoice_product','users','shelfUse','conditions','invoiceArray'));
+        // return view('master',compact('content'));
+        return response()->json(['data' => json_decode(json_encode($invoiceArray))]);
     }
 
     public function clientInfo(){
@@ -119,9 +151,10 @@ class InvoiceProductVariationController extends Controller
             }
 
             if ($result == 1){
-                return redirect('pending-receive')->with('success', 'updated successfully');
+                // return redirect('pending-receive')->with('success', 'updated successfully');
+                return back()->with('invoice_update_success', 'Updated successfully')->with('invoice_update_id', $invoiceProductVariation->id); 
             }else{
-                return back()->with('error', 'Not Updated : Quantity lower then shelved');
+                return back()->with('invoice_update_error', 'Not Updated : Quantity lower then shelved');
             }
         }catch (Exception $exception){
             return redirect('pending-receive')->with('error', $exception);

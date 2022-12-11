@@ -299,7 +299,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box table-responsive catalogue shadow">
                             <!--Start Backend error handler-->
@@ -348,7 +348,7 @@
                                                 <input type="text" name="name" id="name" class="form-control" placeholder="Search Catalogue...." required>
                                             </div>
                                             <div class="submit-btn">
-                                                <button class="search-btn waves-effect waves-light" type="submit" onclick="catalogue_search()">Search</button>
+                                                <button class="search-btn waves-effect waves-light draft-pending-page" type="submit" onclick="catalogue_search()">Search</button>
                                                 <input type="hidden" name="status" id="status" value="draft">
                                             </div>
                                         </form>
@@ -441,7 +441,7 @@
 
                                   <!--Start Table-->
 
-                                <table class="draft_search_result product-draft-table product-draft-table-row-expand w-100">
+                                <table class="draft_search_result product-draft-table product-draft-table-row-expand catalog-table w-100">
                                     <!--start table head-->
                                     <thead style="background-color: {{$setting->master_draft_catalogue->table_header_color ?? '#c5bdbd'}};
                                         color: {{$setting->master_draft_catalogue->table_header_text_color ?? '#292424'}}">
@@ -973,9 +973,9 @@
                                                                 <div class="align-items-center mr-2"><a class="btn-size edit-btn" href="{{route('product-draft.edit',$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i></a></div>
                                                                 <div class="align-items-center mr-2"><a class="btn-size view-btn" href="{{route('product-draft.show',$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="View"><i class="fa fa-eye" aria-hidden="true"></i></a></div>
                                                                 <div class="align-items-center mr-2"><a class="btn-size print-btn" href="{{url('print-bulk-barcode/'.$product_draft->id)}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Print"><i class="fa fa-print" aria-hidden="true"></i></a></div>
-                                                                <div class="align-items-center mr-2"> <a class="btn-size add-product-btn" href="{{url('catalogue/'.$product_draft->id.'/product')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Manage Variation"><i class="fa fa-chart-bar" aria-hidden="true"></i></a></div>
+                                                                <div class="align-items-center"> <a class="btn-size add-product-btn" href="{{url('catalogue/'.$product_draft->id.'/product')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Manage Variation"><i class="fa fa-chart-bar" aria-hidden="true"></i></a></div>
                                                                 {{-- <div class="align-items-center"> <a class="btn-size add-terms-catalogue-btn" href="{{url('add-additional-terms-draft/'.$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list"></i></a></div> --}}
-                                                                <div class="align-items-center" onclick="addTermsCatalog({{ $product_draft->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div>
+                                                                {{-- <div class="align-items-center" onclick="addTermsCatalog({{ $product_draft->id }}, this)"> <a class="btn-size add-terms-catalogue-btn cursor-pointer" data-toggle="tooltip" data-placement="top" title="Add Terms to Catalogue"><i class="fas fa-list text-white"></i></a></div> --}}
                                                             </div>
                                                             <div class="action-2">
                                                                 <div class="align-items-center mr-2">
@@ -985,7 +985,8 @@
                                                                         <button class="del-pub publish-btn" style="cursor: pointer" data-toggle="tooltip" data-placement="top" title="Complete"><i class="fa fa-upload" aria-hidden="true"></i> </button>
                                                                     </form>
                                                                 </div>
-                                                                <div class="align-items-center mr-2"><a class="btn-size catalogue-invoice-btn invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div>
+                                                                {{-- <div class="align-items-center mr-2"><a class="btn-size catalogue-invoice-btn invoice-btn" href="{{url('catalogue-product-invoice-receive/'.$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div> --}}
+                                                                <div class="align-items-center cursor-pointer text-white mr-2" onclick="receive_invoice_modal(this,{{$product_draft->id}},null,null,null,null)"><a class="btn-size catalogue-invoice-btn invoice-btn" target="_blank" data-toggle="tooltip" data-placement="top" title="Receive Invoice"><i class='fa fa-book'></i></a></div>
                                                                 <div class="align-items-center mr-2"> <a class="btn-size duplicate-btn" href="{{url('duplicate-draft-catalogue/'.$product_draft->id ?? '')}}" target="_blank" data-toggle="tooltip" data-placement="top" title="Duplicate"><i class="fa fa-clone" aria-hidden="true"></i></a></div>
                                                                 <div class="align-items-center">
                                                                     <form action="{{route('product-draft.destroy',$product_draft->id ?? '')}}" method="post">
@@ -1162,7 +1163,6 @@
             var category_id = $('#category_id').val();
             var status = $('#status').val();
 
-
             $.ajax({
                 type: 'POST',
                 url: '<?php echo e(url('/search-product-list').'?_token='.csrf_token()); ?>',
@@ -1174,12 +1174,15 @@
                     "skip": skip,
                     "take": take,
                     "ids": ids,
+                    "page_status": "draft_catalog",
                 },
                 beforeSend: function(){
 
                     $("#ajax_loader").show();
                 },
                 success: function(response){
+                    console.log(response.setting)
+                    console.log(response.page_status)
                     if (response.ids.length === 0) {
                         $(document).ready(function() {
                             Swal.fire(
@@ -1195,6 +1198,8 @@
                     skip = parseInt(response.skip)+10;
                     ids = ids.concat(response.ids);
 
+                    var item = response.ids.length
+                    $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
 
                 },
                 complete:function(data){
@@ -1268,7 +1273,8 @@
                             "search_priority": searchPriority,
                             "skip": skip,
                             "take": take,
-                            'ids': ids
+                            'ids': ids,
+                            "page_status": "draft_catalog",
                         },
                         beforeSend: function(){
                             window.stop();
@@ -1281,6 +1287,10 @@
                             // var div = document.getElementById('table');
                             // div.innerHTML +=response.html;
                             ids = ids.concat(response.ids);
+
+                            var item = ids.length-1
+                            $('.datatable-pages').text(item + (item == 1 ? ' item' : ' items') + ' found')
+                            // console.log('ids ' + ids.length)
 
                         },
                         complete:function(data){

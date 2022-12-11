@@ -180,13 +180,22 @@
                                                             <!-- <div class="col-md-4 mb-3"> -->
                                                                 <select name='condition_id' class="form-control select2" id="condition-select">
                                                                     <option value="">Select Condition</option>
-                                                                    @foreach($conditions['Category']['ConditionValues']['Condition'] as $condition)
-                                                                        @if($condition['ID'] == $result->condition_id)
-                                                                            <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" selected>{{$condition['DisplayName']}}</option>
+                                                                    @if(isset($conditions['Category']['ConditionValues']['Condition'][0]))
+                                                                        @foreach($conditions['Category']['ConditionValues']['Condition'] as $condition)
+                                                                            @if($condition['ID'] == $result->condition_id)
+                                                                                <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" selected>{{$condition['DisplayName']}}</option>
+                                                                            @else
+                                                                                <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" >{{$condition['DisplayName']}}</option>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    @else
+                                                                        @if($conditions['Category']['ConditionValues']['Condition']['ID'] == $result->condition_id)
+                                                                            <option value="{{$conditions['Category']['ConditionValues']['Condition']['ID']}}/{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}" selected>{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}</option>
                                                                         @else
-                                                                            <option value="{{$condition['ID']}}/{{$condition['DisplayName']}}" >{{$condition['DisplayName']}}</option>
+                                                                            <option value="{{$conditions['Category']['ConditionValues']['Condition']['ID']}}/{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}" >{{$conditions['Category']['ConditionValues']['Condition']['DisplayName']}}</option>
                                                                         @endif
-                                                                    @endforeach
+                                                                    @endif
+
                                                                 </select>
                                                             <!-- </div> -->
                                                         @else
@@ -311,6 +320,7 @@
                                                     <div class="col-md-9">
                                                         <!-- <div class="row d-flex justify-content-between">
                                                             <div class="col-md-4 mb-3"> -->
+                                                        @if(isset($shop_categories['Store']['CustomCategories']['CustomCategory'][0]))
                                                                 <select name='store_id' class="form-control select2">
                                                                     @foreach($shop_categories['Store']['CustomCategories']['CustomCategory'] as $shop_category)
                                                                         @if(isset($shop_category['ChildCategory']))
@@ -342,6 +352,11 @@
                                                                         @endif
                                                                     @endforeach
                                                                 </select>
+                                                        @else
+                                                            <select name='store_id' class="form-control select2">
+                                                                <option value="{{$shop_categories['Store']['CustomCategories']['CustomCategory']['CategoryID']}}/{{$shop_categories['Store']['CustomCategories']['CustomCategory']['Name']}}" selected>{{$shop_categories['Store']['CustomCategories']['CustomCategory']['Name']}}</option>
+                                                            </select>
+                                                        @endif
                                                             <!-- </div>
                                                         </div> -->
                                                     </div>
@@ -371,6 +386,7 @@
                                                     <div class="col-md-9">
                                                         <!-- <div class="row d-flex justify-content-between"> -->
                                                             <!-- <div class="col-md-4 mb-3"> -->
+                                                        @if(isset($shop_categories['Store']['CustomCategories']['CustomCategory'][0]))
                                                                 <select name='store2_id' class="form-control select2">
                                                                     @foreach($shop_categories['Store']['CustomCategories']['CustomCategory'] as $shop_category)
                                                                         @if(isset($shop_category['ChildCategory']))
@@ -402,6 +418,11 @@
                                                                         @endif
                                                                     @endforeach
                                                                 </select>
+                                                        @else
+                                                            <select name='store_id' class="form-control select2">
+                                                                <option value="{{$shop_categories['Store']['CustomCategories']['CustomCategory']['CategoryID']}}/{{$shop_categories['Store']['CustomCategories']['CustomCategory']['Name']}}" selected>{{$shop_categories['Store']['CustomCategories']['CustomCategory']['Name']}}</option>
+                                                            </select>
+                                                        @endif
                                                             <!-- </div> -->
                                                         <!-- </div> -->
                                                     </div>
@@ -424,11 +445,12 @@
                                                 </div>
                                                 <div class="col-md-9 d-flex align-items-center">
                                                     <div class="custom-control custom-checkbox">
-                                                        <input type="checkbox" name="private_listing" value="1" class="custom-control-input private_listing" id="private_listing"
-                                                        @if($result->private_listing)
-                                                            checked
+{{--                                                        <input type="checkbox" name="private_listing" value="1" class="custom-control-input private_listing" id="private_listing"--}}
+{{--                                                        @if($result->private_listing)--}}
+{{--                                                            checked--}}
 
-                                                        @endif>
+{{--                                                        @endif>--}}
+                                                        @include('partials.private_listing.edit_check_box',['result' => $result->private_listing])
                                                         <label class="custom-control-label" for="private_listing"> </label>
                                                     </div>
                                                     {{-- <div class="onoffswitch mb-sm-10 res-onoff-btn">
@@ -496,7 +518,7 @@
                                                     <span id="start_price" class="float-right"></span>
                                                     @error('start_price')
                                                     <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
+{{--                                                        <strong>{{ $message }}</strong>--}}
                                                     </span>
                                                     @enderror
                                                 </div>
@@ -537,18 +559,19 @@
                                                 <div class="col-md-9 d-flex align-items-center">
                                                     <!-- <div class="row d-flex justify-content-between"> -->
                                                     <!-- <div class="col-md-4 mb-3"> -->
-                                                    <select name="cross_border_trade" class="form-control" id="condition-select">
-                                                        @if($result->cross_border_trade == "None")
-                                                            <option value="None" selected>-</option>
-                                                            <option value="North America">eBay US and Canada</option>
-                                                        @elseif($result->cross_border_trade == "North America")
-                                                            <option value="None">-</option>
-                                                            <option value="North America" selected>eBay US and Canada</option>
-                                                        @else
-                                                            <option value="None" selected>-</option>
-                                                            <option value="North America" >eBay US and Canada</option>
-                                                        @endif
-                                                    </select>
+{{--                                                    <select name="cross_border_trade" class="form-control" id="condition-select">--}}
+{{--                                                        @if($result->cross_border_trade == "None")--}}
+{{--                                                            <option value="None" selected>-</option>--}}
+{{--                                                            <option value="North America">eBay US and Canada</option>--}}
+{{--                                                        @elseif($result->cross_border_trade == "North America")--}}
+{{--                                                            <option value="None">-</option>--}}
+{{--                                                            <option value="North America" selected>eBay US and Canada</option>--}}
+{{--                                                        @else--}}
+{{--                                                            <option value="None" selected>-</option>--}}
+{{--                                                            <option value="North America" >eBay US and Canada</option>--}}
+{{--                                                        @endif--}}
+{{--                                                    </select>--}}
+                                                    @include('partials.cross_border_trade.edit_drop_down',['cross_border_trade' => $result->cross_border_trade])
                                                     <!-- </div> -->
                                                     <!-- </div> -->
                                                 </div>
@@ -1253,7 +1276,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        @isset($item_specifics['Recommendations']['NameRecommendation'])
+                                        @isset($item_specifics['aspects'])
                                             <div class="col-md-10">
 
 
@@ -1263,33 +1286,33 @@
 
 
                                                 <div class="row d-flex justify-content-between">
-                                                    @foreach($item_specifics['Recommendations']['NameRecommendation'] as $index => $item_specific)
+                                                    @foreach($item_specifics['aspects'] as $index => $aspect)
                                                         @php
                                                             $counter = 0;
                                                             if ($result->type == 'variable' && isset($result->variation_specifics)){
                                                                 foreach (unserialize($result->variation_specifics) as $key => $value){
-                                                                    if($key == $item_specific['Name']){
+                                                                    if($key == $aspect['localizedAspectName']){
                                                                         $counter++;
                                                                     }
                                                                 }
                                                             }
 
                                                         @endphp
-                                                        @if(isset($item_specific['Name']) && $counter == 0)
+                                                        @if(isset($aspect['localizedAspectName']) && $counter == 0)
                                                             <div class="col-md-3 mb-3">
-                                                                <label style="font-weight: normal">{{$item_specific['Name']}}
-                                                                    @if($item_specific['ValidationRules']['UsageConstraint'] == 'Required')
+                                                                <label style="font-weight: normal">{{$aspect['localizedAspectName']}}
+                                                                    @if($aspect['aspectConstraint']['aspectRequired'])
                                                                         <strong>*</strong>
                                                                     @endif
                                                                 </label>
 
-                                                                <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$item_specific['Name']}}]' value="{{isset($item_specific_results[$item_specific['Name']]) ? $item_specific_results[$item_specific['Name']] : ''}}">
-                                                                @if(isset($item_specific['ValueRecommendation']))
+                                                                <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$aspect['localizedAspectName']}}]' value="{{isset($item_specific_results[$aspect['localizedAspectName']]) ? $item_specific_results[$aspect['localizedAspectName']] : ''}}">
+                                                                @if(isset($aspect['aspectValues']))
 
                                                                     <datalist id="modelslist{{$index}}">
-                                                                        @foreach($item_specific['ValueRecommendation'] as $recommendation)
-                                                                            @if(isset($recommendation['Value']))
-                                                                                <option value="{{$recommendation['Value']}}">
+                                                                        @foreach($aspect['aspectValues'] as $recommendation)
+                                                                            @if(isset($recommendation['localizedValue']))
+                                                                                <option value="{{$recommendation['localizedValue']}}">
                                                                             @endif
                                                                         @endforeach
                                                                     </datalist>
@@ -1344,7 +1367,7 @@
                                                 <div class="ebay-description-content" style="display: none;"> --}}
                                                     <div class="d-flex align-items-center">
                                                         <div class="custom-control custom-checkbox">
-                                                            <input name="campaign_checkbox" type="checkbox" class="custom-control-input campaign_checkbox" id="campaign_checkbox" checked>
+                                                            <input name="campaign_checkbox" type="checkbox" class="custom-control-input campaign_checkbox" id="campaign_checkbox" @if ($result->campaign_data != null)  checked @else unchecked @endif>
                                                             <label class="custom-control-label" for="campaign_checkbox"> </label>
                                                         </div>
                                                         <div>
@@ -1383,8 +1406,6 @@
                                                                     @foreach($campaigns->campaigns as $campaign)
                                                                         @if($campaign->campaignId == $campaign_id)
                                                                             <option value="{{$campaign->campaignId}}" data-campaign="" selected>{{$campaign->campaignName}}</option>
-                                                                        @elseif($campaign_id == null)
-                                                                            <option value="null" data-campaign="" selected>Remove Campaign</option>
                                                                         @else
                                                                             <option value="{{$campaign->campaignId}}" data-campaign="" >{{$campaign->campaignName}}</option>
                                                                         @endif

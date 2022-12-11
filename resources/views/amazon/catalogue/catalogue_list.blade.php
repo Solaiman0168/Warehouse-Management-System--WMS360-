@@ -61,46 +61,14 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="account" class="onoffswitch-checkbox" id="category" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['account']) && $setting['amazon']['amazon_active_product']['account'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['account']) && $setting['amazon']['amazon_active_product']['account'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="category">
+                                            <input type="checkbox" name="account" class="onoffswitch-checkbox" id="account" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['account']) && $setting['amazon']['amazon_active_product']['account'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['account']) && $setting['amazon']['amazon_active_product']['account'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="account">
                                                 <span class="onoffswitch-inner"></span>
                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
                                         <div class="ml-1"><p>Account</p></div>
                                     </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="category" class="onoffswitch-checkbox" id="category" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['category']) && $setting['amazon']['amazon_active_product']['category'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['category']) && $setting['amazon']['amazon_active_product']['category'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="category">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Category</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="status" class="onoffswitch-checkbox" id="status" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['status']) && $setting['amazon']['amazon_active_product']['status'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['status']) && $setting['amazon']['amazon_active_product']['status'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="status">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Status</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="master_sale_price" class="onoffswitch-checkbox" id="master_sale_price" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['master_sale_price']) && $setting['amazon']['amazon_active_product']['master_sale_price'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['master_sale_price']) && $setting['amazon']['amazon_active_product']['master_sale_price'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="master_sale_price">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Sale Price</p></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="stock" class="onoffswitch-checkbox" id="stock" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['stock']) && $setting['amazon']['amazon_active_product']['stock'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['stock']) && $setting['amazon']['amazon_active_product']['stock'] == 0) @else checked @endif>
@@ -111,7 +79,19 @@
                                         </div>
                                         <div class="ml-1"><p>Stock</p></div>
                                     </div>
+                                </div>
+                                <div class="col-md-4">
                                     <div class="d-flex align-items-center mt-sm-10">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="master_sale_price" class="onoffswitch-checkbox" id="master_sale_price" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['master_sale_price']) && $setting['amazon']['amazon_active_product']['master_sale_price'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['master_sale_price']) && $setting['amazon']['amazon_active_product']['master_sale_price'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="master_sale_price">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>Sale Price</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="product" class="onoffswitch-checkbox" id="product" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['product']) && $setting['amazon']['amazon_active_product']['product'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['product']) && $setting['amazon']['amazon_active_product']['product'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="product">
@@ -143,26 +123,6 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="sku" class="onoffswitch-checkbox" id="sku" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['sku']) && $setting['amazon']['amazon_active_product']['sku'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['sku']) && $setting['amazon']['amazon_active_product']['sku'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="sku">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>SKU</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
-                                            <input type="checkbox" name="qr" class="onoffswitch-checkbox" id="qr" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['qr']) && $setting['amazon']['amazon_active_product']['qr'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['qr']) && $setting['amazon']['amazon_active_product']['qr'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="qr">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>QR</p></div>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
                                             <input type="checkbox" name="variation" class="onoffswitch-checkbox" id="variation" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['variation']) && $setting['amazon']['amazon_active_product']['variation'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['variation']) && $setting['amazon']['amazon_active_product']['variation'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="variation">
                                                 <span class="onoffswitch-inner"></span>
@@ -171,9 +131,29 @@
                                         </div>
                                         <div class="ml-1"><p>Variation</p></div>
                                     </div>
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="sku" class="onoffswitch-checkbox" id="sku" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['sku']) && $setting['amazon']['amazon_active_product']['sku'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['sku']) && $setting['amazon']['amazon_active_product']['sku'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="sku">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>SKU</p></div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center mt-sm-10">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="asin" class="onoffswitch-checkbox" id="asin" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['asin']) && $setting['amazon']['amazon_active_product']['asin'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['asin']) && $setting['amazon']['amazon_active_product']['asin'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="asin">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>ASIN</p></div>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="ean" class="onoffswitch-checkbox" id="ean" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['ean']) && $setting['amazon']['amazon_active_product']['ean'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['ean']) && $setting['amazon']['amazon_active_product']['ean'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="ean">
@@ -185,6 +165,16 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
+                                            <input type="checkbox" name="is-master-editable" class="onoffswitch-checkbox" id="is-master-editable" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['is-master-editable']) && $setting['amazon']['amazon_active_product']['is-master-editable'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['is-master-editable']) && $setting['amazon']['amazon_active_product']['is-master-editable'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="is-master-editable">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
+                                        </div>
+                                        <div class="ml-1"><p>Editable</p></div>
+                                    </div>
+                                    {{-- <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
                                             <input type="checkbox" name="regular-price" class="onoffswitch-checkbox" id="regular-price" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['regular-price']) && $setting['amazon']['amazon_active_product']['regular-price'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['regular-price']) && $setting['amazon']['amazon_active_product']['regular-price'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="regular-price">
                                                 <span class="onoffswitch-inner"></span>
@@ -192,7 +182,7 @@
                                             </label>
                                         </div>
                                         <div class="ml-1"><p>Regular Price</p></div>
-                                    </div>
+                                    </div> --}}
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="sales-price" class="onoffswitch-checkbox" id="sales-price" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['sales-price']) && $setting['amazon']['amazon_active_product']['sales-price'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['sales-price']) && $setting['amazon']['amazon_active_product']['sales-price'] == 0) @else checked @endif>
@@ -205,15 +195,6 @@
                                     </div>
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
-                                            <input type="checkbox" name="sold" class="onoffswitch-checkbox" id="sold" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['sold']) && $setting['amazon']['amazon_pending_product']['sold'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['sold']) && $setting['amazon']['amazon_active_product']['sold'] == 0) @else checked @endif>
-                                            <label class="onoffswitch-label" for="sold">
-                                                <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
-                                            </label>
-                                        </div>
-                                        <div class="ml-1"><p>Sold</p></div>
-                                    </div><div class="d-flex align-items-center mt-2">
-                                        <div class="onoffswitch">
                                             <input type="checkbox" name="available-qty" class="onoffswitch-checkbox" id="available-qty" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['available-qty']) && $setting['amazon']['amazon_active_product']['available-qty'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['available-qty']) && $setting['amazon']['amazon_active_product']['available-qty'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="available-qty">
                                                 <span class="onoffswitch-inner"></span>
@@ -222,19 +203,16 @@
                                         </div>
                                         <div class="ml-1"><p>Available Qty</p></div>
                                     </div>
-                                    @if($shelfUse == 1)
-                                        <div class="d-flex align-items-center mt-2">
-                                            <div class="onoffswitch">
-                                                <input type="checkbox" name="shelf-qty" class="onoffswitch-checkbox" id="shelf-qty" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['shelf-qty']) && $setting['amazon']['amazon_active_product']['shelf-qty'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['shelf-qty']) && $setting['amazon']['amazon_active_product']['shelf-qty'] == 0) @else checked @endif>
-                                                <label class="onoffswitch-label" for="shelf-qty">
-                                                    <span class="onoffswitch-inner"></span>
-                                                    <span class="onoffswitch-switch"></span>
-                                                </label>
-                                            </div>
-                                            <div class="ml-1"><p>Shelf Qty</p></div>
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="onoffswitch">
+                                            <input type="checkbox" name="sold" class="onoffswitch-checkbox" id="sold" tabindex="0" @if(isset($setting['amazon']['amazon_active_product']['sold']) && $setting['amazon']['amazon_active_product']['sold'] == 1) checked @elseif(isset($setting['amazon']['amazon_active_product']['sold']) && $setting['amazon']['amazon_active_product']['sold'] == 0) @else checked @endif>
+                                            <label class="onoffswitch-label" for="sold">
+                                                <span class="onoffswitch-inner"></span>
+                                                <span class="onoffswitch-switch"></span>
+                                            </label>
                                         </div>
-                                    @endif
-
+                                        <div class="ml-1"><p>Sold</p></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -275,6 +253,24 @@
                             <li class="breadcrumb-item">Amazon</li>
                         </ol>
                     </div>
+                    <div class="unmatched-csv-mb">
+                        <form action="{{asset('generate-csv-comparing-live-data')}}" method="post" enctype="multipart/form-data">
+                            @csrf
+                            <div class="upload-csv-in-unmatched-list">
+                                <div class="mr-1">
+                                    <a class="btn btn-default sample-csv-unmatched" href="{{asset('assets/sample-csv/sample.csv')}}"><i class="fa fa-download"></i> Sample CSV</a>
+                                </div>
+                                <div class="custom-file mr-1">
+                                    <input type="file" class="custom-file-input" name="csvFile" accept=".csv" required>
+                                    <input type="hidden" class="" name="channel_column" value="Amazon Quantity">
+                                    <label class="custom-file-label unmatched-label" for="customFile">Upload CSV To Check Qty</label>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn upload-csv-unmatched-btn">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="screen-option-btn">
                         <button class="btn btn-link waves-effect waves-light" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
                             Screen Options &nbsp; <i class="fa" aria-hidden="true"></i>
@@ -285,7 +281,7 @@
                 <!--End Breadcrumb section-->
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 amazon-catalog">
                     <div class="col-md-12">
                         <div class="card-box amazon shadow">
                         @if(Session::has('success'))
@@ -427,11 +423,11 @@
                                                             <p>Filter Value</p>
                                                             <select class="form-control select2" name="application" id="application">
                                                                 @isset($applications)
-                                                                    @if($applications->count() == 1)
+                                                                    {{-- @if($applications->count() == 1)
                                                                         @foreach($applications as $application)
                                                                             <option value="{{$application->id}}">{{$application->application_name}}</option>
                                                                         @endforeach
-                                                                    @else
+                                                                    @else --}}
                                                                         <option value="">Select Application</option>
                                                                         @foreach($applications as $application)
                                                                             @if(isset($allCondition['application']) && ($allCondition['application'] == $application->id))
@@ -440,7 +436,7 @@
                                                                                 <option value="{{$application->id}}">{{$application->application_name}}</option>
                                                                             @endif
                                                                         @endforeach
-                                                                    @endif
+                                                                    {{-- @endif --}}
                                                                 @endisset
                                                             </select>
                                                             <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
@@ -694,7 +690,7 @@
                                                 <div class="d-flex justify-content-center">
                                                     <div>Actions</div> &nbsp; &nbsp;
                                                     @if(count($allCondition) > 0)
-                                                        <div><a title="Clear filters" class='btn btn-outline-info clear-params'><img src="{{asset('assets/common-assets/25.png')}}"></a></div>
+                                                        <div><a title="Clear filters" href="{{url('amazon/active-catalogues')}}" class='btn btn-outline-info clear-params'><img src="{{asset('assets/common-assets/25.png')}}"></a></div>
                                                     @endif
                                                 </div>
                                             </th>
@@ -718,7 +714,7 @@
                                         @endif
                                         @endisset
                                         @foreach($total_catalogues as $catalogue)
-                                            <tr class="amazon-catalogue-row-{{$catalogue->id}}">
+                                            <tr class="amazon-catalogue-row-{{$catalogue->id}} amazon-tr">
                                                 <td class="image" style="width: 10%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">
                                                     <!--Start each row loader-->
                                                     <div id="product_variation_loading{{$catalogue->id}}" class="variation_load" style="display: none;"></div>
@@ -747,7 +743,7 @@
                                                 <td class="stock text-center" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">{{$catalogue->variations[0]->stock ?? 0}}</td>
                                                 <td class="master_sale_price text-center" style="cursor: pointer; width: 10%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">{{$catalogue->sale_price ?? 0}}</td>
                                                 <td class="product text-center" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">{{$catalogue->variations_count ?? 0}}</td>
-                                                <td class="creator" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">
+                                                <td class="creator text-center" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">
                                                     @if(isset($catalogue->user_info->name))
                                                     <div class="wms-name-creator">
                                                         <div data-tip="on {{date('d-m-Y', strtotime($catalogue->created_at))}}">
@@ -756,7 +752,7 @@
                                                     </div>
                                                     @endif
                                                 </td>
-                                                <td class="modifier" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">
+                                                <td class="modifier text-center" style="cursor: pointer; width: 5%;" data-toggle="collapse" id="mtr-{{$catalogue->id}}"  data-target="#demo{{$catalogue->id}}" class="accordion-toggle">
                                                     @if(isset($catalogue->modifier_info->name))
                                                         <div class="wms-name-modifier1">
                                                             <div data-tip="on {{date('d-m-Y', strtotime($catalogue->updated_at))}}">
@@ -771,7 +767,7 @@
                                                         </div>
                                                     @endif
                                                 </td>
-                                                <td class="actions" style="width: 10%;">
+                                                <td class="actions text-center" style="width: 10%;">
                                                     <button type="button" class="btn btn-danger btn-sm delete-amazon-master-catalogue" id="{{$catalogue->id}}">Delete</button>
                                                     <!-- <form action="" method="post">
                                                         @csrf
@@ -794,14 +790,14 @@
                                                                         <table class="product-draft-table row-expand-table w-100">
                                                                             <thead>
                                                                             <tr>
-                                                                                <th class="id" style="width: 10%">ID</th>
+                                                                                <th class="id" style="width: 10%; text-align: center !important">ID</th>
                                                                                 <th class="variation" style="width: 20%">Variation</th>
                                                                                 <th class="sku" style="width: 10%">SKU</th>
                                                                                 <th class="asin" style="width: 10%">ASIN</th>
                                                                                 <th class="ean" style="width: 10%">EAN</th>
                                                                                 <th class="is-master-editable" style="width: 5%">Editable</th>
                                                                                 <th class="sales-price" style="width: 10%">Sales Price</th>
-                                                                                <th class="quantity" style="width: 10%">Quantity</th>
+                                                                                <th class="available-qty" style="width: 10%">Quantity</th>
                                                                                 <th class="sold" style="width: 5%">Sold</th>
                                                                                 <th style="width: 10%">Actions</th>
                                                                             </tr>
@@ -1303,5 +1299,14 @@
             $(body).append(target);
             $('.'+target).display('toggle');
         });
+
+        var tr_row = $('.amazon-table #search_reasult .amazon-tr').length
+        if(tr_row == 0 || tr_row == 1 || tr_row == 2 || tr_row == 3){
+            $('.amazon-catalog .card-box').attr('style', 'padding-bottom: 270px !important')
+        }else if(tr_row > 3){
+            $('.amazon-catalog .card-box').removeAttr('style')
+        }
+
+
     </script>
 @endsection

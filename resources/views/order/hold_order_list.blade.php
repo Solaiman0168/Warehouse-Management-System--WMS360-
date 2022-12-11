@@ -83,9 +83,9 @@
                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
-                                        <div class="ml-1"><p>Ebay User Id</p></div>
+                                        <div class="ml-1"><p>User ID</p></div>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
@@ -108,7 +108,7 @@
                                         </div>
                                         <div class="ml-1"><p>City</p></div>
                                     </div>
-                                    
+
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="order-product" class="onoffswitch-checkbox" id="order-product" tabindex="0" @if(isset($setting['order']['hold_order']['order-product']) && $setting['order']['hold_order']['order-product'] == 1) checked @elseif(isset($setting['order']['hold_order']['order-product']) && $setting['order']['hold_order']['order-product'] == 0) @else checked @endif>
@@ -537,29 +537,12 @@
                                                                     <div class="dropdown-menu filter-content shadow" role="menu">
                                                                         <p>Filter Value</p>
                                                                         <select class="form-control select2" name="channels[]" multiple>
-                                                                            @isset($allChannels)
-                                                                                @foreach($allChannels as $channel)
-                                                                                    @if(isset($allCondition['channels']))
-                                                                                        @php
-                                                                                            $existChannel = null;
-                                                                                            $getChannel = $channel['account'];
-                                                                                        @endphp
-                                                                                        @foreach($allCondition['channels'] as $ch)
-                                                                                            @if($getChannel == $ch)
-                                                                                                <option value="{{$channel['account']}}" selected>{{$channel['channel']}}</option>
-                                                                                                @php
-                                                                                                    $existChannel = 1;
-                                                                                                @endphp
-                                                                                            @endif
-                                                                                        @endforeach
-                                                                                        @if($existChannel == null)
-                                                                                            <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                                        @endif
-                                                                                    @else
-                                                                                        <option value="{{$channel['account']}}">{{$channel['channel']}}</option>
-                                                                                    @endif
+                                                                            <option value="">Manual</option>
+                                                                            @if (count($channelWithAccount) > 0)
+                                                                                @foreach ($channelWithAccount as $channel)
+                                                                                    <option value="{{$channel}}" @if(isset($allCondition['channels']) && in_array($channel,$allCondition['channels'])) selected @endif>{{explode('/',$channel)[1] ?? ''}} ({{explode('/',$channel)[0] == 'checkout' ? 'woocommerce' : explode('/',$channel)[0]}})</option>
                                                                                 @endforeach
-                                                                            @endisset
+                                                                            @endif
                                                                         </select>
                                                                         <div class="checkbox checkbox-custom checkbox m-t-10 m-b-10">
                                                                             <input id="channel_opt_out" type="checkbox" name="channel_opt_out" value="1" @isset($allCondition['channel_opt_out']) checked @endisset><label for="channel_opt_out">Opt Out</label>
@@ -652,7 +635,7 @@
                                                                     </div>
 
                                                                 </div>
-                                                                <div>Ebay User ID</div>
+                                                                <div>User ID</div>
                                                             </div>
                                                         </th>
                                                     <th class="name" style="width: 10%; text-align: center;">
@@ -705,7 +688,7 @@
                                                             <div>City</div>
                                                         </div>
                                                     </th>
-                                                    
+
                                                     <th class="order-product filter-symbol" style="text-align: center; width: 10%">
                                                         <div class="d-flex justify-content-center">
                                                             <div class="btn-group">
@@ -1037,7 +1020,14 @@
                                             @endisset
                                         @inject('CommonFunction', 'App\Helpers\TraitFromClass')
                                         @foreach($all_hold_order as $hold)
-                                            <tr>
+                                            @php
+                                                $colorCodeIndex = array_search($hold->order_number, array_column($shipping_fee_array, 'order_number'));
+                                                $colorCode = '';
+                                                if($colorCodeIndex) {
+                                                    $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+                                                }
+                                            @endphp
+                                            <tr class="order_number_{{$hold->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
                                                 @if($shelfUse == 1)
                                                     <td style="width: 4%; text-align: center !important;">
                                                         <input type="checkbox" class="checkBoxClass" id="customCheck{{$hold->id}}" value="{{$hold->id}}">
@@ -1051,12 +1041,12 @@
                                                     @if($hold->exchange_order_id)
                                                         (Ac. Order No. &nbsp;<span class="text-danger">{{\App\Order::find($hold->exchange_order_id)->order_number ?? ''}}</span>)
                                                     @endif
-                                                    <span class="append_note{{$hold->id}}">
-                                                        @isset($hold->order_note)
-                                                            <label class="label label-success view-note" style="cursor: pointer" id="{{$hold->id}}" onclick="view_note({{$hold->id}});">View Note</label>
-                                                         @endisset
-                                                    </span>
-
+{{--                                                    <span class="append_note{{$hold->id}}">--}}
+{{--                                                        @isset($hold->order_note)--}}
+{{--                                                            <label class="label label-success view-note" style="cursor: pointer" id="{{$hold->id}}" onclick="view_note({{$hold->id}});">View Note</label>--}}
+{{--                                                         @endisset--}}
+{{--                                                    </span>--}}
+                                                    @include('partials.order.order_note.order_note',['id' => $hold->id,'order_note'=> $hold->order_note,'buyer_message' => $hold->buyer_message])
                                                     {{-- Clear filters loader added --}}
                                                     <div id="product_variation_loading" class="variation_load" style="display: none;"></div>
 
@@ -1147,22 +1137,14 @@
                                                 @else
                                                     <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">{{ucfirst($hold->created_via)}}</td>
                                                 @endif
-                                                @if($hold->payment_method == 'paypal' || $hold->payment_method == 'PayPal')
-                                                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">
-                                                        <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$hold->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$hold->payment_method}}"></a>
+                                                @if ($hold->payment_method == 'cash')
+                                                    <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">
+                                                        <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$hold->payment_method}}" style="width: 65px;height: 50px;"></a>
                                                     </td>
-                                                @elseif($hold->payment_method == 'Amazon')
-                                                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$hold->payment_method}}">
-                                                        @if(!empty($hold->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$hold->transaction_id}}" target="_blank">({{$hold->transaction_id}})</a>@endif
-                                                    </td>
-                                                @elseif($hold->payment_method == 'stripe')
-                                                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$hold->payment_method}}">
-                                                        @if(!empty($hold->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$hold->transaction_id}}" target="_blank">({{$hold->transaction_id}})</a>@endif
-                                                    </td>
-                                                @elseif($hold->payment_method == 'CreditCard')
-                                                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$hold->payment_method}}" style="width: 65px;height: 50px;"></td>
                                                 @else
-                                                    <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">{{ucfirst($hold->payment_method)}}</td>
+                                                    <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">
+                                                        <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$hold->payment_method}}" style="width: 65px;height: 50px;">
+                                                    </td>
                                                 @endif
                                                     <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">
                                                         <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -1182,7 +1164,7 @@
                                                         <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
                                                     </div>
                                                 </td>
-                                                
+
                                                 <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">{{count($hold->product_variations)}}</td>
                                                 <td class="total-price" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">{{$hold->total_price}}</td>
                                                 <td class="hold-by" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$hold->order_number}}" class="accordion-toggle">{{$hold->cancelled_by_user->name ?? ''}}</td>
@@ -1199,26 +1181,26 @@
                                                 </td>
                                                 <!--Action Button-->
                                                 <td class="note_btn_append{{$hold->id}}" style="width: 6%">
-                                                        <!-- <div class="btn-group dropup">
-                                                                <button type="button" class="btn manage-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                                    Manage
-                                                                </button>
-                                                                    <div class="dropdown-menu">
-                                                                        <div class="dropup-content">
-                                                                            <div class="action-1">
-                                                                                <a href="{{url('unhold-order/'.$hold->id)}}" class="btn-size hold-order-btn mr-2" data-toggle="tooltip" data-placement="top" title="Unhold Order"><i class="fa fa-pause" aria-hidden="true"></i></a>
-                                                                                @if(!isset($hold->order_note))
-                                                                                    <button type="button" style="cursor: pointer" class="btn-size add-note-btn order-note mr-2 append_button{{$hold->id}}" data-toggle="tooltip" data-placement="top" title="Add Note" id="{{$hold->id}}"><i class="fa fa-sticky-note-o" aria-hidden="true"></i></button>
-                                                                                @endif
-                                                                                <a href="{{url('hold/cancel-order/'.$hold->id)}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Cancel" onclick="return cancel_order_check({{$hold->id}},'hold');"><i class="fa fa-window-close" aria-hidden="true"></i></a>
-
-                                                                                <a style="background:skyblue !important; margin-right:7px; margin-left:7px;" href="{{url('order/list/pdf/'.$hold->order_number)}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Invoice"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
-                                                                                <a style="background:green !important; margin-right:7px;" href="{{url('order/list/pdf/'.$hold->order_number)}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Packing Slip"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                            </div> -->
-                                                    <a href="{{url('unhold-order/'.$hold->id)}}"><button class="btn btn-default btn-sm m-b-5 w-100 text-success">Unhold</button></a>
+                                                    <div class="hold-main-content">
+                                                        <div class="hold-order-btn-content d-none" id="hold-order-btn-content-{{$hold->id}}">
+                                                            <div class="action-1" style="padding-top: 4px">
+                                                                <a href="{{url('unhold-order/'.$hold->id)}}" data-toggle="tooltip" data-placement="top" title="Unhold"><div class="btn-size hold-order-btn mr-2"><i class="fa fa-reorder"></i></div></a>
+                                                                @if(!isset($hold->order_note))
+                                                                    <a href="#" data-toggle="tooltip" data-placement="top" title="Add Note"><button type="button" class="btn-size add-note-btn order-note cursor-pointer mr-2 append_button{{$hold->id}}" id="{{$hold->id}}"><i class="fa fa-sticky-note-o" aria-hidden="true"></i></button></a>
+                                                                @endif
+                                                                <a href="{{url('hold/cancel-order/'.$hold->id)}}" class="btn-size cancel-btn order-btn m-b-5 w-100 mr-2 text-center" onclick="return cancel_order_check({{$hold->id}},'hold');" data-toggle="tooltip" data-placement="top" title="Cancel Order"><i class="fa fa-window-close" aria-hidden="true"></i></a>
+                                                                <a href="{{url('order/list/pdf/'.$hold->order_number.'/1')}}" data-toggle="tooltip" data-placement="top" title="Invoice"><div class="btn-size hold-invoice-btn order-btn mr-2"><i class="fa fa-file-text-o" aria-hidden="true"></i></div></a>
+                                                                <a href="{{url('order/list/pdf/'.$hold->order_number.'/2')}}" data-toggle="tooltip" data-placement="top" title="Packing Slip"><div class="btn-size packing-btn order-btn mr-2"><i class="fa fa-file-text-o" aria-hidden="true"></i></div></a>
+                                                                <button type="button" class="btn btn-light btn-sm m-b-5 w-100 border-secondary text-center text-danger create-dpd-order mr-2" data="{{$hold->order_number}}" data-toggle="tooltip" data-placement="top" title="Create DPD Order"><i class="fas fa-shipping-fast"></i></button>
+                                                                <button type="button" class="btn btn-success btn-sm m-b-5 w-100 text-center create-royal-mail-order" data="{{$hold->order_number}}" data-toggle="tooltip" data-placement="top" title="Create Royal Mail Order" style="background-color: #d42024 !important; color: #ffca00 !important"><i class="fas fa-shipping-fast"></i></button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="hold-order-manage-btn" id="hold-order-manage-btn-{{$hold->id}}" onclick="hold_order_action_btn({{$hold->id}})">Manage</div>
+                                                    </div>
+                                                    
+                                                    
+                                                   
+                                                    {{-- <a href="{{url('unhold-order/'.$hold->id)}}"><button class="btn btn-default btn-sm m-b-5 w-100 text-success">Unhold</button></a>
                                                     @if(!isset($hold->order_note))
                                                         <a href="#"><button type="button" class="btn btn-primary btn-sm order-note label-status m-b-5 w-100 append_button{{$hold->id}}" id="{{$hold->id}}">Add Note</button></a>
                                                     @endif
@@ -1229,13 +1211,36 @@
                                                             <a style="background:skyblue !important; margin-right:7px; margin-left:7px;" href="{{url('order/list/pdf/'.$hold->order_number.'/1')}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Invoice"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
                                                             <a style="background:green !important; margin-right:7px;" href="{{url('order/list/pdf/'.$hold->order_number.'/2')}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Packing Slip"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
                                                         </div>
-                                                        </td>
+                                                        </td> --}}
+
+
+                                                        {{-- <div class="btn-group dropup">
+                                                            <button type="button" class="btn manage-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                                Manage
+                                                            </button>
+                                                            <div class="dropdown-menu">
+                                                                <!-- Dropdown menu links -->
+                                                                <div class="dropup-content">
+                                                                    <div class="action-1">
+                                                                        <a href="{{url('unhold-order/'.$hold->id)}}"><div class="btn-size btn-sm m-b-5 w-100 text-success"><i class="fa fa-reorder"></i></div></a>
+                                                                        @if(!isset($hold->order_note))
+                                                                            <a href="#"><button type="button" class="btn-size add-note-btn btn-sm order-note label-status cursor-pointer m-b-5 w-100 append_button{{$hold->id}}" id="{{$hold->id}}"><i class="fa fa-sticky-note-o" aria-hidden="true"></i></button></a>
+                                                                        @endif
+                                                                        <a href="{{url('hold/cancel-order/'.$hold->id)}}" class="btn-size cancel-btn order-btn m-b-5 w-100 text-center" onclick="return cancel_order_check({{$hold->id}},'hold');"><i class="fa fa-window-close" aria-hidden="true"></i></a>
+                                                                        <button type="button" class="btn btn-success btn-sm m-b-5 w-100 text-center create-royal-mail-order" data="{{$hold->order_number}}" data-toggle="tooltip" data-placement="top" title="Create Royal Mail Order" style="background-color: #d42024 !important; color: #ffca00 !important"><i class="fas fa-shipping-fast"></i></button>
+                                                                        <button type="button" class="btn btn-light btn-sm m-b-5 w-100 border-secondary text-center text-danger create-dpd-order" data="{{$hold->order_number}}" data-toggle="tooltip" data-placement="top" title="Create DPD Order"><i class="fas fa-shipping-fast"></i></button>
+                                                                        <a style="background:skyblue !important; margin-right:7px; margin-left:7px;" href="{{url('order/list/pdf/'.$hold->order_number.'/1')}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Invoice"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
+                                                                        <a style="background:green !important; margin-right:7px;" href="{{url('order/list/pdf/'.$hold->order_number.'/2')}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Packing Slip"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div> --}}
                                                 <!--End Action Button-->
                                             </tr>
 
                                             <!--hidden row start-->
                                             <tr>
-                                                <td colspan="16" class="hiddenRow">
+                                                <td colspan="17" class="hiddenRow">
                                                     <div class="accordian-body collapse" id="demo{{$hold->order_number}}">
                                                         <div class="row">
                                                             <div class="col-12">
@@ -1401,6 +1406,7 @@
                                                                                             <h7> : {{$hold->shipping_country}} </h7>
                                                                                         </div>
                                                                                     </div>
+                                                                                    @include('partials.order.ioss_number',['ebay_tax_reference' => $hold->ebay_tax_reference])
                                                                                 </div>
                                                                             </div>
                                                                             <div class="billing">
@@ -1538,25 +1544,7 @@
     </div> <!-- content page -->
 
     <!--Modal Start-->
-    <div class="modal fade" id="orderNoteModalView" tabindex="-1" role="dialog" aria-labelledby="orderNoteLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Order Note</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body-view">
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary update-note">Update</button>
-                    <button type="button" class="btn btn-danger delete-note">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('partials.order.order_note.order_note_modal')
     <!--End Modal-->
 
 
@@ -1639,48 +1627,8 @@
             $(this).closest("table").find(".collapse.in").not(this).collapse('toggle')
         })
 
-        function view_note(id) {
-            // var id = $(this).attr('id');
-            $.ajax({
-                type: "POST",
-                url:"{{url('view-order-note')}}",
-                data: {
-                    "_token" : "{{csrf_token()}}",
-                    "order_id" : id
-                },
-                success: function (response) {
-                    if(response.data !== 'error'){
-                        var infoModal = $('#orderNoteModalView');
-                        if(response.data){
-                          var creatorName = (response.data.user_info == null) ? '' : response.data.user_info.name;
-                          var modifierName = (response.data.modifier_info == null) ? '' : response.data.modifier_info.name;
-                          }
-                        var info = '';
-                        if(response.buyerMessage.buyer_message){
-                            info += '<div class="alert alert-warning text-dark"> Buyer Note : '+response.buyerMessage.buyer_message+'</div>'
-                            $('table tbody tr td.checkboxShowHide'+id).html('<input type="checkbox" class="checkBoxClass" id="customCheck'+id+'" value="'+id+'">')
-                        }
-                        if(response.data){
-                            info += '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                            '<strong>Note : </strong>\n' +
-                            '<p class=""></p>' +
-                            '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                            '<strong>Created By : ' + creatorName + '</strong>' +
-                            '<strong class="pull-right">Modified By : ' + modifierName + ' (' + response.data.updated_at + ')' + '</strong>'
-                            $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                            $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                            $('#orderNoteModalView .modal-footer').removeClass('d-none')
-                        }else{
-                            $('#orderNoteModalView .modal-footer').addClass('d-none')
-                        }
-                        infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        infoModal.modal();
-                    }else{
-                        alert('Something went wrong');
-                    }
-                }
-            });
-        }
+        @include('partials.order.order_note.order_note_unread_javascript')
+        @include('partials.order.order_note.order_note_javascript')
 
 
         // Drop down checkbox menu js
@@ -1936,87 +1884,24 @@
                 }
             })
 
-            $('tbody').on('click','.create-royal-mail-order',function(){
-                var orderNumber = $(this).attr('data')
-                if((orderNumber == '') || (orderNumber == 'undefined') || (orderNumber == null)){
-                    Swal.fire('Oops!','Order Number Not Found','error')
-                    return false
-                }
-                var url = "{{url('create-royal-mail-order')}}"
-                var token = "{{csrf_token()}}"
-                var html = '<div class="form-group">'
-                                +'<label class="required">Weight In Grams</label>'
-                                +'<input type="text" class="form-control" id="weight_in_gram" placeholder="Enter The Parcel Weight" required>'
-                            +'</div>'
-                            +'<div class="form-group">'
-                                +'<label class="required">Package Format</label>'
-                                +'<select class="form-control" id="package_format" required>'
-                                +'<option value="">Select Package</option>'
-                                +'<option value="letter">Letter</option>'
-                                +'<option value="largeLetter">LargeLetter</option>'
-                                +'<option value="smallParcel">SmallParcel</option>'
-                                +'<option value="mediumParcel">MediumParcel</option>'
-                                +'<option value="parcel">Parcel</option>'
-                                +'<option value="documents">Documents</option>'
-                                +'<option value="undefined">Undefined</option>'
-                                +'</select>'
-                            +'</div>'
-                            +'<div class="form-group">'
-                                +'<label>Special Instruction</label>'
-                                +'<input type="text" class="form-control" id="special_instruction" placeholder="Enter Special Instruction">'
-                            +'</div>'
-                Swal.fire({
-                    title: 'Create Order In Royal Mail',
-                    html: html,
-                    showCancelButton: true,
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes',
-                    showLoaderOnConfirm: true,
-                    preConfirm: function(){
-                        var packageWeight = Swal.getPopup().querySelector('#weight_in_gram').value
-                        var packageFormat = Swal.getPopup().querySelector('#package_format').value
-                        var specialInstruction = Swal.getPopup().querySelector('#special_instruction').value
-                        console.log(packageWeight,packageFormat)
-                        if((packageWeight == '') || (packageFormat == '')){
-                            Swal.showValidationMessage(`Enter Valid Value`)
-                            return false
-                        }
-                        var dataObj = {
-                            orderNumber: orderNumber,
-                            packageWeight: packageWeight,
-                            packageFormat: packageFormat,
-                            specialInstruction: specialInstruction,
-                        }
-                        return fetch(url,{
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token
-                            },
-                            method: 'post',
-                            body: JSON.stringify(dataObj)
-                        })
-                        .then(response => {
-                            if(!response.ok){
-                                throw new Error(response.statusText)
-                            }
-                            return response.json()
-                        })
-                        .then(data => {
-                            if(data.type == 'success'){
-                                Swal.fire('Success',data.msg,'success')
-                            }else{
-                                Swal.fire('Oops!',data.msg,'error')
-                            }
-                        })
-                        .catch(error => {
-                            Swal.showValidationMessage(`Request Failed: ${error}`)
-                        })
-                    }
-                })
-            })
         });
         //End Check uncheck active catalogue counter
+
+
+        function hold_order_action_btn(id){
+            $('#hold-order-btn-content-'+id).toggleClass('d-none')
+            $('#hold-order-manage-btn-'+id).toggleClass('hold-btn-focus-color')
+        }
+
+        $(document).mouseup(function(e){
+            var hold_order_manage_content = $("div.hold-order-btn-content:visible")
+            var hold_order_manage_btn = $('div.hold-order-manage-btn')
+            if(!hold_order_manage_content.is(e.target) && hold_order_manage_content.has(e.target).length === 0){
+                hold_order_manage_content.toggleClass('d-none')
+                $('.hold-btn-focus-color').removeClass('hold-btn-focus-color')
+            }
+            
+        })
 
     </script>
 

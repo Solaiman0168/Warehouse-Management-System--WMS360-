@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ItemAttribute extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['item_attribute','item_attribute_slug','is_active'];
+    protected $fillable = ['item_attribute','item_attribute_slug','is_active','position'];
     protected $dates = ['deleted_at'];
 
     protected $columns = ['id','item_attribute','item_attribute_slug','is_active','created_at','updated_at','deleted_at'];

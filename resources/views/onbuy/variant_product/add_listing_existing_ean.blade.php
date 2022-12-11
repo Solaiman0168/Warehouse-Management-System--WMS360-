@@ -137,6 +137,22 @@
                                         <input type="text" class="form-control" name="price" value="{{$productInfo->sale_price ?? ''}}">
                                     </div>
                                 </div>
+                                <div class="row m-t-10 d-flex align-items-center">
+                                    <div class="col-md-2">
+                                        <label class="">Base Price</label>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <input type="text" class="form-control" name="base_price" value="{{$productInfo->base_price ?? $draftcatalogueId->base_price ?? ''}}">
+                                    </div>
+                                </div>
+                                <div class="row m-t-10 d-flex align-items-center">
+                                    <div class="col-md-2">
+                                        <label class="required">Max Price</label>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <input type="text" class="form-control" name="max_price" value="{{$productInfo->max_price ?? $draftcatalogueId->max_price ?? ''}}">
+                                    </div>
+                                </div>
 
                                 <div class="row m-t-10 d-flex align-items-center">
                                     <div class="col-md-2">

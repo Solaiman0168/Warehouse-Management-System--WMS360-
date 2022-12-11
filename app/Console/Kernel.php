@@ -45,7 +45,8 @@ class Kernel extends ConsoleKernel
         }
         if(($key = array_search('onbuy',array_column($channels,'channel_term_slug'))) !== false){
             if($channels[$key]['is_active'] == 1){
-                $schedule->call('App\Http\Controllers\OnbuyController@leadListingCheck')->timezone('Europe/London')->daily();
+                $schedule->call('App\Http\Controllers\OnbuyController@leadListingCheck')->timezone('Europe/London')->twiceDaily(0,6);
+                $schedule->call('App\Http\Controllers\OnbuyController@leadListingCheck')->timezone('Europe/London')->twiceDaily(12,18);
                 $schedule->call('App\Http\Controllers\OnbuyController@checkAndMakeLeadListing')->everyFifteenMinutes();
                 Log::info('onbuy sync start');
                 $schedule->call('App\Http\Controllers\OnbuyOrderSyncController@syncOrderFromOnbuyClicked')->everyMinute();

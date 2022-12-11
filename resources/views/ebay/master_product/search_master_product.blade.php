@@ -1,13 +1,14 @@
 
 @foreach($search_result as $index => $product_list)
-    <tr>
+    <tr class="search-tr">
         <td style="width: 6%; text-align: center !important;">
 
             {{--                                                    <input type="checkbox" class="checkBoxClass" id="customCheck{{$pending->id}}" name="multiple_order[]" value="{{$pending->id}}">--}}
             <input type="checkbox" class="checkBoxClass" id="checkItem{{$index}}" name="masterProduct[{{$index}}]" value="{{$product_list->id}}">
 
         </td>
-        <td class="image" style="cursor: pointer; width: 6%;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+
+        <td class="image @if(isset($setting['ebay']['ebay_active_product']['image']) && $setting['ebay']['ebay_active_product']['image'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['image']) && $setting['ebay']['ebay_active_product']['image'] == 1) @else @endif" style="cursor: pointer; width: 6%;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
 
             <!--Start each row loader-->
             <div id="product_variation_loading{{$product_list->id}}" class="variation_load" style="display: none;"></div>
@@ -21,7 +22,7 @@
 
         </td>
 {{--        <td class="item-id" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">--}}
-        <td class="item-id" style="text-align: center !important; width: 8%">
+        <td class="item-id @if(isset($setting['ebay']['ebay_active_product']['item-id']) && $setting['ebay']['ebay_active_product']['item-id'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['item-id']) && $setting['ebay']['ebay_active_product']['item-id'] == 1) @else @endif" style="text-align: center !important; width: 8%">
             <span id="master_opc_{{$product_list->item_id}}">
                  <div class="id_tooltip_container d-flex justify-content-start align-items-center">
                     <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$product_list->item_id}}</span>
@@ -29,7 +30,7 @@
                 </div>
             </span>
         </td>
-        <td class="product-type">
+        <td class="product-type @if(isset($setting['ebay']['ebay_active_product']['product-type']) && $setting['ebay']['ebay_active_product']['product-type'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['product-type']) && $setting['ebay']['ebay_active_product']['product-type'] == 1) @else @endif">
             <div style="text-align: center;">
                 @if($product_list->type == 'simple')
                     Simple
@@ -39,31 +40,31 @@
             </div>
         </td>
 {{--        <td class="catalogue-id" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">--}}
-        <td class="catalogue-id" style="width: 8%; text-align: center !important;">
+        <td class="catalogue-id @if(isset($setting['ebay']['ebay_active_product']['catalogue-id']) && $setting['ebay']['ebay_active_product']['catalogue-id'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['catalogue-id']) && $setting['ebay']['ebay_active_product']['catalogue-id'] == 1) @else @endif" style="width: 8%; text-align: center !important;">
             <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                 <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$product_list->master_product_id}}</span>
                 <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
             </div>
         </td>
-        <td class="account" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="account @if(isset($setting['ebay']['ebay_active_product']['account']) && $setting['ebay']['ebay_active_product']['account'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['account']) && $setting['ebay']['ebay_active_product']['account'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             @isset(\App\EbayAccount::find($product_list->account_id)->account_name)
                 {{\App\EbayAccount::find($product_list->account_id)->account_name}}
             @endisset
         </td>
-        <td class="product-name" style="cursor: pointer; width: 20%" data-toggle="collapse" id="mtr-{{$product_list->id}}" data-target="#demo{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top" title="Show Details">
+        <td class="product-name @if(isset($setting['ebay']['ebay_active_product']['product-name']) && $setting['ebay']['ebay_active_product']['product-name'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['product-name']) && $setting['ebay']['ebay_active_product']['product-name'] == 1) @else @endif" style="cursor: pointer; width: 20%" data-toggle="collapse" id="mtr-{{$product_list->id}}" data-target="#demo{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top" title="Show Details">
             <a class="ebay-product-name" href="https://www.ebay.co.uk/itm/{{$product_list->item_id}}" target="_blank">
                 {!! Str::limit(strip_tags($product_list->title),$limit = 100, $end = '...') !!}
             </a>
         </td>
-        <td class="category" style="cursor: pointer; width: 20%;" data-toggle="collapse" data-target="#demo{{$product_list->id}}" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$product_list->category_name}}</td>
+        <td class="category @if(isset($setting['ebay']['ebay_active_product']['category']) && $setting['ebay']['ebay_active_product']['category'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['category']) && $setting['ebay']['ebay_active_product']['category'] == 1) @else @endif" style="cursor: pointer; width: 20%;" data-toggle="collapse" data-target="#demo{{$product_list->id}}" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$product_list->category_name}}</td>
         @php
             $total_quantity = 0;
             foreach ($product_list->variationProducts as $variation){
                 $total_quantity += $variation->quantity;
             }
         @endphp
-        <td class="stock" style="cursor: pointer; text-align: center !important; width: 5%" data-toggle="collapse" data-target="#demo{{$product_list->id}}" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_quantity}}</td>
-        <td class="profile" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="stock @if(isset($setting['ebay']['ebay_active_product']['stock']) && $setting['ebay']['ebay_active_product']['stock'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['stock']) && $setting['ebay']['ebay_active_product']['stock'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 5%" data-toggle="collapse" data-target="#demo{{$product_list->id}}" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_quantity}}</td>
+        <td class="profile @if(isset($setting['ebay']['ebay_active_product']['profile']) && $setting['ebay']['ebay_active_product']['profile'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['profile']) && $setting['ebay']['ebay_active_product']['profile'] == 0) hide @else @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             @isset(\App\EbayProfile::find($product_list->profile_id)->profile_name)
                 {{\App\EbayProfile::find($product_list->profile_id)->profile_name}}
             @endisset
@@ -86,7 +87,7 @@
 
             @endif
         </td> --}}
-        <td class="promoted-listings" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="promoted-listings @if(isset($setting['ebay']['ebay_active_product']['promoted-listings']) && $setting['ebay']['ebay_active_product']['promoted-listings'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['promoted-listings']) && $setting['ebay']['ebay_active_product']['promoted-listings'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             <?php
 
             $campaign_array = \Opis\Closure\unserialize($product_list->campaign_data) ?? '';
@@ -106,7 +107,7 @@
             @endif
 
         </td>
-        <td class="creator" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="creator @if(isset($setting['ebay']['ebay_active_product']['creator']) && $setting['ebay']['ebay_active_product']['creator'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['creator']) && $setting['ebay']['ebay_active_product']['creator'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             @if(isset($creatorInfo->name))
             <div class="wms-name-creator">
                 <div data-tip="on {{date('d-m-Y', strtotime($product_list->created_at))}}">
@@ -115,7 +116,7 @@
             </div>
             @endif
         </td>
-        <td class="modifier" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
+        <td class="modifier @if(isset($setting['ebay']['ebay_active_product']['modifier']) && $setting['ebay']['ebay_active_product']['modifier'] == 0) hide @elseif(isset($setting['ebay']['ebay_active_product']['modifier']) && $setting['ebay']['ebay_active_product']['modifier'] == 1) @else @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">
             @if(isset($modifierInfo->name))
                 <div class="wms-name-modifier1">
                     <div data-tip="on {{date('d-m-Y', strtotime($product_list->updated_at))}}">
@@ -215,6 +216,13 @@ $("input:checkbox").click(function(){
         event.stopPropagation();
     });
 
+
+    var tr_row = $('.ebay-table tbody .search-tr').length
+    if(tr_row == 0 || tr_row == 1 || tr_row == 2 || tr_row == 3){
+        $('.catalog .card-box').attr('style','padding-bottom: 270px !important')
+    }else{
+        $('.catalog .card-box').removeAttr('style')
+    }
 
 
 </script>

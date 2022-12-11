@@ -17,7 +17,7 @@ class ProductVariation extends Model
         'sku','actual_quantity','ean_no',
         'regular_price',
         'sale_price','rrp',
-        'cost_price','base_price','product_code','color_code',
+        'cost_price','base_price','max_price','product_code','color_code',
         'low_quantity','low_quantity_visibility',
         'notification_status','change_message',
         'manage_stock',
@@ -94,6 +94,14 @@ class ProductVariation extends Model
     }
     public function get_reshelved_product(){
         return $this->hasMany('App\ReshelvedProduct','variation_id','id');
+    }
+
+    public function parent_bundle_product() {
+        return $this->hasMany('App\BundleSku','parent_variation_id','id');
+    }
+
+    public function child_bundle_product() {
+        return $this->hasMany('App\BundleSku','child_variation_id','id');
     }
 
 }

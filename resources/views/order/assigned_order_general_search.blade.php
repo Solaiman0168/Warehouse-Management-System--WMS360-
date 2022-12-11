@@ -1,6 +1,13 @@
 @inject('CommonFunction', 'App\Helpers\TraitFromClass')
 @foreach($all_assigned_order as $assigned)
-    <tr>
+    @php
+        $colorCodeIndex = array_search($assigned->order_number, array_column($shipping_fee_array, 'order_number'));
+        $colorCode = '';
+        if($colorCodeIndex) {
+            $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+        }
+    @endphp
+    <tr class="order_number_{{$assigned->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
         <td style="width: 4%; text-align: center !important;">
         @php
             $picking_count = 0;
@@ -19,11 +26,12 @@
                 <span title="Click to view in channel" onclick="wmsOrderPageTextCopied(this);" class="order_page_copy_button">{!! \App\Traits\CommonFunction::dynamicOrderLink($assigned->created_via,$assigned) !!}</span>
                 <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
             </div>
-            <span class="append_note{{$assigned->id}}">
-                @if(isset($assigned->order_note) || (($assigned->buyer_message != null) || ($assigned->buyer_message != '')))
-                    <label class="label label-success view-note" style="cursor: pointer" id="{{$assigned->id}}" onclick="view_note({{$assigned->id}});">View Note</label>
-                @endif
-            </span>
+{{--            <span class="append_note{{$assigned->id}}">--}}
+{{--                @if(isset($assigned->order_note) || (($assigned->buyer_message != null) || ($assigned->buyer_message != '')))--}}
+{{--                    <label class="label label-success view-note" style="cursor: pointer" id="{{$assigned->id}}" onclick="view_note({{$assigned->id}});">View Note</label>--}}
+{{--                @endif--}}
+{{--            </span>--}}
+            @include('partials.order.order_note.order_note',['id' => $assigned->id,'order_note' => $assigned->order_note,'buyer_message' => $assigned->buyer_message])
         </td>
         <td class="order-date" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
             {{$CommonFunction->getDateByTimeZone($assigned->date_created)}}
@@ -104,22 +112,14 @@
         @else
             <td class="channel" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">{{ucfirst($assigned->created_via)}}</td>
         @endif
-        @if($assigned->payment_method == 'paypal' || $assigned->payment_method == 'PayPal')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
-                <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$assigned->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$assigned->payment_method}}"></a>
+        @if ($assigned->payment_method == 'cash')
+            <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
+                <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$assigned->payment_method}}" style="width: 65px;height: 50px;"></a>
             </td>
-        @elseif($assigned->payment_method == 'Amazon')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$assigned->payment_method}}">
-                @if(!empty($assigned->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$assigned->transaction_id}}" target="_blank">({{$assigned->transaction_id}})</a>@endif
-            </td>
-        @elseif($assigned->payment_method == 'stripe')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$assigned->payment_method}}">
-                @if(!empty($assigned->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$assigned->transaction_id}}" target="_blank">({{$assigned->transaction_id}})</a>@endif
-            </td>
-        @elseif($assigned->payment_method == 'CreditCard')
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$assigned->payment_method}}" style="width: 65px;height: 50px;"></td>
         @else
-            <td class="payment" style="cursor: pointer; width: 15%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">{{ucfirst($assigned->payment_method)}}</td>
+            <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
+                <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$assigned->payment_method}}" style="width: 65px;height: 50px;">
+            </td>
         @endif
         <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
             <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -139,11 +139,11 @@
                 <span class="wms__order__page__tooltip__message" id="wms__order__page__tooltip__message">Copied!</span>
             </div>
         </td>
-        
+
         <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">{{count($assigned->product_variations)}}</td>
         <td class="picking-status" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">
 
-            {!! (count($assigned->product_variations) == $picking_count) ? '<span class="label label-success label-status" title=".$pickedTime.">Picked</span>' : '<span class="label label-danger label-status">Unpicked</span>'!!}
+            {!! (count($assigned->product_variations) == $picking_count) ? '<span class="label label-success label-status" title="'.$pickedTime.'">Picked</span>' : '<span class="label label-danger label-status">Unpicked</span>'!!}
             {{$picking_count}}/{{count($assigned->product_variations)}}
         </td>
         <td class="packer" style="cursor: pointer; text-align: center !important; width: 10%;" data-toggle="collapse" data-target="#demo{{$assigned->order_number}}" class="accordion-toggle">{{$assigned->picker_info->name ?? ''}}</td>
@@ -179,8 +179,9 @@
                             <a href="{{url('assigned/cancel-order/'.$assigned->id)}}" class="btn-size cancel-btn order-btn mr-2" onclick="return cancel_order_check({{$assigned->id}},'assigned');" data-toggle="tooltip" data-placement="top" title="Cancel Order"><i class="fa fa-window-close" aria-hidden="true"></i></a>
 
                             <a style="background:skyblue !important" href="{{url('order/list/pdf/'.$assigned->order_number.'/1')}}" class="btn-size cancel-btn order-btn mr-2" data-toggle="tooltip" data-placement="top" title="Invoice"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
-                            <a style="background:green !important" href="{{url('order/list/pdf/'.$assigned->order_number.'/2')}}" class="btn-size cancel-btn order-btn" data-toggle="tooltip" data-placement="top" title="Packing Slip"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
-                            <button type="button" class="btn btn-light btn-sm w-100 border-secondary text-center text-danger create-dpd-order" data="{{$assigned->order_number}}" data-toggle="tooltip" data-placement="top" title="Create DPD Order"><i class="fas fa-shipping-fast"></i></button>
+                            <a style="background:green !important" href="{{url('order/list/pdf/'.$assigned->order_number.'/2')}}" class="btn-size cancel-btn order-btn mr-2" data-toggle="tooltip" data-placement="top" title="Packing Slip"><i class="fa fa-file-text-o" aria-hidden="true"></i></a>
+                            <button type="button" class="btn btn-light btn-sm w-100 border-secondary text-center text-danger create-dpd-order mr-2" data="{{$assigned->order_number}}" data-toggle="tooltip" data-placement="top" title="Create DPD Order"><i class="fas fa-shipping-fast"></i></button>
+                            <button type="button" class="btn btn-danger w-100 border-secondary text-center text-white create-royal-mail-order" data="{{$assigned->order_number}}" data-toggle="tooltip" data-placement="top" title="Create Royal Mail Order"><i class="fas fa-shipping-fast"></i></button>
                         </div>
                     </div>
                 </div>
@@ -190,7 +191,7 @@
 
     <!--start hidden row-->
     <tr>
-        <td colspan="18" class="hiddenRow">
+        <td colspan="19" class="hiddenRow">
             <div class="accordian-body collapse" id="demo{{$assigned->order_number}}">
                 <div class="row">
                     <div class="col-12">
@@ -387,6 +388,7 @@
                                                     <h7> : {{$assigned->shipping_country}} </h7>
                                                 </div>
                                             </div>
+                                            @include('partials.order.ioss_number',['ebay_tax_reference' => $assigned->ebay_tax_reference])
                                         </div>
                                     </div>
                                     <div class="billing">
@@ -465,70 +467,14 @@
 @endforeach
 
 <!--Modal-->
-<div class="modal fade" id="orderNoteModalView" tabindex="-1" role="dialog" aria-labelledby="orderNoteLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Ordr Note</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body-view">
-
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary update-note">update</button>
-                <button type="button" class="btn btn-danger delete-note">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
+@include('partials.order.order_note.order_note_modal')
 <!--End Modal-->
 
 
 <script>
 
-    function view_note(id) {
-        // var id = $(this).attr('id');
-        $.ajax({
-            type: "POST",
-            url:"{{url('view-order-note')}}",
-            data: {
-                "_token" : "{{csrf_token()}}",
-                "order_id" : id
-            },
-            success: function (response) {
-                if(response.data !== 'error'){
-                    var infoModal = $('#orderNoteModalView');
-                    var info = '';
-                    if(response.buyerMessage.buyer_message){
-                        info += '<div class="alert alert-warning text-dark"> Buyer Note : '+response.buyerMessage.buyer_message+'</div>'
-                        $('table tbody tr td.checkboxShowHide'+id).html('<input type="checkbox" class="checkBoxClass" id="customCheck'+id+'" value="'+id+'">')
-                    }
-                    if(response.data){
-                        info += '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                            '<strong>Note : </strong>\n' +
-                            '<p class=""></p>' +
-                            '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                            '<strong>Created By : ' + response.data.user_info.name + '</strong>' +
-                            '<strong class="pull-right">Modified By : ' + response.data.modifier_info.name + ' (' + response.data.updated_at + ')' + '</strong>'
-                        infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        infoModal.modal();
-                        $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                        $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                        $('#orderNoteModalView .modal-footer').removeClass('d-none')
-                    }else{
-                        $('#orderNoteModalView .modal-footer').addClass('d-none')
-                    }
-                    infoModal.find('.modal-body-view')[0].innerHTML = info;
-                    infoModal.modal();
-                }else{
-                    alert('Something went wrong');
-                }
-            }
-        });
-    }
+    @include('partials.order.order_note.order_note_unread_javascript')
+    @include('partials.order.order_note.order_note_javascript')
 
 
     $(document).ready(function () {
@@ -644,6 +590,11 @@
     });
     //End Check uncheck active catalogue counter
 
-
+    var tr_length = $('.order-table tbody .shipping_fee_order_no_check').length
+    if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+        $('.order-content .card-box').attr('style', 'padding-bottom: 270px !important')
+    }else if(tr_length > 3){
+        $('.order-content .card-box').removeAttr('style')
+    }
 
 </script>

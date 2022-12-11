@@ -66,7 +66,7 @@ class MigrationController extends Controller
             }
             foreach($creatableProfile as $profile){
                 $tt = EbayMigration::where('account_id',$profile['account_id'])->where('category_id',$profile['category_id'])
-                ->where('condition_id',$profile['condition_id'])->pluck('id')->toArray();
+                    ->where('condition_id',$profile['condition_id'])->pluck('id')->toArray();
                 foreach($tt as $t){
                     $migration_count_id[] = $t;
                 }
@@ -77,32 +77,32 @@ class MigrationController extends Controller
 
     public function ebayMigration(Request $request){
 
-         //Start page title and pagination setting
-         $settingData = $this->paginationSetting('activitylog', 'activity_log_active_product');
-         $setting = $settingData['setting'];
-         $page_title = '';
-         $pagination = $settingData['pagination'];
-         //End page title and pagination setting
+        //Start page title and pagination setting
+        $settingData = $this->paginationSetting('activitylog', 'activity_log_active_product');
+        $setting = $settingData['setting'];
+        $page_title = '';
+        $pagination = $settingData['pagination'];
+        //End page title and pagination setting
 
         $ebay_migration_result = EbayMigration::query();
         $isSearch = $request->get('is_search') ? true : false;
-            $allCondition = [];
-            if($isSearch){
-                $this->ebayMigrationSearchCondition($ebay_migration_result, $request);
-                $allCondition = $this->ebayMigrationSearchParams($request, $allCondition);
-                //dd($allCondition);
-            }
+        $allCondition = [];
+        if($isSearch){
+            $this->ebayMigrationSearchCondition($ebay_migration_result, $request);
+            $allCondition = $this->ebayMigrationSearchParams($request, $allCondition);
+            //dd($allCondition);
+        }
 
-            $category_count_id = $this->creatableProfile();
-            if($request->get('account_id')){
-                $category_count = EbayMigration::where('account_id', $request->get('account_id'))
+        $category_count_id = $this->creatableProfile();
+        if($request->get('account_id')){
+            $category_count = EbayMigration::where('account_id', $request->get('account_id'))
                 ->whereNotIn('id',$category_count_id)
                 ->where('status',0)
                 ->distinct('category_id')
                 ->groupBy('condition_id')
                 ->count('category_id');
-            }else{
-                $category_count = EbayMigration::select('id','account_id','condition_id','category_id')
+        }else{
+            $category_count = EbayMigration::select('id','account_id','condition_id','category_id')
                 ->whereNotIn('id',$category_count_id)
                 ->where('status',0)
                 ->groupBy('account_id')
@@ -110,20 +110,20 @@ class MigrationController extends Controller
                 ->groupBy('condition_id')
                 ->get()
                 ->count();
-            }
-            // echo '<pre>';
-            // print_r($category_count);
-            // exit();
-            $category_count_reset = EbayMigration::where('status',0)
+        }
+        // echo '<pre>';
+        // print_r($category_count);
+        // exit();
+        $category_count_reset = EbayMigration::where('status',0)
             ->groupBy('account_id')
             ->groupBy('category_id')
             ->groupBy('condition_id')
             ->get()
             ->count();
-            $category_name = EbayMigration::select('category_name')
+        $category_name = EbayMigration::select('category_name')
             ->distinct('category_id')
             ->get();
-            $counter = 0;
+        $counter = 0;
         foreach ($category_name as $value){
             $counter++;
         }
@@ -145,47 +145,47 @@ class MigrationController extends Controller
 
 
 
-        /*
-        * Function : paginationSetting
-        * Route Type : null
-        * Parameters : null
-        * Creator : Solaiman
-        * Description : This function is used for pagination setting
-        * Created Date : 1-12-2020
-        */
+    /*
+    * Function : paginationSetting
+    * Route Type : null
+    * Parameters : null
+    * Creator : Solaiman
+    * Description : This function is used for pagination setting
+    * Created Date : 1-12-2020
+    */
 
-        public function paginationSetting ($firstKey, $secondKey = NULL) {
-            $setting_info = Setting::where('user_id',Auth::user()->id)->first();
-            $data['setting'] = null;
-            $data['pagination'] = 500;
-            if(isset($setting_info)) {
-                if($setting_info->setting_attribute != null){
-                    $data['setting'] = \Opis\Closure\unserialize($setting_info->setting_attribute);
-                    if(array_key_exists($firstKey,$data['setting'])){
-                        if($secondKey != null) {
-                            if (array_key_exists($secondKey, $data['setting'][$firstKey])) {
-                                $data['pagination'] = $data['setting'][$firstKey][$secondKey]['pagination'] ?? 500;
-                            } else {
-                                $data['pagination'] = 500;
-                            }
-                        }else{
-                            $data['pagination'] = $data['setting'][$firstKey]['pagination'] ?? 500;
+    public function paginationSetting ($firstKey, $secondKey = NULL) {
+        $setting_info = Setting::where('user_id',Auth::user()->id)->first();
+        $data['setting'] = null;
+        $data['pagination'] = 500;
+        if(isset($setting_info)) {
+            if($setting_info->setting_attribute != null){
+                $data['setting'] = \Opis\Closure\unserialize($setting_info->setting_attribute);
+                if(array_key_exists($firstKey,$data['setting'])){
+                    if($secondKey != null) {
+                        if (array_key_exists($secondKey, $data['setting'][$firstKey])) {
+                            $data['pagination'] = $data['setting'][$firstKey][$secondKey]['pagination'] ?? 500;
+                        } else {
+                            $data['pagination'] = 500;
                         }
                     }else{
-                        $data['pagination'] = 500;
+                        $data['pagination'] = $data['setting'][$firstKey]['pagination'] ?? 500;
                     }
                 }else{
-                    $data['setting'] = null;
                     $data['pagination'] = 500;
                 }
-
             }else{
                 $data['setting'] = null;
                 $data['pagination'] = 500;
             }
 
-            return $data;
+        }else{
+            $data['setting'] = null;
+            $data['pagination'] = 500;
         }
+
+        return $data;
+    }
 
 
     public function descriptionMigration(){
@@ -254,7 +254,7 @@ class MigrationController extends Controller
 
                     }
                 }
-               $result = EbayMasterProduct::onlyTrashed()->where('product_status', '=', 'Completed')->where('item_id',$ebay_product->item_id)->update(["item_specifics" => \Opis\Closure\serialize($item_specifics)]);
+                $result = EbayMasterProduct::onlyTrashed()->where('product_status', '=', 'Completed')->where('item_id',$ebay_product->item_id)->update(["item_specifics" => \Opis\Closure\serialize($item_specifics)]);
 
             }catch (\Mockery\Exception $exception){
 
@@ -297,9 +297,7 @@ class MigrationController extends Controller
                 // Log:info($product->item_id);
                 $product_variation_specifics = array();
 
-//                echo "<pre>";
-//                print_r($item_details);
-//                exit();
+
 
                 $existCatalogueItemId = EbayMasterProduct::where('item_id',$item_details["Item"]["ItemID"])->first();
                 if(!$existCatalogueItemId){
@@ -366,7 +364,7 @@ class MigrationController extends Controller
                         if (isset($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"][0]) && isset($item_details["Item"]["Variations"])){
 
                             foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"] as $key => $attribute){
-                                $attribute_result = Attribute::where('attribute_name',$attribute["Name"])->get()->first();
+                                $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$attribute["Name"])->get()->first();
                                 if (!$attribute_result){
                                     $last_attribute = Attribute::get()->last();
                                     if (isset($last_attribute->id)){
@@ -384,7 +382,7 @@ class MigrationController extends Controller
                                     foreach ($attribute["Value"] as $index => $terms){
                                         // Log::info($terms);
 
-                                        $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                        $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->get()->first();
                                         if (!$attribute_terms_result){
                                             $last_attribute_terms = AttributeTerm::get()->last();
                                             if (isset($last_attribute_terms->id)){
@@ -409,7 +407,7 @@ class MigrationController extends Controller
                                         $attribute["Name"] => $all_terms
                                     ];
                                 }else{
-                                    $attribute_terms_result = AttributeTerm::where('terms_name',$attribute["Value"])->get()->first();
+                                    $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$attribute["Value"])->get()->first();
                                     if (!$attribute_terms_result){
                                         $last_attribute_terms = AttributeTerm::get()->last();
                                         if (isset($last_attribute_terms->id)) {
@@ -436,7 +434,7 @@ class MigrationController extends Controller
                             // exit();
                         }elseif(!isset($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"][0]) && isset($item_details["Item"]["Variations"])){
 
-                            $attribute_result = Attribute::where('attribute_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
+                            $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
                             if (!isset($attribute_result->id)){
                                 $last_attribute = Attribute::get()->last();
                                 if (isset($last_attribute->id)) {
@@ -451,7 +449,7 @@ class MigrationController extends Controller
                             if(is_array($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])){
                                 foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"] as $terms){
 
-                                    $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                    $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->get()->first();
                                     if (!isset($attribute_terms_result->id)){
                                         $last_attribute_terms = AttributeTerm::get()->last();
                                         if (isset($last_attribute_terms->id)) {
@@ -476,7 +474,7 @@ class MigrationController extends Controller
                                 ];
                             }else{
 
-                                $attribute_terms_result = AttributeTerm::where('terms_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
+                                $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
                                 if (!isset($attribute_terms_result->id)){
                                     $last_attribute_terms = AttributeTerm::get()->last();
                                     if (isset($last_attribute_terms->id)) {
@@ -503,7 +501,9 @@ class MigrationController extends Controller
                         $product_draft_result = ProductDraft::create(['user_id' => Auth::id(),'modifier_id' => Auth::id(),'woowms_category' => $woowms_category_result->id , 'condition' => $woowms_condition_result->id ?? NULL,
                             'name' => $item_details["Item"]["Title"],'description' => $item_details["Item"]["Description"],'type' => isset($item_details["Item"]["Variations"]) ? 'variable' : 'simple','sale_price' => $item_details["Item"]["StartPrice"],'rrp' => $item_details["Item"]["StartPrice"],
                             'attribute' => \Opis\Closure\serialize($attribute_array),'status' => 'publish']);
-
+                        if (isset($item_details["Item"]["Variations"]["Pictures"])){
+                            $variation_image_array = $this->getVariationImage($item_details["Item"]["Variations"]["Pictures"]);
+                        }
                         if ($product_draft_result){
                             $master_image = array();
                             if (isset($item_details["Item"]["PictureDetails"])){
@@ -603,16 +603,24 @@ class MigrationController extends Controller
                                     }
                                 }else{
                                     if (isset($item_details["Item"]["Variations"]["Pictures"])){
-                                        foreach ($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"] as $terms_image){
+                                        if (isset($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"][0])){
+                                            foreach ($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"] as $terms_image){
 //                        echo "<pre>";
 //                        print_r($terms_image["VariationSpecificValue"]);
 //                        exit();
-                                            if(isset($terms_image["VariationSpecificValue"])){
-                                                $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
-                                            }
+                                                if(isset($terms_image["VariationSpecificValue"])){
+                                                    $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
+                                                }
 
+                                            }
+                                            $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
+                                        }else{
+                                            if(isset($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificValue"])){
+                                                $terms_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificValue"]][] = $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"]["PictureURL"];
+                                            }
+                                            $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
                                         }
-                                        $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
+
                                     }
 
 
@@ -656,10 +664,12 @@ class MigrationController extends Controller
 
                             if ($ebay_master_product_result != null &&  $product_draft_result != null){
 
+
+                                    $image_terms_name = '';
+                                    if (isset($item_details["Item"]["Variations"]["Pictures"])){
+                                        $image_terms_name = $item_details["Item"]["Variations"]["Pictures"]['VariationSpecificName'];
+                                    }
                                 if (isset($item_details["Item"]["Variations"]["Variation"][0])){
-
-
-
                                     foreach ($item_details["Item"]["Variations"]["Variation"] as $variation){
                                         $ean = '';
                                         $product_variation_specifics = array();
@@ -672,12 +682,13 @@ class MigrationController extends Controller
                                                 $ean = $variation["VariationProductListingDetails"]["EAN"];
                                             }
                                         }
-
+                                        $master_image_attribute_array = array();
+                                        $master_variation_images_array = array();
                                         if (isset($variation["VariationSpecifics"]["NameValueList"][0])){
 
                                             foreach ($variation["VariationSpecifics"]["NameValueList"] as $variation_specifics){
-                                                $variation_attribute = Attribute::where('attribute_name',$variation_specifics["Name"])->get()->first();
-                                                $variation_terms = AttributeTerm::where('terms_name',$variation_specifics["Value"])->get()->first();
+                                                $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'),$variation_specifics["Name"])->get()->first();
+                                                $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$variation_specifics["Value"])->get()->first();
                                                 $product_variation_specifics[] = [
                                                     'attribute_id' => $variation_attribute->id,
                                                     'attribute_name' => $variation_attribute->attribute_name,
@@ -690,18 +701,45 @@ class MigrationController extends Controller
                                                                                     <Name>'.$variation_specifics["Name"].'</Name>
                                                                                     <Value>'.'<![CDATA['.$variation_specifics["Value"].']]>'.'</Value>
                                                                                     </NameValueList>';
+                                                if ($variation_attribute->attribute_name == $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"] && isset($variation_image_array[$variation_terms->terms_name])){
+                                                    $master_image_attribute_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $variation_terms->terms_name;
+//                                                    $master_variation_images_array = $variation_image_array[$variation_terms->terms_name];
+                                                    foreach ($variation_image_array[$variation_terms->terms_name] as $url){
+                                                        $name = $this->uploadSingleImage($url,'product_image_custom');
+//                                                    Image::create(['draft_product_id' => $product_draft_result->id, 'image_url' => '/uploads/product-images/'.$name]);
+                                                        $master_variation_images_array[] = '/uploads/product-images/'.$name;
+                                                    }
+//                                                    echo "<pre>";
+//                                                    print_r($master_variation_images_array);
+//                                                    exit();
+
+                                                }
 
                                             }
                                             $variation_update .= '</VariationSpecifics>';
                                         }else{
-                                            $variation_attribute = Attribute::where('attribute_name', $variation["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
-                                            $variation_terms = AttributeTerm::where('terms_name', $variation["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
+                                            $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'), $variation["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
+                                            $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'), $variation["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
                                             $product_variation_specifics[] = [
                                                 'attribute_id' => $variation_attribute->id,
                                                 'attribute_name' => $variation_attribute->attribute_name,
                                                 'terms_id' => $variation_terms->id,
                                                 'terms_name' => $variation_terms->terms_name,
                                             ];
+                                            if(isset($item_details["Item"]["Variations"]["Pictures"])){
+                                                if ($variation_attribute->attribute_name == $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"] && isset($variation_image_array[$variation_terms->terms_name])){
+                                                    $master_image_attribute_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $variation_terms->terms_name;
+                                                    //                                                $master_variation_images_array = $variation_image_array[$variation_terms->terms_name];
+                                                    foreach ($variation_image_array[$variation_terms->terms_name] as $url){
+                                                        $name = $this->uploadSingleImage($url,'product_image_custom');
+                                                        //                                                    Image::create(['draft_product_id' => $product_draft_result->id, 'image_url' => '/uploads/product-images/'.$name]);
+                                                        $master_variation_images_array[] = '/uploads/product-images/'.$name;
+                                                    }
+                                                    //                                                echo "<pre>";
+                                                    //                                                print_r($master_variation_images_array);
+                                                    //                                                exit();
+                                                }
+                                            }
                                             $variation_sku .= '_'.$variation_terms->terms_name;
                                             $ebay_product_variation_specifics[$variation["VariationSpecifics"]["NameValueList"]["Name"]] = $variation["VariationSpecifics"]["NameValueList"]["Value"];
                                             $variation_update .=  '<NameValueList>
@@ -716,7 +754,7 @@ class MigrationController extends Controller
                                         }else{
                                             $variation_sku = str_replace('/',',',str_replace(' ','_',$variation_sku));
                                         }
-                                        $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $variation["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics), 'actual_quantity' => ($variation["Quantity"]-$variation["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
+                                        $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $variation["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image' => $master_variation_images_array[0] ?? null,'image_attribute' => sizeof($master_image_attribute_array) !=0 ? \Opis\Closure\serialize($master_image_attribute_array) : null,'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array), 'actual_quantity' => ($variation["Quantity"]-$variation["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
                                             'regular_price' => $variation["OriginalRetailPrice"]["DiscountPriceInfo"] ?? 0.00, 'sale_price' => $variation["StartPrice"]]);
                                         $shelf_product = ShelfedProduct::where('variation_id', $product_variation_create_result->id)->get()->first();
                                         $quantity = 0;
@@ -790,18 +828,23 @@ class MigrationController extends Controller
                                             $ean = $item_details["Item"]["Variations"]["Variation"]["VariationProductListingDetails"]["EAN"];
                                         }
                                     }
-
+                                    $master_image_attribute_array = array();
+                                    $master_variation_images_array = array();
                                     if (isset($item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"][0])){
 
                                         foreach ($item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"] as $variation_specifics){
-                                            $variation_attribute = Attribute::where('attribute_name',$variation_specifics["Name"])->get()->first();
-                                            $variation_terms = AttributeTerm::where('terms_name',$variation_specifics["Value"])->get()->first();
+                                            $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'),$variation_specifics["Name"])->get()->first();
+                                            $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$variation_specifics["Value"])->get()->first();
                                             $product_variation_specifics[] = [
                                                 'attribute_id' => $variation_attribute->id,
                                                 'attribute_name' => $variation_attribute->attribute_name,
                                                 'terms_id' => $variation_terms->id,
                                                 'terms_name' => $variation_terms->terms_name,
                                             ];
+                                            if ($variation_attribute->attribute_name == $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"] && isset($variation_image_array[$variation_terms->terms_name])){
+                                                $master_image_attribute_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $variation_terms->terms_name;
+                                                $master_variation_images_array = $variation_image_array[$variation_terms->terms_name];
+                                            }
                                             $ebay_product_variation_specifics[$variation_specifics["Name"]] = $variation_specifics["Value"];
                                             $variation_sku .= '_'.$variation_terms->terms_name;
                                             $variation_update .=  '<NameValueList>
@@ -812,14 +855,24 @@ class MigrationController extends Controller
                                         }
                                         $variation_update .= '</VariationSpecifics>';
                                     }else{
-                                        $variation_attribute = Attribute::where('attribute_name', $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
-                                        $variation_terms = AttributeTerm::where('terms_name', $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
+                                        $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'), $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
+                                        $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'), $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
                                         $product_variation_specifics[] = [
                                             'attribute_id' => $variation_attribute->id,
                                             'attribute_name' => $variation_attribute->attribute_name,
                                             'terms_id' => $variation_terms->id,
                                             'terms_name' => $variation_terms->terms_name,
                                         ];
+                                        if(isset($item_details["Item"]["Variations"]["Pictures"])){
+                                            if ($variation_attribute->attribute_name == $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"] && isset($variation_image_array[$variation_terms->terms_name])){
+                                                $master_image_attribute_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $variation_terms->terms_name;
+                                                foreach ($variation_image_array[$variation_terms->terms_name] as $url){
+
+                                                }
+                                                $master_variation_images_array = $variation_image_array[$variation_terms->terms_name];
+                                            }
+
+                                        }
                                         $variation_sku .= '_'.$variation_terms->terms_name;
                                         $ebay_product_variation_specifics[$item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Name"]] = $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Value"];
                                         $variation_update .=  '<NameValueList>
@@ -834,7 +887,7 @@ class MigrationController extends Controller
                                     }else{
                                         $variation_sku = str_replace('/',',',str_replace(' ','_',$variation_sku));
                                     }
-                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["Variations"]["Variation"]["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics), 'actual_quantity' => ($item_details["Item"]["Variations"]["Variation"]["Quantity"]-$item_details["Item"]["Variations"]["Variation"]["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
+                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["Variations"]["Variation"]["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image_attribute' => sizeof($master_image_attribute_array) !=0 ? \Opis\Closure\serialize($master_image_attribute_array) : null,'image' => $master_variation_images_array[0] ?? null,'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array), 'actual_quantity' => ($item_details["Item"]["Variations"]["Variation"]["Quantity"]-$item_details["Item"]["Variations"]["Variation"]["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
                                         'regular_price' => $variation["OriginalRetailPrice"]["DiscountPriceInfo"] ?? 0.00, 'sale_price' => $item_details["Item"]["Variations"]["Variation"]["StartPrice"]]);
                                     $shelf_product = ShelfedProduct::where('variation_id', $product_variation_create_result->id)->get()->first();
                                     $quantity = 0;
@@ -1079,7 +1132,7 @@ class MigrationController extends Controller
                 $product_variation_specifics = array();
 //                dd($item_details);
 //                echo "<pre>";
-//                print_r($item_details);
+//                print_r($item_details["Item"]["Variations"]["Pictures"]);
 //                exit();
 
 
@@ -1088,6 +1141,7 @@ class MigrationController extends Controller
                 $existCatalogueItemId = EbayMasterProduct::where('item_id',$item_details["Item"]["ItemID"])->first();
 
                 if(!$existCatalogueItemId){
+//                if(true){
 
 //                if(isset($item_details["Item"]["Variations"])){
 
@@ -1126,6 +1180,7 @@ class MigrationController extends Controller
 //                        exit();
 //                    dd('test');
                     if( $counter == 0){
+//                    if( true){
 
                         //foreach ($item_details["Item"]["Variations"]["Variation"] as $variation){
                         $attribute_array = array();
@@ -1150,7 +1205,7 @@ class MigrationController extends Controller
                         if (isset($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"][0]) && isset($item_details["Item"]["Variations"])){
 
                             foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"] as $key => $attribute){
-                                $attribute_result = Attribute::where('attribute_name',$attribute["Name"])->get()->first();
+                                $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$attribute["Name"])->get()->first();
                                 if (!$attribute_result){
                                     $last_attribute = Attribute::get()->last();
                                     if (isset($last_attribute->id)){
@@ -1168,7 +1223,7 @@ class MigrationController extends Controller
                                     foreach ($attribute["Value"] as $index => $terms){
                                         // Log::info($terms);
 
-                                        $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                        $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->where('attribute_id',$attribute_result->id)->get()->first();
                                         if (!$attribute_terms_result){
                                             $last_attribute_terms = AttributeTerm::get()->last();
                                             if (isset($last_attribute_terms->id)){
@@ -1193,7 +1248,7 @@ class MigrationController extends Controller
                                         $attribute["Name"] => $all_terms
                                     ];
                                 }else{
-                                    $attribute_terms_result = AttributeTerm::where('terms_name',$attribute["Value"])->get()->first();
+                                    $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$attribute["Value"])->get()->first();
                                     if (!$attribute_terms_result){
                                         $last_attribute_terms = AttributeTerm::get()->last();
                                         if (isset($last_attribute_terms->id)) {
@@ -1220,7 +1275,7 @@ class MigrationController extends Controller
                             // exit();
                         }elseif(!isset($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"][0]) && isset($item_details["Item"]["Variations"])){
 
-                            $attribute_result = Attribute::where('attribute_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
+                            $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
                             if (!isset($attribute_result->id)){
                                 $last_attribute = Attribute::get()->last();
                                 if (isset($last_attribute->id)) {
@@ -1236,7 +1291,7 @@ class MigrationController extends Controller
                             if(is_array($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])){
                                 foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"] as $terms){
 
-                                    $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                    $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->where('attribute_id',$attribute_result->id)->get()->first();
                                     if (!isset($attribute_terms_result->id)){
                                         $last_attribute_terms = AttributeTerm::get()->last();
                                         if (isset($last_attribute_terms->id)) {
@@ -1261,7 +1316,7 @@ class MigrationController extends Controller
                                 ];
                             }else{
 
-                                $attribute_terms_result = AttributeTerm::where('terms_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
+                                $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
                                 if (!isset($attribute_terms_result->id)){
                                     $last_attribute_terms = AttributeTerm::get()->last();
                                     if (isset($last_attribute_terms->id)) {
@@ -1327,6 +1382,8 @@ class MigrationController extends Controller
 
 
 
+
+
                             $master_product_find_result = ProductDraft::where('id' , $product_draft_result->id)->first();
                             if (isset($item_details["Item"]["Variations"]["Variation"])){
                                 foreach (\Opis\Closure\unserialize($master_product_find_result->attribute) as $attribute_id => $attribute_array){
@@ -1382,16 +1439,24 @@ class MigrationController extends Controller
                                     }
                                 }else{
                                     if (isset($item_details["Item"]["Variations"]["Pictures"])){
-                                        foreach ($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"] as $terms_image){
+                                        if (isset($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"][0])){
+                                            foreach ($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"] as $terms_image){
 //                        echo "<pre>";
 //                        print_r($terms_image["VariationSpecificValue"]);
 //                        exit();
-                                            if(isset($terms_image["VariationSpecificValue"])){
-                                                $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
-                                            }
+                                                if(isset($terms_image["VariationSpecificValue"])){
+                                                    $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
+                                                }
 
+                                            }
+                                            $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
+                                        }else{
+                                            if(isset($item_details["Item"]["Variations"]["Pictures"]["VariationSpecificValue"])){
+                                                $terms_array[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificValue"]][] = $item_details["Item"]["Variations"]["Pictures"]["VariationSpecificPictureSet"]["PictureURL"];
+                                            }
+                                            $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
                                         }
-                                        $variation_image[$item_details["Item"]["Variations"]["Pictures"]["VariationSpecificName"]] = $terms_array;
+
                                     }
 
 
@@ -1434,7 +1499,10 @@ class MigrationController extends Controller
                             }
 
                             if ($ebay_master_product_result != null &&  $product_draft_result != null){
-
+                                $image_terms_name = '';
+                                if (isset($item_details["Item"]["Variations"]["Pictures"])){
+                                    $image_terms_name = $item_details["Item"]["Variations"]["Pictures"]['VariationSpecificName'];
+                                }
                                 if (isset($item_details["Item"]["Variations"]["Variation"][0])){
 
 
@@ -1451,13 +1519,13 @@ class MigrationController extends Controller
                                                 $ean = $variation["VariationProductListingDetails"]["EAN"];
                                             }
                                         }
-
+                                        $master_image_attribute_array = array();
+                                        $master_variation_images_array = array();
                                         if (isset($variation["VariationSpecifics"]["NameValueList"][0])){
-                                            $master_image_attribute_array = array();
-                                            $master_variation_images_array = array();
+
                                             foreach ($variation["VariationSpecifics"]["NameValueList"] as $variation_specifics){
-                                                $variation_attribute = Attribute::where('attribute_name',$variation_specifics["Name"])->get()->first();
-                                                $variation_terms = AttributeTerm::where('terms_name',$variation_specifics["Value"])->get()->first();
+                                                $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'),$variation_specifics["Name"])->get()->first();
+                                                $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$variation_specifics["Value"])->get()->first();
                                                 $product_variation_specifics[] = [
                                                     'attribute_id' => $variation_attribute->id,
                                                     'attribute_name' => $variation_attribute->attribute_name,
@@ -1489,8 +1557,8 @@ class MigrationController extends Controller
                                             }
                                             $variation_update .= '</VariationSpecifics>';
                                         }else{
-                                            $variation_attribute = Attribute::where('attribute_name', $variation["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
-                                            $variation_terms = AttributeTerm::where('terms_name', $variation["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
+                                            $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'), $variation["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
+                                            $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'), $variation["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
                                             $product_variation_specifics[] = [
                                                 'attribute_id' => $variation_attribute->id,
                                                 'attribute_name' => $variation_attribute->attribute_name,
@@ -1521,13 +1589,23 @@ class MigrationController extends Controller
                                             $variation_update .= '</VariationSpecifics>';
                                         }
 
+
+
                                         if (isset($variation["SKU"])){
                                             $variation_sku = str_replace('/',',',str_replace(' ','_',$variation["SKU"]));
 
                                         }else{
                                             $variation_sku = str_replace('/',',',str_replace(' ','_',$variation_sku));
                                         }
-                                        $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $variation["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image' => $master_image_attribute_array[0],'image_attribute' => \Opis\Closure\serialize($master_image_attribute_array),'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array),'actual_quantity' => ($variation["Quantity"]-$variation["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
+//                                        echo "<pre>";
+//                                        print_r($product_variation_specifics);
+//                                        echo "***********";
+//                                        print_r($master_image_attribute_array);
+//                                        echo "***********";
+//                                        print_r($master_variation_images_array);
+//
+//                                        exit();
+                                        $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $variation["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image' => $master_variation_images_array[0] ?? null,'image_attribute' => sizeof($master_image_attribute_array) !=0 ? \Opis\Closure\serialize($master_image_attribute_array) : null,'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array),'actual_quantity' => ($variation["Quantity"]-$variation["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
                                             'regular_price' => $variation["OriginalRetailPrice"]["DiscountPriceInfo"] ?? 0.00, 'sale_price' => $variation["StartPrice"]]);
                                         $shelf_product = ShelfedProduct::where('variation_id', $product_variation_create_result->id)->get()->first();
                                         $quantity = 0;
@@ -1603,12 +1681,13 @@ class MigrationController extends Controller
                                             $ean = $item_details["Item"]["Variations"]["Variation"]["VariationProductListingDetails"]["EAN"];
                                         }
                                     }
-
+                                    $master_image_attribute_array = array();
+                                    $master_variation_images_array = array();
                                     if (isset($item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"][0])){
 
                                         foreach ($item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"] as $variation_specifics){
-                                            $variation_attribute = Attribute::where('attribute_name',$variation_specifics["Name"])->get()->first();
-                                            $variation_terms = AttributeTerm::where('terms_name',$variation_specifics["Value"])->get()->first();
+                                            $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'),$variation_specifics["Name"])->get()->first();
+                                            $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$variation_specifics["Value"])->get()->first();
                                             $product_variation_specifics[] = [
                                                 'attribute_id' => $variation_attribute->id,
                                                 'attribute_name' => $variation_attribute->attribute_name,
@@ -1629,8 +1708,8 @@ class MigrationController extends Controller
                                         }
                                         $variation_update .= '</VariationSpecifics>';
                                     }else{
-                                        $variation_attribute = Attribute::where('attribute_name', $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
-                                        $variation_terms = AttributeTerm::where('terms_name', $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
+                                        $variation_attribute = Attribute::where(DB::raw('BINARY `attribute_name`'), $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Name"])->get()->first();
+                                        $variation_terms = AttributeTerm::where(DB::raw('BINARY `terms_name`'), $item_details["Item"]["Variations"]["Variation"]["VariationSpecifics"]["NameValueList"]["Value"])->get()->first();
                                         $product_variation_specifics[] = [
                                             'attribute_id' => $variation_attribute->id,
                                             'attribute_name' => $variation_attribute->attribute_name,
@@ -1645,6 +1724,7 @@ class MigrationController extends Controller
                                                 }
                                                 $master_variation_images_array = $variation_image_array[$variation_terms->terms_name];
                                             }
+
                                         }
 
                                         $variation_sku .= '_'.$variation_terms->terms_name;
@@ -1661,7 +1741,7 @@ class MigrationController extends Controller
                                     }else{
                                         $variation_sku = str_replace('/',',',str_replace(' ','_',$variation_sku));
                                     }
-                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["Variations"]["Variation"]["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image_attribute' => \Opis\Closure\serialize($master_image_attribute_array),'image' => $master_image_attribute_array[0],'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array), 'actual_quantity' => ($item_details["Item"]["Variations"]["Variation"]["Quantity"]-$item_details["Item"]["Variations"]["Variation"]["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
+                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["Variations"]["Variation"]["SKU"] ?? $variation_sku,'attribute' => \Opis\Closure\serialize($product_variation_specifics),'image_attribute' => sizeof($master_image_attribute_array) !=0 ? \Opis\Closure\serialize($master_image_attribute_array) : null,'image' => $master_variation_images_array[0] ?? null,'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array), 'actual_quantity' => ($item_details["Item"]["Variations"]["Variation"]["Quantity"]-$item_details["Item"]["Variations"]["Variation"]["SellingStatus"]["QuantitySold"]),'ean_no' => $ean,
                                         'regular_price' => $variation["OriginalRetailPrice"]["DiscountPriceInfo"] ?? 0.00, 'sale_price' => $item_details["Item"]["Variations"]["Variation"]["StartPrice"]]);
                                     $shelf_product = ShelfedProduct::where('variation_id', $product_variation_create_result->id)->get()->first();
                                     $quantity = 0;
@@ -1733,7 +1813,7 @@ class MigrationController extends Controller
                                     }else{
                                         $variation_sku = random_int(1,1000000);
                                     }
-                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["SKU"] ?? $variation_sku,'attribute' =>  '','image' => $master_image_attribute_array[0],'variation_images' =>  \Opis\Closure\serialize($master_variation_images_array), 'actual_quantity' => ($item_details["Item"]["Quantity"]-$item_details["Item"]["SellingStatus"]["QuantitySold"]),'ean_no' => $item_details["Item"]["ProductListingDetails"]["EAN"] ?? '',
+                                    $product_variation_create_result = ProductVariation::create(['product_draft_id' => $product_draft_result->id,'sku' => $item_details["Item"]["SKU"] ?? $variation_sku,'attribute' =>  '','image' => null,'variation_images' =>  null, 'actual_quantity' => ($item_details["Item"]["Quantity"]-$item_details["Item"]["SellingStatus"]["QuantitySold"]),'ean_no' => $item_details["Item"]["ProductListingDetails"]["EAN"] ?? '',
                                         'regular_price' => $item_details["Item"]["OriginalRetailPrice"]["DiscountPriceInfo"] ?? 0.00, 'sale_price' => $item_details["Item"]["StartPrice"]]);
                                     $shelf_product = ShelfedProduct::where('variation_id', $product_variation_create_result->id)->get()->first();
                                     $quantity = 0;
@@ -1844,20 +1924,32 @@ class MigrationController extends Controller
             }
         }else{
             if (isset($pictures)){
+                if (isset($pictures["VariationSpecificPictureSet"][0])){
+                    foreach ($pictures["VariationSpecificPictureSet"] as $terms_image){
 
-                foreach ($pictures["VariationSpecificPictureSet"] as $terms_image){
+                        if (gettype($terms_image["PictureURL"]) == "array"){
+                            foreach ($terms_image["PictureURL"] as $picture_url){
+                                $terms_array[$terms_image["VariationSpecificValue"]][] = $picture_url;
+                            }
+                        }else{
+                            if(isset($terms_image["VariationSpecificValue"])){
+                                $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
+                            }
+                        }
 
-                    if (gettype($terms_image["PictureURL"]) == "array"){
-                        foreach ($terms_image["PictureURL"] as $picture_url){
-                            $terms_array[$terms_image["VariationSpecificValue"]][] = $picture_url;
+                    }
+                }else{
+                    if (gettype($pictures["VariationSpecificPictureSet"]["PictureURL"]) == "array"){
+                        foreach ($pictures["VariationSpecificPictureSet"]["PictureURL"] as $picture_url){
+                            $terms_array[$pictures["VariationSpecificValue"]][] = $picture_url;
                         }
                     }else{
-                        if(isset($terms_image["VariationSpecificValue"])){
-                            $terms_array[$terms_image["VariationSpecificValue"]][] = $terms_image["PictureURL"];
+                        if(isset($pictures["VariationSpecificPictureSet"]["VariationSpecificValue"])){
+                            $terms_array[$pictures["VariationSpecificPictureSet"]["VariationSpecificValue"]][] = $pictures["VariationSpecificPictureSet"]["PictureURL"];
                         }
                     }
-
                 }
+
 //                $variation_image[$pictures["VariationSpecificName"]] = $terms_array;
             }
         }
@@ -1958,7 +2050,7 @@ class MigrationController extends Controller
                     if (is_array($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]) && isset($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"][0])){
 
                         foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"] as $attribute){
-                            $attribute_result = Attribute::where('attribute_name',$attribute["Name"])->get()->first();
+                            $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$attribute["Name"])->get()->first();
                             if (!$attribute_result){
                                 $attribute_result = Attribute::create(['attribute_name' => $attribute["Name"]]);
                             }
@@ -1967,7 +2059,7 @@ class MigrationController extends Controller
 
                                 foreach ($attribute["Value"] as $terms){
 
-                                    $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                    $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->where('attribute_id',$attribute_result->id)->get()->first();
                                     if (!$attribute_terms_result){
                                         $attribute_terms_result = AttributeTerm::create(['attribute_id' => $attribute_result->id, 'terms_name' => $terms]);
                                     }
@@ -1986,7 +2078,7 @@ class MigrationController extends Controller
                                     $attribute["Name"] => $all_terms
                                 ];
                             }else{
-                                $attribute_terms_result = AttributeTerm::where('terms_name',$attribute["Value"])->get()->first();
+                                $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$attribute["Value"])->get()->first();
                                 if (!$attribute_terms_result){
                                     $attribute_terms_result = AttributeTerm::create(['attribute_id' => $attribute_result->id, 'terms_name' => $attribute["Value"]]);
                                 }
@@ -2002,7 +2094,7 @@ class MigrationController extends Controller
 //                                    print_r($attribute_array);
 //                                    exit();
                     }else{
-                        $attribute_result = Attribute::where('attribute_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
+                        $attribute_result = Attribute::where(DB::raw('BINARY `attribute_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"])->get()->first();
                         if (!$attribute_result){
                             $attribute_result = Attribute::create(['attribute_name' => $item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"]]);
                         }
@@ -2011,7 +2103,7 @@ class MigrationController extends Controller
 
                             foreach ($item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"] as $terms){
 
-                                $attribute_terms_result = AttributeTerm::where('terms_name',$terms)->get()->first();
+                                $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$terms)->where('attribute_id',$attribute_result->id)->get()->first();
                                 if (!$attribute_terms_result){
                                     $attribute_terms_result = AttributeTerm::create(['attribute_id' => $attribute_result->id, 'terms_name' => $terms]);
                                 }
@@ -2030,7 +2122,7 @@ class MigrationController extends Controller
                                 $item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Name"] => $all_terms
                             ];
                         }else{
-                            $attribute_terms_result = AttributeTerm::where('terms_name',$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
+                            $attribute_terms_result = AttributeTerm::where(DB::raw('BINARY `terms_name`'),$item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"])->get()->first();
                             if (!isset($attribute_terms_result->id)){
                                 $attribute_terms_result = AttributeTerm::create(['attribute_id' => $attribute_result->id, 'terms_name' => $item_details["Item"]["Variations"]["VariationSpecificsSet"]["NameValueList"]["Value"]]);
                             }
@@ -2253,35 +2345,35 @@ class MigrationController extends Controller
                     $conditionArr[] = $explodeData[2];
                 }
                 $migrationInfo = EbayMigration::select('id')->where('account_id',$explodeData[0])
-                ->where('category_id',$explodeData[1])
-                ->where('condition_id',$explodeData[2])->first();
+                    ->where('category_id',$explodeData[1])
+                    ->where('condition_id',$explodeData[2])->first();
                 $searchIds[] = $migrationInfo->id;
             }
             $category_sorting = EbayMigration::with(['accountInfo:id,account_name,logo'])
-            ->whereNotIn('id',$category_count_id)
-            ->whereIn('id',$searchIds)
-            ->whereIn('account_id',$accountArr)
-            ->whereIn('category_id',$categoryArr)
-            ->whereIn('condition_id',$conditionArr)
-            ->groupBy('category_id')
-            ->groupBy('account_id')
-            ->groupBy('condition_id')
-            ->get();
+                ->whereNotIn('id',$category_count_id)
+                ->whereIn('id',$searchIds)
+                ->whereIn('account_id',$accountArr)
+                ->whereIn('category_id',$categoryArr)
+                ->whereIn('condition_id',$conditionArr)
+                ->groupBy('category_id')
+                ->groupBy('account_id')
+                ->groupBy('condition_id')
+                ->get();
         }elseif(isset($request->account_id)){
             $category_sorting = EbayMigration::with(['accountInfo:id,account_name,logo'])
-            ->whereNotIn('id',$category_count_id)
-            ->where('account_id', $request->account_id)
-            ->groupBy('category_id')
-            ->groupBy('account_id')
-            ->groupBy('condition_id')
-            ->get();
+                ->whereNotIn('id',$category_count_id)
+                ->where('account_id', $request->account_id)
+                ->groupBy('category_id')
+                ->groupBy('account_id')
+                ->groupBy('condition_id')
+                ->get();
         }else{
             $category_sorting = EbayMigration::with(['accountInfo:id,account_name,logo'])
-            ->whereNotIn('id',$category_count_id)
-            ->groupBy('category_id')
-            ->groupBy('account_id')
-            ->groupBy('condition_id')
-            ->get();
+                ->whereNotIn('id',$category_count_id)
+                ->groupBy('category_id')
+                ->groupBy('account_id')
+                ->groupBy('condition_id')
+                ->get();
         }
         // echo '<pre>';
         // print_r(json_decode($category_sorting));
@@ -2292,26 +2384,26 @@ class MigrationController extends Controller
 
     public function autoCreateProfile($id){
 
-            $uniqProfiles = EbayMigration::where('account_id',$id)->GroupBy(['category_id','condition_id'])->get();
+        $uniqProfiles = EbayMigration::where('account_id',$id)->GroupBy(['category_id','condition_id'])->get();
 
-            $ebay_account = EbayAccount::find($id);
-            $policy = \Opis\Closure\unserialize($ebay_account->default_policy);
+        $ebay_account = EbayAccount::find($id);
+        $policy = \Opis\Closure\unserialize($ebay_account->default_policy);
 
-            foreach ($uniqProfiles as $uniqProfile){
-                $ebay_site = DB::table('ebay_currency')->where('site_id',$uniqProfile['site_id'])->get()->first();
+        foreach ($uniqProfiles as $uniqProfile){
+            $ebay_site = DB::table('ebay_currency')->where('site_id',$uniqProfile['site_id'])->get()->first();
 //                return $uniqProfile['account_id'];
-                $profile = EbayProfile::where('account_id',$uniqProfile['account_id'])->where('site_id',$uniqProfile['site_id'])->where('condition_id',$uniqProfile['condition_id'])->where('category_id',$uniqProfile['category_id'])->get()->first();
+            $profile = EbayProfile::where('account_id',$uniqProfile['account_id'])->where('site_id',$uniqProfile['site_id'])->where('condition_id',$uniqProfile['condition_id'])->where('category_id',$uniqProfile['category_id'])->get()->first();
 
-                if (!isset($profile)){
+            if (!isset($profile)){
 
-                    $profile_name = $uniqProfile['category_name'].' ('.$ebay_account->account_name.')';
-                    EbayProfile::updateOrCreate(['account_id' => $uniqProfile['account_id'],'site_id' => $uniqProfile['site_id'],'condition_id' => $uniqProfile['condition_id'],'category_id' => $uniqProfile['category_id']],['account_id' => $uniqProfile['account_id'],'site_id' => $uniqProfile['site_id'],'profile_name' => $uniqProfile['category_name'] .' ('.$ebay_account->account_name.')','condition_id' => $uniqProfile['condition_id'],'condition_name' => $uniqProfile['condition_name'],'category_id' => $uniqProfile['category_id'],'category_name' => $uniqProfile['category_name'],
-                        'location' => $ebay_account->location,'country' => $ebay_account->country,
-                        'shipping_id' => $policy['shipment_policy'],'return_id' => $policy['return_policy'],'payment_id' => $policy['payment_policy'],'currency' => $ebay_site->currency,'template_id' => 1,'eps' => 'EPS']);
-                }
-
+                $profile_name = $uniqProfile['category_name'].' ('.$ebay_account->account_name.')';
+                EbayProfile::updateOrCreate(['account_id' => $uniqProfile['account_id'],'site_id' => $uniqProfile['site_id'],'condition_id' => $uniqProfile['condition_id'],'category_id' => $uniqProfile['category_id']],['account_id' => $uniqProfile['account_id'],'site_id' => $uniqProfile['site_id'],'profile_name' => $uniqProfile['category_name'] .' ('.$ebay_account->account_name.')','condition_id' => $uniqProfile['condition_id'],'condition_name' => $uniqProfile['condition_name'],'category_id' => $uniqProfile['category_id'],'category_name' => $uniqProfile['category_name'],
+                    'location' => $ebay_account->location,'country' => $ebay_account->country,'post_code' =>$ebay_account->post_code,
+                    'shipping_id' => $policy['shipment_policy'],'return_id' => $policy['return_policy'],'payment_id' => $policy['payment_policy'],'currency' => $ebay_site->currency,'template_id' => 1,'eps' => 'EPS']);
             }
-            return 1;
+
+        }
+        return 1;
     }
 
     public function creatableProfileBySearch(){
@@ -2331,7 +2423,7 @@ class MigrationController extends Controller
             }
             foreach($creatableProfile as $profile){
                 $tt = EbayMigration::where('condition_id',$profile['condition_id'])->where('category_id',$profile['category_id'])
-                ->where('condition_id',$profile['condition_id'])->pluck('id')->toArray();
+                    ->where('condition_id',$profile['condition_id'])->pluck('id')->toArray();
                 foreach($tt as $t){
                     $migration_count_id[] = $t;
                 }

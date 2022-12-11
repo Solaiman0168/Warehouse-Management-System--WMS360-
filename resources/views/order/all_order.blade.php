@@ -104,9 +104,9 @@
                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
-                                        <div class="ml-1"><p>Ebay User Id</p></div>
+                                        <div class="ml-1"><p>User Id</p></div>
                                     </div>
-                                    
+
                                 </div>
                                 <div class="col-md-4">
                                     <div class="d-flex align-items-center">
@@ -129,7 +129,7 @@
                                         </div>
                                         <div class="ml-1"><p>City</p></div>
                                     </div>
-                                    
+
                                     <div class="d-flex align-items-center mt-2">
                                         <div class="onoffswitch">
                                             <input type="checkbox" name="order-product" class="onoffswitch-checkbox" id="order-product" tabindex="0" @if(isset($setting['order']['order_awaiting_dispatch']['order-product']) && $setting['order']['order_awaiting_dispatch']['order-product'] == 1) checked @elseif(isset($setting['order']['order_awaiting_dispatch']['order-product']) && $setting['order']['order_awaiting_dispatch']['order-product'] == 0) @else checked @endif>
@@ -400,7 +400,7 @@
                                 <form action="{{url('all-column-search')}}" method="post">
                                     @csrf
                                     <input type="hidden" name="search_route" value="all/order">
-{{--                                    <input type="hidden" name="status" value="processing">--}}
+                                    <input type="hidden" name="status" value="all">
                                     <tr>
                                         <th style="width: 4%; text-align: center"><input type="checkbox" class="ckbCheckAll" id="ckbCheckAll"><label for="selectall"></label></th>
                                         <th class="order-no" style="width: 10%; text-align: center">
@@ -474,7 +474,7 @@
 {{--                                                                @endforeach--}}
 {{--                                                            @else--}}
 
-                                                            <option value="" >Select Status</option>  
+                                                            <option value="" >Select Status</option>
                                                             @if(isset($allCondition['order_status']) && ($allCondition['order_status'] == "awaiting dispatch"))
                                                                 <option value="awaiting dispatch" selected>Awaiting Dispatch</option>
                                                             {{-- @elseif(isset($allCondition['order_status']))
@@ -558,110 +558,9 @@
 
                                                         <select class="form-control select2" name="channels[]" multiple>
                                                             <option value="">Manual</option>
-                                                            @foreach($channels as $key=> $channel)
-                                                                @if($key == "ebay")
-                                                                    @foreach($channel as $key => $ebay)
-                                                                        @if(isset($allCondition['channels']))
-                                                                            @php
-                                                                                $existEbayChannel = null;
-                                                                                $getebay = 'ebay/'.$ebay;
-                                                                            @endphp
-                                                                            @foreach($allCondition['channels'] as $ch)
-                                                                                @if($getebay == $ch)
-                                                                                    <option value="ebay/{{$ebay}}" selected>{{$ebay}}</option>
-                                                                                    @php
-                                                                                        $existEbayChannel = 1;
-                                                                                    @endphp
-                                                                                @endif
-                                                                            @endforeach
-                                                                            @if($existEbayChannel == null)
-                                                                                <option value="ebay/{{$ebay}}">{{$ebay}}</option>
-                                                                            @endif
-                                                                        @else
-                                                                            <option value="ebay/{{$ebay}}">{{$ebay}}</option>
-                                                                        @endif
-                                                                    @endforeach
-
-                                                                @endif
-                                                            @endforeach
-                                                            @foreach($wooChannels as $key=> $channel)
-                                                                @if($key == "checkout")
-                                                                    @foreach($channel as $key => $ebay)
-                                                                        @if(isset($allCondition['channels']))
-                                                                            @php
-                                                                                $existEbayChannel = null;
-                                                                                $getebay = 'checkout/'.$ebay;
-                                                                            @endphp
-                                                                            @foreach($allCondition['channels'] as $ch)
-                                                                                @if($getebay == $ch)
-                                                                                    <option value="checkout/{{$ebay}}" selected>{{$ebay}}</option>
-                                                                                    @php
-                                                                                        $existEbayChannel = 1;
-                                                                                    @endphp
-                                                                                @endif
-                                                                            @endforeach
-                                                                            @if($existEbayChannel == null)
-                                                                                <option value="checkout/{{$ebay}}">{{$ebay}}</option>
-                                                                            @endif
-                                                                        @else
-                                                                            <option value="checkout/{{$ebay}}">{{$ebay}}</option>
-                                                                        @endif
-                                                                    @endforeach
-
-                                                                @endif
-                                                            @endforeach
-                                                            @foreach($onbuyChannels as $key=> $channel)
-                                                                @if($key == "onbuy")
-                                                                    @foreach($channel as $key => $ebay)
-                                                                        @if(isset($allCondition['channels']))
-                                                                            @php
-                                                                                $existEbayChannel = null;
-                                                                                $getebay = 'onbuy/'.$ebay;
-                                                                            @endphp
-                                                                            @foreach($allCondition['channels'] as $ch)
-                                                                                @if($getebay == $ch)
-                                                                                    <option value="onbuy/{{$ebay}}" selected>{{$ebay}}</option>
-                                                                                    @php
-                                                                                        $existEbayChannel = 1;
-                                                                                    @endphp
-                                                                                @endif
-                                                                            @endforeach
-                                                                            @if($existEbayChannel == null)
-                                                                                <option value="onbuy/{{$ebay}}">{{$ebay}}</option>
-                                                                            @endif
-                                                                        @else
-                                                                            <option value="onbuy/{{$ebay}}">{{$ebay}}</option>
-                                                                        @endif
-                                                                    @endforeach
-
-                                                                @endif
-                                                            @endforeach
-                                                            @if(isset($amazonChannels['amazon']) && count($amazonChannels['amazon']) > 0)
-                                                                @foreach($amazonChannels as $key=> $channel)
-                                                                    @if($key == "amazon")
-                                                                        @foreach($channel as $key => $amazon)
-                                                                            @if(isset($allCondition['channels']))
-                                                                                @php
-                                                                                    $existAmazonChannel = null;
-                                                                                    $getamazon = 'amazon/'.$amazon;
-                                                                                @endphp
-                                                                                @foreach($allCondition['channels'] as $ch)
-                                                                                    @if($getamazon == $ch)
-                                                                                        <option value="amazon/{{$amazon}}" selected>{{$amazon}}</option>
-                                                                                        @php
-                                                                                            $existAmazonChannel = 1;
-                                                                                        @endphp
-                                                                                    @endif
-                                                                                @endforeach
-                                                                                @if($existAmazonChannel == null)
-                                                                                    <option value="amazon/{{$amazon}}">{{$amazon}}</option>
-                                                                                @endif
-                                                                            @else
-                                                                                <option value="amazon/{{$amazon}}">{{$amazon}}</option>
-                                                                            @endif
-                                                                        @endforeach
-
-                                                                    @endif
+                                                            @if (count($channelWithAccount) > 0)
+                                                                @foreach ($channelWithAccount as $channel)
+                                                                    <option value="{{$channel}}" @if(isset($allCondition['channels']) && in_array($channel,$allCondition['channels'])) selected @endif>{{explode('/',$channel)[1] ?? ''}} ({{explode('/',$channel)[0] == 'checkout' ? 'woocommerce' : explode('/',$channel)[0]}})</option>
                                                                 @endforeach
                                                             @endif
                                                         </select>
@@ -756,7 +655,7 @@
                                                     </div>
 
                                                 </div>
-                                                <div>Ebay User ID</div>
+                                                <div>User ID</div>
                                             </div>
                                         </th>
                                         <th class="name" style="width: 20%;">
@@ -812,7 +711,7 @@
                                                 <div>City</div>
                                             </div>
                                         </th>
-                                        
+
                                         <th class="order-product filter-symbol" style="width: 10%">
                                             <div class="d-flex justify-content-center">
                                                 <div class="btn-group">
@@ -1076,7 +975,15 @@
                                 @inject('CommonFunction', 'App\Helpers\TraitFromClass')
                                 @foreach($all_pending_order as $pending)
                                     <?php // dd($all_pending_order); exit(); ?>
-                                    <tr>
+                                    @php
+                                        $colorCodeIndex = array_search($pending->order_number, array_column($shipping_fee_array, 'order_number'));
+                                        $colorCode = '';
+                                        if($colorCodeIndex) {
+                                            $colorCode = $shipping_fee_array[$colorCodeIndex]['color_code'];
+                                        }
+                                    @endphp
+                                    
+                                    <tr class="order_number_{{$pending->order_number}} shipping_fee_order_no_check" style="background-color: {{$colorCode}}">
                                         <td class="checkboxShowHide{{$pending->id}}" style="width: 4%; text-align: center !important;">
                                             @if(count($pending->product_variations) > 0 && ($pending->is_buyer_message_read !== 0))
                                                 <input type="checkbox" class="checkBoxClass" id="customCheck{{$pending->id}}" value="{{$pending->id}}">
@@ -1094,19 +1001,7 @@
                                             @if($pending->exchange_order_id)
                                                 (Ex. Order No. &nbsp;<span class="text-danger">{{\App\Order::find($pending->exchange_order_id)->order_number}}</span>)
                                             @endif
-                                            <span class="append_note{{$pending->id}}">
-                                                        @if(isset($pending->order_note) || ($pending->buyer_message != null))
-                                                    <label class="label label-success view-note" style="cursor: pointer" id="{{$pending->id}}" onclick="view_note({{$pending->id}});">View Note</label>
-                                                    @if($pending->is_buyer_message_read == 1)
-                                                        <label class="label label-danger view-note" style="cursor: pointer" id="unread{{$pending->id}}" onclick="unread({{$pending->id}});">Unread</label>
-                                                    @endif
-                                                @endif
-                                                    </span>
-                                            @if($pending->customer_note != null)
-                                                <span>
-                                                        <label class="label label-danger">Customer Note</label>
-                                                    </span>
-                                            @endif
+                                            @include('partials.order.order_note.order_note',['id' => $pending->id,'order_note' => $pending->order_note,'buyer_message' => $pending->buyer_message])
                                         </td>
                                         <td class="order-date" style="cursor: pointer; text-align: center !important; width: 20%!important;" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">
                                             {{$CommonFunction->getDateByTimeZone($pending->date_created)}}
@@ -1250,22 +1145,14 @@
 
                                         </td>
 
-                                        @if($pending->payment_method == 'paypal' || $pending->payment_method == 'PayPal')
+                                        @if ($pending->payment_method == 'cash')
                                             <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">
-                                                <a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$pending->transaction_id}}" target="_blank"><img src="{{asset('assets/common-assets/paypal.png')}}" alt="{{$pending->payment_method}}"></a>
+                                                <a href="#" target="_blank"><img src="{{asset('assets/common-assets/dollar.png')}}" alt="{{$pending->payment_method}}" style="width: 65px;height: 50px;"></a>
                                             </td>
-                                        @elseif($pending->payment_method == 'Amazon')
-                                            <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/amazon-orange-16x16.png')}}" alt="{{$pending->payment_method}}">
-                                                @if(!empty($pending->transaction_id))<a href="{{"https://www.paypal.com/cgi-bin/webscr?cmd=_view-a-trans&id=".$pending->transaction_id}}" target="_blank">({{$pending->transaction_id}})</a>@endif
-                                            </td>
-                                        @elseif($pending->payment_method == 'stripe')
-                                            <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/stripe.png')}}" alt="{{$pending->payment_method}}">
-                                                @if(!empty($pending->transaction_id))<a href="{{"https://dashboard.stripe.com/payments/".$pending->transaction_id}}" target="_blank">({{$pending->transaction_id}})</a>@endif
-                                            </td>
-                                        @elseif($pending->payment_method == 'CreditCard')
-                                            <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle"><img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$pending->payment_method}}" style="width: 65px;height: 50px;"></td>
                                         @else
-                                            <td class="payment" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">{{ucfirst($pending->payment_method)}}</td>
+                                            <td class="payment" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">
+                                                <img src="{{asset('assets/common-assets/credit-card.png')}}" alt="{{$pending->payment_method}}" style="width: 65px;height: 50px;">
+                                            </td>
                                         @endif
                                         <td class="ebay-user-id" style="cursor: pointer; width: 20%; text-align: center !important;" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">
                                             <div class="order_page_tooltip_container d-flex justify-content-center align-items-center">
@@ -1286,7 +1173,7 @@
                                             </div>
                                         </td>
                                         {{--                                                <td class="order-date" style="cursor: pointer" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">{{date('d-m-Y H:i:s',strtotime($pending->date_created))}}</td>--}}
-                                        
+
                                         {{--                                                <td class="order-date" style="cursor: pointer; text-align: center !important; width: 20%!important;" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">{{ \Carbon\Carbon::parse($pending->date_created)->diffForHumans()}}</td>--}}
                                         <td class="order-product" style="cursor: pointer; text-align: center !important; width: 10%" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">{{count($pending->product_variations)}}</td>
                                         <td style="cursor: pointer; text-align: center !important; width: 10%" class="total-price" data-toggle="collapse" data-target="#demo{{$pending->order_number}}" class="accordion-toggle">{{$pending->total_price}}</td>
@@ -1326,6 +1213,11 @@
                                                             <a href="{{url('hold-assigned-order/'.$pending->id)}}" class="btn-size hold-order-btn mr-2" data-toggle="tooltip" data-placement="top" title="Hold Order"><i class="fa fa-pause" aria-hidden="true"></i></a>
                                                             @if(!isset($pending->order_note))
                                                                 <button type="button" style="cursor: pointer" class="btn-size add-note-btn order-note mr-2 append_button{{$pending->id}}" data-toggle="tooltip" data-placement="top" title="Add Note" id="{{$pending->id}}"><i class="fa fa-sticky-note-o" aria-hidden="true"></i></button>
+                                                            @endif
+                                                            @if ($pending->status == 'completed' && isset($return_order))
+                                                                <a href="{{url('manual-order/'.$pending->id.'/return')}}" target="_blank"><button style="cursor: pointer" class="btn-size order-return-btn mr-2" data-toggle="tooltip" data-placement="top" title="Exchange Return"><i class="fa fa-paper-plane" aria-hidden="true"></i></button></a>
+                                                            @elseif ($pending->status == 'completed')
+                                                                <a href="{{url('manual-order/'.$pending->id)}}" target="_blank"><button style="cursor: pointer" class="btn-size order-return-btn mr-2" data-toggle="tooltip" data-placement="top" title="Exchange Return"><i class="fa fa-paper-plane" aria-hidden="true"></i></button></a>
                                                             @endif
                                                             <a href="{{url('processing/cancel-order/'.$pending->id)}}" class="btn-size cancel-btn order-btn mr-2" data-toggle="tooltip" data-placement="top" title="Cancel" onclick="return cancel_order_check({{$pending->id}},'processing');"><i class="fa fa-window-close" aria-hidden="true"></i></a>
 
@@ -1510,6 +1402,7 @@
                                                                                     <h7> : {{$pending->shipping_country}} </h7>
                                                                                 </div>
                                                                             </div>
+                                                                            @include('partials.order.ioss_number',['ebay_tax_reference' => $pending->ebay_tax_reference])
                                                                         </div>
                                                                     </div>
                                                                     <div class="billing">
@@ -1653,27 +1546,7 @@
     </div> <!-- content page -->
 
 
-    <!--order note modal-->
-    <div class="modal fade" id="orderNoteModalView" tabindex="-1" role="dialog" aria-labelledby="orderNoteLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Note</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body-view">
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary update-note">Update</button>
-                    <button type="button" class="btn btn-danger delete-note">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!--End order note modal-->
+    @include('partials.order.order_note.order_note_modal')
 
 
 
@@ -1715,6 +1588,14 @@
         //Select option jquery
         $('.select2').select2();
 
+        // var shipping_fee_array = {!! json_encode($shipping_fee_array) !!};
+        // if(shipping_fee_array != '' || shipping_fee_array != null){
+        //     shipping_fee_array.forEach(item => {
+        //         // console.log(item)
+        //         $('.order_number_'+item.order_number).css('background-color', item.color_code)
+        //         $('.order_number_'+item.order_number+ ' td').css('border-radius','0')
+        //     })
+        // }
 
         function cancel_order_check(id,route){
             var check = confirm('Do you want to cancel this order ?');
@@ -1751,93 +1632,8 @@
         $('.accordian-body').on('show.bs.collapse', function () {
             $(this).closest("table").find(".collapse.in").not(this).collapse('toggle')
         })
-        function unread(id){
-            $.ajax({
-                type: "POST",
-                url:"{{url('unread')}}",
-                data: {
-                    "_token" : "{{csrf_token()}}",
-                    "order_id" : id
-                },
-                success: function (response) {
-                    if(response.data !== 'error'){
-                        if(response.data == 1){
-                            $("#customCheck"+id).hide();
-                            $("#unread"+id).hide();
-                        }
-                        // var info = '';
-                        // if(response.buyerMessage.buyer_message){
-                        //     info += '<div class="alert alert-warning text-dark"> Buyer Note : '+response.buyerMessage.buyer_message+'</div>'
-                        //     $('table tbody tr td.checkboxShowHide'+id).html('<input type="checkbox" class="checkBoxClass" id="customCheck'+id+'" value="'+id+'">')
-                        // }
-                        // if(response.data){
-                        //     info += '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                        //         '<strong>Note : </strong>\n' +
-                        //         '<p class=""></p>' +
-                        //         '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                        //         '<strong>Created By : ' + creatorName + '</strong>' +
-                        //         '<strong class="pull-right">Modified By : ' + modifierName + ' (' + response.data.updated_at + ')' + '</strong>'
-                        //     // infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        //     // infoModal.modal();
-                        //     $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                        //     $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                        //     $('#orderNoteModalView .modal-footer').removeClass('d-none')
-                        // }else{
-                        //     $('#orderNoteModalView .modal-footer').addClass('d-none')
-                        // }
-                        // infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        // infoModal.modal();
-                    }else{
-                        alert('Something went wrong');
-                    }
-                }
-            });
-        }
-        function view_note(id) {
-            // var id = $(this).attr('id');
-            $.ajax({
-                type: "POST",
-                url:"{{url('view-order-note')}}",
-                data: {
-                    "_token" : "{{csrf_token()}}",
-                    "order_id" : id
-                },
-                success: function (response) {
-                    if(response.data !== 'error'){
-                        var infoModal = $('#orderNoteModalView');
-                        if(response.data){
-                            var creatorName = (response.data.user_info == null) ? '' : response.data.user_info.name;
-                            var modifierName = (response.data.modifier_info == null) ? '' : response.data.modifier_info.name;
-                        }
-                        $("#unread"+id).show();
-                        var info = '';
-                        if(response.buyerMessage.buyer_message){
-                            info += '<div class="alert alert-warning text-dark"> Buyer Note : '+response.buyerMessage.buyer_message+'</div>'
-                            $('table tbody tr td.checkboxShowHide'+id).html('<input type="checkbox" class="checkBoxClass" id="customCheck'+id+'" value="'+id+'">')
-                        }
-                        if(response.data){
-                            info += '<strong>Note Create Date : ' + response.data.created_at + '</strong><br>' +
-                                '<strong>Note : </strong>\n' +
-                                '<p class=""></p>' +
-                                '<textarea class="form-control" name="order_note_view" id="order_note_view" cols="5" rows="3" placeholder="Type your note here..">' + response.data.note + '</textarea>\n' +
-                                '<strong>Created By : ' + creatorName + '</strong>' +
-                                '<strong class="pull-right">Modified By : ' + modifierName + ' (' + response.data.updated_at + ')' + '</strong>'
-                            // infoModal.find('.modal-body-view')[0].innerHTML = info;
-                            // infoModal.modal();
-                            $('#orderNoteModalView .modal-footer .update-note').attr('id',response.data.id);
-                            $('#orderNoteModalView .modal-footer .delete-note').attr('id',response.data.id);
-                            $('#orderNoteModalView .modal-footer').removeClass('d-none')
-                        }else{
-                            $('#orderNoteModalView .modal-footer').addClass('d-none')
-                        }
-                        infoModal.find('.modal-body-view')[0].innerHTML = info;
-                        infoModal.modal();
-                    }else{
-                        alert('Something went wrong');
-                    }
-                }
-            });
-        }
+        @include('partials.order.order_note.order_note_unread_javascript')
+        @include('partials.order.order_note.order_note_javascript')
 
         $(document).ready(function () {
             $("#ckbCheckAll").click(function () {

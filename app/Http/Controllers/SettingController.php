@@ -6,9 +6,11 @@ use App\Client;
 use App\InvoiceSetting;
 use App\Setting;
 use App\ShippingSetting;
+use App\NavbarHumbergerExpandCollapse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Auth;
+use DB;
 use Illuminate\Support\Facades\Session;
 
 class SettingController extends Controller
@@ -393,26 +395,97 @@ class SettingController extends Controller
 
 
     public function shippingFee(){
-        $shipping_fee = ShippingSetting::first();
-        return view('setting.shipping_setting', compact('shipping_fee'));
-    }
-
-    public function storeShippingFee(Request $request){
-        $shipping_fee = ShippingSetting::first();
-        if(empty($shipping_fee)){
-            ShippingSetting::insert([
-                'aggregate_value' => $request->aggregate_value,
-                'shipping_fee' => $request->shipping_fee
-            ]);
-            return response()->json(['data' => 'Shipping fee added successfully']);
-        }else{
-            ShippingSetting::where('id', $shipping_fee->id)->update([
-                'aggregate_value' => $request->aggregate_value,
-                'shipping_fee' => $request->shipping_fee
-            ]);
-            return response()->json(['data' => 'Shipping fee updated successfully']);
+        try{
+            $shipping_fees = ShippingSetting::get();
+            return view('setting.shipping_setting', compact('shipping_fees'));
+        }catch(\Exception $exception){
+            return back()->with('error','Something Went Wrong');
         }
     }
+
+    // Static shipping fee add
+    // public function storeShippingFee(Request $request){
+    //     $shipping_fee = ShippingSetting::first();
+    //     if(empty($shipping_fee)){
+    //         ShippingSetting::insert([
+    //             'aggregate_value' => $request->aggregate_value,
+    //             'shipping_fee' => $request->shipping_fee
+    //         ]);
+    //         return response()->json(['data' => 'Shipping fee added successfully']);
+    //     }else{
+    //         ShippingSetting::where('id', $shipping_fee->id)->update([
+    //             'aggregate_value' => $request->aggregate_value,
+    //             'shipping_fee' => $request->shipping_fee
+    //         ]);
+    //         return response()->json(['data' => 'Shipping fee updated successfully']);
+    //     }
+    // }
+
+    // Multiple shipping fee add
+    public function storeShippingFee(Request $request){
+        // dd($request->all());
+        try{
+            if($request->shipping_ids){
+                foreach ($request->shipping_ids as $key => $shipping_id) {
+                    $shipping_fee = ShippingSetting::where('id', $shipping_id)->first();
+                    if(isset($shipping_fee)){
+                        ShippingSetting::where('id', $shipping_fee->id)->update([
+                            'shipping_fee' => $request->shipping_fee_range1[$key] ?? 0.00,
+                            'shipping_fee_two' => $request->shipping_fee_range2[$key] ?? 0.00,
+                            'color_code' => $request->favcolor[$key]
+                        ]);
+                    }
+                }
+            }
+            if($request->new_shipping_fee_range1 && $request->new_shipping_fee_range2){
+                foreach ($request->new_shipping_fee_range1 as $key => $new_shipping_fee_value) {
+                    ShippingSetting::insert([
+                        'shipping_fee' => $new_shipping_fee_value ?? 0.00,
+                        'shipping_fee_two' => $request->new_shipping_fee_range2[$key] ?? 0.00,
+                        'color_code' => $request->new_favcolor[$key]
+                    ]);
+                }
+            }
+            if($request->new_shipping_fee_range1 && $request->new_shipping_fee_range2){
+                return back()->with('success_add', 'Shipping fee added successfully!');
+            }elseif($request->shipping_ids && $request->new_shipping_fee_range1 && $request->new_shipping_fee_range2){
+                return back()->with('success_add', 'Shipping fee added successfully!');
+            }elseif($request->shipping_ids){
+                return back()->with('success_update', 'Shipping fee updated successfully!');
+            }
+        }catch(\Exception $exception){
+            return back()->with('error','Something Went Wrong');
+        }
+        
+    }
+
+    public function removeShippingFee(Request $request){
+        try{
+            ShippingSetting::find($request->id)->delete();
+            return response()->json(['data' => 'Shipping fee deleted successfully!']);
+        }catch(\Exception $exception){
+            return back()->with('error','Something Went Wrong');
+        }
+    }
+
+    public function sidebarHumbergerBtnExpandCollapse(Request $request){
+        // dd($request->all());
+        $user_id = NavbarHumbergerExpandCollapse::where('user_id', Auth::user()->id)->first();
+        if(empty($user_id)){
+            $humberger_btn_value = NavbarHumbergerExpandCollapse::create([
+                "user_id" => Auth::user()->id,
+                "expand_collapse_value" => $request->sidebar_humberger_btn_value,
+            ]);
+            return response()->json(['data' => 'Humberger button collapsed successfully']);
+        }else{
+            $humberger_btn_value = NavbarHumbergerExpandCollapse::where('user_id', Auth::user()->id)->update([
+                "user_id" => Auth::user()->id,
+                "expand_collapse_value" => $request->sidebar_humberger_btn_value,
+            ]);
+            return response()->json(['data' => 'Humberger button value set successfully']);
+        }
+    }
+
 
 
 }

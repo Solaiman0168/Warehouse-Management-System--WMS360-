@@ -68,18 +68,27 @@ use App\CatalogueAttributeTerms;
 use App\Channel;
 use App\Mapping;
 use App\shopify\ShopifyAccount;
+use App\amazon\AmazonAccount;
 use App\shopify\ShopifyMasterProduct;
 use App\shopify\ShopifyVariation;
 use App\ItemAttributeProfile;
+use App\Traits\Shopify;
+use PHPShopify\ShopifySDK;
+use PHPShopify\AuthHelper;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 
 class ProductDraftController extends Controller
 {
     use SearchCatalogue;
-    use ImageUpload;
+    use ImageUpload; 
     use ListingLimit;
     use CommonFunction;
     use Ebay;
+    use Shopify;
+    use BundleSKUTrait;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -277,6 +286,7 @@ class ProductDraftController extends Controller
     	 try {
             // dd($request);
             // exit();
+            $channelWithAccount = $this->getChannelAndAccountInSameArray();
             $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
              //Start page title and pagination setting
              $shelf_use = $this->shelf_use;
@@ -290,9 +300,14 @@ class ProductDraftController extends Controller
             $wooChannel = WoocommerceAccount::get()->all();
             $onbuyChannel = OnbuyAccount::get()->all();
             $ebayChannel = EbayAccount::get()->all();
+            $amazonChannel = AmazonAccount::get();
+            $shopifyChannel = ShopifyAccount::get();
 
             $channels = array();
             $temp = array();
+            $amazonArray = array();
+            $shopifyArray = array();
+
             foreach ($wooChannel as $woo){
                 $channels["woocommerce"] = "woocommerce";
             }
@@ -305,6 +320,17 @@ class ProductDraftController extends Controller
             }
             $channels["ebay"] = $temp;
 
+            foreach ($amazonChannel as $amazon) {
+                $amazonArray[$amazon->id] = $amazon->account_name;
+            }
+            $channels["amazon"] = $amazonArray;
+
+            foreach ($shopifyChannel as $shopify) {
+                $shopifyArray[$shopify->id] = $shopify->account_name;
+            }
+            $channels["shopify"] = $shopifyArray;
+            // dd($channels);
+
             $product_drafts = ProductDraft::with(['ProductVariations' => function($query){
                 $query->select('product_draft_id', DB::raw('sum(product_variation.actual_quantity) stock'))
                     ->groupBy('product_draft_id');
@@ -316,7 +342,7 @@ class ProductDraftController extends Controller
                     $applicationInfo->select('id','amazon_account_id','application_name','application_logo','amazon_marketplace_fk_id')->with(['accountInfo:id,account_name,account_logo','marketPlace:id,marketplace']);
                 }]);
             },'shopifyCatalogueInfo' => function($shopifyCatalogue){
-                $shopifyCatalogue->select(['id','master_catalogue_id','account_id'])->with(['shopifyUserInfo:id,account_name,account_logo,shop_url']);
+                $shopifyCatalogue->select(['id','master_catalogue_id','account_id','collect_id','title','product_type'])->with(['shopifyUserInfo:id,account_name,account_logo,shop_url']);
             },'variations' => function($query){
                 $query->select(['id','product_draft_id','actual_quantity'])->with(['order_products' => function($query){
                     $this->orderWithoutCancelAndReturn($query);
@@ -335,13 +361,17 @@ class ProductDraftController extends Controller
             // echo '<pre>';
             // print_r($product_drafts);
             // exit();
+            //dd(count($product_drafts));
 
             if($request->has('is_clear_filter')){
                 $status = $request->get('status') ?? 'publish';
                 $date = '12345';
+                $page_status = "active";
+                $settingData = $this->paginationSetting('', '');
+                $setting = $settingData['setting'];
                 $woocommerceSiteUrl = WoocommerceAccount::first();
                 $search_result = $product_drafts;
-                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render();
+                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','page_status','setting'))->render();
                 return response()->json(['html' => $view]);
             }
 
@@ -349,7 +379,7 @@ class ProductDraftController extends Controller
             $product_drafts_info = json_decode(json_encode($product_drafts));
 
             $total_product_drafts = ProductDraft::where('status','publish')->count();
-            $content = view('product_draft.complete_catalogue_list',compact('product_drafts','total_product_drafts','product_drafts_info','setting','pagination','users','see_more','shelf_use','woocommerceSiteUrl','channels','allCondition','url'));
+            $content = view('product_draft.complete_catalogue_list',compact('product_drafts','total_product_drafts','product_drafts_info','setting','pagination','users','see_more','shelf_use','woocommerceSiteUrl','channels','allCondition','url','channelWithAccount'));
             return view('master',compact('content','page_title'));
          }catch (\Exception $exception){
              return redirect('exception')->with('exception',$exception->getMessage());
@@ -477,7 +507,9 @@ class ProductDraftController extends Controller
                 $query->orderBy('terms_name','asc');
             }])->where('use_variation',1)->get();
             $attribute_terms = json_decode(json_encode($attribute_terms));
-            $content = view('product_draft.create_product_draft',compact('categories','attribute_terms','brands','genders','conditions','listingLimitAllChannelActiveProduct','clientListingLimit','itemInfos','listingLimitInfo'));
+            $onbuyActive = Channel::where('channel','OnBuy')->where('is_active',1)->first();
+            $woocommerceActive = Channel::where('channel','Woocommerce')->where('is_active',1)->first();
+            $content = view('product_draft.create_product_draft',compact('categories','attribute_terms','brands','genders','conditions','listingLimitAllChannelActiveProduct','clientListingLimit','itemInfos','listingLimitInfo','onbuyActive','woocommerceActive'));
             return view('master',compact('content'));
         } catch(\Exception $exception){
             return redirect('exception')->with('exception',$exception->getMessage());
@@ -603,6 +635,7 @@ class ProductDraftController extends Controller
                         'rrp' => $request->rrp ?? $request->regular_price ?? null,
                         'cost_price' => $request->cost_price ?? null,
                         'base_price' => $request->base_price ?? null,
+                        'max_price' => $request->max_price ?? null,
                         'vat' => $request->vat ?? null,
                         'product_code' => $request->product_code ?? null,
                         'attribute' => $attribute_array ?? null,
@@ -651,7 +684,6 @@ class ProductDraftController extends Controller
                         $folderPath = 'uploads/product-images/';
                         foreach($request->newUploadImage as $imageName => $imageContent){
                             $updatedImageName = $this->base64ToImage($product_draft_create_result->id, $imageName, $imageContent, $folderPath);
-
                             // $info = pathinfo($updatedImageName);
                             // $image_name =  basename($updatedImageName,'.'.$info['extension']);
                             // $ext = explode(".", $updatedImageName);
@@ -826,10 +858,11 @@ class ProductDraftController extends Controller
             }
             $product_draft_result = ProductDraft::with(['ProductVariations' => function($query) {
                 $query->with(['shelf_quantity', 'order_products' => function ($query) {
-                    $query->select('variation_id', DB::raw('sum(product_orders.quantity) sold'))->groupBy('variation_id');
+                    $this->orderWithoutCancelAndReturn($query);
+                    //$query->select('variation_id', DB::raw('sum(product_orders.quantity) sold'))->groupBy('variation_id');
                 },'get_reshelved_product' => function($reshelve){
                     $reshelve->where('status',0)->select('variation_id',DB::raw('sum(reshelved_product.quantity) pending_reshelve'))->groupBy('variation_id');
-                }]);
+                },'parent_bundle_product','child_bundle_product']);
             },'WooWmsCategory:id,category_name'])->find($id);
             $product_draft_variation_results = json_decode(json_encode($product_draft_result));
 //            echo "<pre>";
@@ -878,11 +911,143 @@ class ProductDraftController extends Controller
             // echo '<pre>';
             // print_r(json_decode($attribute_info));
             // exit();
+
             $content = view('product_draft.product_draft_details',compact('product_draft_variation_results','product_image','attribute_info','distinct_attribute','id', 'setting', 'page_title', 'pagination','shelf_use','variaition_terms','shelfQuantityChangeReason','attribute_terms', 'attribute_info_unserialize', 'id','productVariationExist','existAttr'));
             return view('master',compact('content'));
+
         }catch (\Exception $exception){
             return $exception->getMessage();
         }
+    }
+
+
+
+    public function shelfSkuToDraftPageView($variation_id){
+
+        try{
+
+            $product_variation = ProductVariation::where('id', $variation_id)->first();
+            $product_drfat_info = ProductDraft::where('id', $product_variation->product_draft_id)->first();
+            $id = $product_drfat_info->id;
+
+            $attribute_info = ProductDraft::with(['woocommerce_catalogue_info','onbuy_product_info','ebayCatalogueInfo'])->where('id',$id)->first();
+            if($attribute_info) {
+                $attribute_terms = Attribute::With(['attributesTerms'])->get();
+                $attribute_terms = json_decode(json_encode($attribute_terms));
+                $productVariationExist = (($attribute_info->woocommerce_catalogue_info != null) || ($attribute_info->onbuy_product_info != null) || ($attribute_info->ebayCatalogueInfo->count() > 0 )) ? true : false;
+                $attribute_info_unserialize = \Opis\Closure\unserialize($attribute_info->attribute);
+                //$productVariationExist = ProductVariation::where('product_draft_id',$id)->first();
+                // if($attribute_info->attribute != null) {
+                //     $product_attribute = \Opis\Closure\unserialize($attribute_info->attribute);
+                // }else{
+                //     $product_attribute = null;
+                // }
+                $existAttr = [];
+                if($attribute_info_unserialize && is_array($attribute_info_unserialize)){
+                    foreach($attribute_info_unserialize as $attr_id => $attr_value){
+                        foreach($attr_value as $attr_name => $value){
+                            $existAttr[$attr_id] = $attr_name;
+                        }
+                    }
+                }
+
+                // echo'<pre>';
+                // print_r($attribute_info);
+                // exit();
+
+                // dd($existAttr);
+
+            }else{
+                return back()->with('error','No Catalogue Found');
+            }
+
+            //End Add Terms to Catalogue attribute modal view
+
+
+
+            //Start page title and pagination setting
+            $shelf_use = $this->shelf_use;
+            $settingData = $this->paginationSetting('catalogue', 'catalogue_details');
+//                    echo('<pre>');
+//                    print_r($settingData);
+//                    exit();
+            $setting = $settingData['setting'];
+            $page_title = '';
+            $pagination = $settingData['pagination'];
+            //End page title and pagination setting
+            $shelfQuantityChangeReason = ShelfQuantityChangeReason::all();
+
+            $attribute_info = ProductDraft::with(['product_draft_attribute'])->where('id', $id)->get();
+            $product_image = ProductDraft::find($id)->images;
+            $distinct_attribute = null;
+            if ($attribute_info[0]->type == 'variable'){
+                $distinct_attribute = AttributeTermProductDraft::select('attribute_id')->with(['attribute' => function ($query) use ($id) {
+                    $query->with(['terms_ids' => function ($query) use ($id) {
+                        $query->with('terms_info')->where('product_draft_id', $id);
+                    }]);
+                }])->where('product_draft_id', $id)->groupBy('attribute_id')->get();
+            }
+            $product_draft_result = ProductDraft::with(['ProductVariations' => function($query) {
+                $query->with(['shelf_quantity', 'order_products' => function ($query) {
+                    $this->orderWithoutCancelAndReturn($query);
+                    //$query->select('variation_id', DB::raw('sum(product_orders.quantity) sold'))->groupBy('variation_id');
+                },'get_reshelved_product' => function($reshelve){
+                    $reshelve->where('status',0)->select('variation_id',DB::raw('sum(reshelved_product.quantity) pending_reshelve'))->groupBy('variation_id');
+                },'parent_bundle_product','child_bundle_product']);
+            },'WooWmsCategory:id,category_name'])->find($id);
+            $product_draft_variation_results = json_decode(json_encode($product_draft_result));
+        //    echo "<pre>";
+        //    print_r($product_draft_variation_results);
+        //    exit();
+            $distinctTerms = [];
+            $distinctVariationInfo = [];
+            $variaition_terms = [];
+            if ($product_draft_variation_results->type == 'variable'){
+                foreach($product_draft_variation_results->product_variations as $variationInfo){
+                    foreach(unserialize($variationInfo->attribute) as $attribute){
+                        if(!in_array($attribute['terms_name'],$distinctTerms)){
+
+                            $variation = [
+                                'attribute_name' => $attribute['attribute_name'],
+                                'terms_name' => $attribute['terms_name'],
+
+                            ];
+                            $distinctVariationInfo[] = $variation;
+                            $distinctTerms[] = $attribute['terms_name'];
+                        }
+                    }
+                }
+                asort($distinctVariationInfo);
+                foreach($distinctVariationInfo as $terms){
+                    $variation_ids = '';
+                    foreach($product_draft_variation_results->product_variations as $varInfo){
+                        foreach (\Opis\Closure\unserialize($varInfo->attribute) as $att){
+                            if($att['terms_name'] == $terms['terms_name']) {
+                                $variation_ids .= $varInfo->id.'/';
+                            }
+                        }
+                    }
+                    $variaition_terms[] = [
+                        'terms_name' => $terms['terms_name'],
+                        'attribute_name' => $terms['attribute_name'],
+                        'variation_id' => rtrim($variation_ids,'/') ?? null,
+                    ];
+                }
+            }
+
+            // echo '<pre>';
+            // print_r($variaition_terms);
+            // exit();
+            // echo '<pre>';
+            // print_r(json_decode($attribute_info));
+            // exit();
+
+            return view('product_draft.product_draft_details',compact('product_draft_variation_results','variation_id','product_image','attribute_info','distinct_attribute','id', 'setting', 'page_title', 'pagination','shelf_use','variaition_terms','shelfQuantityChangeReason','attribute_terms', 'attribute_info_unserialize', 'id','productVariationExist','existAttr'))->render();
+
+        }catch(\Exception $exception){
+            return $exception->getMessage();
+        }
+
     }
 
 
@@ -948,8 +1113,9 @@ class ProductDraftController extends Controller
                     $active_status[] = $ebay_master_catalog->id;
                 }
             }
+            $onbuyActive = Channel::where('channel','OnBuy')->where('is_active',1)->first();
             $tabAttributeInfo = $this->getCatalogueTabAttribute($product_draft->woowms_category, $id);
-            $content = view('product_draft.edit_product_draft',compact('product_draft','product_variation','categories','image_as_string','brands','genders','conditions','account','tabAttributeInfo','channels','active_status'));
+            $content = view('product_draft.edit_product_draft',compact('product_draft','product_variation','categories','image_as_string','brands','genders','conditions','account','tabAttributeInfo','channels','active_status','onbuyActive'));
             return view('master', compact('content'));
         }catch (\Exception $exception){
             return back()->with('wms_error','Something went wrong');
@@ -990,6 +1156,8 @@ class ProductDraftController extends Controller
         $this->ebay_result = '';
         $this->onbuy_result = '';
         $this->woocom_result = '';
+        $this->shopify_single_product_result = '';
+        $this->shopify_edit_image_result = '';
         $this->wms = '';
         $woocommcerce_status = '';
         $onbuy_status = '';
@@ -997,6 +1165,8 @@ class ProductDraftController extends Controller
         $ebay_flag = '';
         $onbuy_flag = '';
         $woocom_flag = '';
+        $shopify_flag = '';
+        $shopify_result_message = '';
         $wms_flag = '';
         $dataimage = [];
         try {
@@ -1205,6 +1375,7 @@ class ProductDraftController extends Controller
                 'rrp' => $request->rrp ?? $request->regular_price ?? null,
                 'cost_price' => $request->cost_price ?? null,
                 'base_price' => $request->base_price ?? null,
+                'max_price' => $request->max_price ?? null,
                 'product_code' => $request->product_code ?? null,
                 'color' => $request->color ?? null,
                 'color_code' => $request->color_code ?? null,
@@ -1265,85 +1436,85 @@ class ProductDraftController extends Controller
         }
 
         //woocommerce update start
-//        if(Session::get('woocommerce') == 1 && $request->button != "wms"){
-//            if($request->website_update == 1) {
-//                $woocommcerce_status = WoocommerceAccount::where('status',1)->first();
-//                if($woocommcerce_status){
-//                    $woo_catalogue_info = WoocommerceCatalogue::where('master_catalogue_id', $productDraft->id)->first();
-//                    if ($woo_catalogue_info) {
-//                        $data = [
-//                            'name' => $request->name ?? null,
-//                            'description' => $request->description ?? null,
-//                            'short_description' => $request->short_description ?? null
-//                        ];
-//                        // $data['meta_data'][] = [
-//                        //     'key' => 'rrp',
-//                        //     'value' => $request->rrp ?? $request->regular_price ?? null,
-//                        // ];
-//                        if ($request->image_update_check == 1 && (count($woo_dataimage) > 0)) {
-//                            $data['images'] = $woo_dataimage;
-//                        }
-//                        try {
-//                            $woocom_product_result = Woocommerce::put('products/' . $woo_catalogue_info->id, $data);
-//                            $woocom_product_result = json_decode(json_encode($woocom_product_result));
-//                            $woo_master_catalogue_update_result = WoocommerceCatalogue::where('master_catalogue_id', $productDraft->id)->update([
-//                                'modifier_id' => Auth::user()->id ?? null,
-//                                'name' => $request->name,
-//                                'description' => $request->description,
-//                                'short_description' => $request->short_description ?? null,
-//                                // 'regular_price' => $request->regular_price ?? null,
-//                                // 'sale_price' => $request->sale_price ?? null,
-//                                // 'rrp' => $request->rrp ?? $request->regular_price ?? null,
-//                                // 'cost_price' => $request->cost_price ?? null,
-//                                'product_code' => $request->product_code ?? null,
-//                                'color_code' => $request->color_code ?? null,
-//                                'low_quantity' => $request->low_quantity ?? null
-//                            ]);
-//                            if ($request->image_update_check == 1 && (count($woocom_product_result->images) > 0)) {
-//                                $woo_system_dataimage = [];
-//                                foreach ($woocom_product_result->images as $image) {
-//                                    $woo_system_dataimage[] = [
-//                                        'id' => $image->id,
-//                                        'woo_master_catalogue_id' => $woo_catalogue_info->id ?? null,
-//                                        'image_url' => $image->src ?? null
-//                                    ];
-//                                }
-//                                $woocommerce_image = WoocommerceImage::where('woo_master_catalogue_id', $woo_catalogue_info->id)->get();
-//                                if(count($woocommerce_image) > 0) {
-//                                    WoocommerceImage::where('woo_master_catalogue_id', $woo_catalogue_info->id)->delete();
-//                                }
-//                                $image = WoocommerceImage::insert($woo_system_dataimage);
-//                            }
-//                            // $variation_data = [
-//                            //     'regular_price' => $request->regular_price ?? 0,
-//                            //     'sale_price' => $request->sale_price ?? 0
-//                            // ];
-//                            // $woo_variation_info = WoocommerceVariation::where('woocom_master_product_id', $woo_catalogue_info->id)->get();
-//                            // if (count($woo_variation_info) > 0) {
-//                            //     foreach ($woo_variation_info as $varaition_info) {
-//                            //         try {
-//                            //             $product_variation_result = Woocommerce::put('products/' . $varaition_info->woocom_master_product_id . '/variations/' . $varaition_info->id, $variation_data);
-//                            //         } catch (HttpClientException $exception) {
-//                            //             return back()->with('woocom_error', $exception->getMessage());
-//                            //         }
-//                            //         if ($varaition_info->cost_price == $request->old_cost_price) {
-//                            //             $update_info = WoocommerceVariation::where(['id' => $varaition_info->id])->update(['cost_price' => $request->cost_price ?? 0]);
-//                            //         }
-//                            //         $update = WoocommerceVariation::where('woocom_master_product_id', $woo_catalogue_info->id)->update([
-//                            //             'regular_price' => $request->regular_price ?? 0,
-//                            //             'sale_price' => $request->sale_price ?? 0,
-//                            //             'rrp' => $request->rrp ?? $request->regular_price ?? null
-//                            //         ]);
-//                            //     }
-//                            // }
-//                        } catch (HttpClientException $exception) {
-//                            $this->woocom_result = $exception->getMessage();
-//                        }
-//                    }
-//
-//                }
-//            }
-//        }
+       if(Session::get('woocommerce') == 1 && $request->button != "wms"){
+           if($request->website_update == 1) {
+               $woocommcerce_status = WoocommerceAccount::where('status',1)->first();
+               if($woocommcerce_status){
+                   $woo_catalogue_info = WoocommerceCatalogue::where('master_catalogue_id', $productDraft->id)->first();
+                   if ($woo_catalogue_info) {
+                       $data = [
+                           'name' => $request->name ?? null,
+                           'description' => $request->description ?? null,
+                           'short_description' => $request->short_description ?? null
+                       ];
+                       // $data['meta_data'][] = [
+                       //     'key' => 'rrp',
+                       //     'value' => $request->rrp ?? $request->regular_price ?? null,
+                       // ];
+                       if ($request->image_update_check == 1 && (count($woo_dataimage) > 0)) {
+                           $data['images'] = $woo_dataimage;
+                       }
+                       try {
+                           $woocom_product_result = Woocommerce::put('products/' . $woo_catalogue_info->id, $data);
+                           $woocom_product_result = json_decode(json_encode($woocom_product_result));
+                           $woo_master_catalogue_update_result = WoocommerceCatalogue::where('master_catalogue_id', $productDraft->id)->update([
+                               'modifier_id' => Auth::user()->id ?? null,
+                               'name' => $request->name,
+                               'description' => $request->description,
+                               'short_description' => $request->short_description ?? null,
+                               // 'regular_price' => $request->regular_price ?? null,
+                               // 'sale_price' => $request->sale_price ?? null,
+                               // 'rrp' => $request->rrp ?? $request->regular_price ?? null,
+                               // 'cost_price' => $request->cost_price ?? null,
+                               'product_code' => $request->product_code ?? null,
+                               'color_code' => $request->color_code ?? null,
+                               'low_quantity' => $request->low_quantity ?? null
+                           ]);
+                           if ($request->image_update_check == 1 && (count($woocom_product_result->images) > 0)) {
+                               $woo_system_dataimage = [];
+                               foreach ($woocom_product_result->images as $image) {
+                                   $woo_system_dataimage[] = [
+                                       'id' => $image->id,
+                                       'woo_master_catalogue_id' => $woo_catalogue_info->id ?? null,
+                                       'image_url' => $image->src ?? null
+                                   ];
+                               }
+                               $woocommerce_image = WoocommerceImage::where('woo_master_catalogue_id', $woo_catalogue_info->id)->get();
+                               if(count($woocommerce_image) > 0) {
+                                   WoocommerceImage::where('woo_master_catalogue_id', $woo_catalogue_info->id)->delete();
+                               }
+                               $image = WoocommerceImage::insert($woo_system_dataimage);
+                           }
+                           // $variation_data = [
+                           //     'regular_price' => $request->regular_price ?? 0,
+                           //     'sale_price' => $request->sale_price ?? 0
+                           // ];
+                           // $woo_variation_info = WoocommerceVariation::where('woocom_master_product_id', $woo_catalogue_info->id)->get();
+                           // if (count($woo_variation_info) > 0) {
+                           //     foreach ($woo_variation_info as $varaition_info) {
+                           //         try {
+                           //             $product_variation_result = Woocommerce::put('products/' . $varaition_info->woocom_master_product_id . '/variations/' . $varaition_info->id, $variation_data);
+                           //         } catch (HttpClientException $exception) {
+                           //             return back()->with('woocom_error', $exception->getMessage());
+                           //         }
+                           //         if ($varaition_info->cost_price == $request->old_cost_price) {
+                           //             $update_info = WoocommerceVariation::where(['id' => $varaition_info->id])->update(['cost_price' => $request->cost_price ?? 0]);
+                           //         }
+                           //         $update = WoocommerceVariation::where('woocom_master_product_id', $woo_catalogue_info->id)->update([
+                           //             'regular_price' => $request->regular_price ?? 0,
+                           //             'sale_price' => $request->sale_price ?? 0,
+                           //             'rrp' => $request->rrp ?? $request->regular_price ?? null
+                           //         ]);
+                           //     }
+                           // }
+                       } catch (HttpClientException $exception) {
+                           $this->woocom_result = $exception->getMessage();
+                       }
+                   }
+
+               }
+           }
+       }
         //woocommerce update end
 
         //ebay update starts
@@ -1484,6 +1655,48 @@ class ProductDraftController extends Controller
         }
         //Onbuy update end
 
+        // Shopify Update start
+        if(Session::get('shopify') == 1 && $request->button != "wms"){
+            if($request->shopify_update == 1){
+                $shopify_status = ShopifyAccount::where('account_status', 1)->first();
+                if(isset($shopify_status)){
+                    $single_shopify_master_product = ShopifyMasterProduct::where('master_catalogue_id', $productDraft->id)->first();
+                    $shopify = $this->getConfig($shopify_status->shop_url, $shopify_status->api_key, $shopify_status->password);
+                    $postArray = array(
+                        "title" => $request->name,
+                        "body_html" => $request->description,
+                    );
+                    $this->shopify_single_product_result = $shopify->Product($single_shopify_master_product->shopify_product_id)->put($postArray);
+                    $main_image = array();
+                    if($request->image_update_check == 1){
+                        foreach ($image_array as $images){
+                            $main_image[]['src'] = $images;
+                        }
+                    }
+                    $postArray = array(
+                        "images" => $main_image ?? null
+                    );
+                    $this->shopify_edit_image_result = $shopify->Product($single_shopify_master_product->shopify_product_id)->put($postArray);
+                    if(isset($this->shopify_edit_image_result)){
+                        $master_img = serialize($this->shopify_edit_image_result['images']);
+                    }
+                    if(isset($this->shopify_single_product_result)){
+                        $shopifyCatalogue = ShopifyMasterProduct::where('master_catalogue_id', $productDraft->id)->first();
+                        $shopifyCatalogue->title = $request->name;
+                        $shopifyCatalogue->description = $request->description;
+                        $shopifyCatalogue->regular_price = $request->regular_price;
+                        $shopifyCatalogue->sale_price = $request->sale_price;
+                        $shopifyCatalogue->rrp = $request->rrp;
+                        if(isset($this->shopify_edit_image_result)){
+                            $shopifyCatalogue->image = $master_img;
+                        }
+                        $shopifyCatalogueUpdate = $shopifyCatalogue->update();
+                    }
+                }
+            }
+        }
+        // End Shopify Update
+
         if ($this->wms != null){
             $wms_flag = 'wms_error';
             $this->wms = 'Wms Failed :' .$this->wms;
@@ -1513,10 +1726,22 @@ class ProductDraftController extends Controller
             $ebay_flag = 'ebay_success';
             $this->ebay_result = 'eBay Successfully Updated';
         }
+
+        if($this->shopify_single_product_result && $shopify_status && $request->button != "wms"){
+            $shopify_flag = 'shopify_success';
+            $shopify_result_message = 'Shopify Successfully Updated';
+        }
+        if($this->shopify_edit_image_result && $shopify_status && $request->button != "wms"){
+            $shopify_flag = 'shopify_success';
+            $shopify_result_message = 'Shopify Successfully Updated';
+        }
+       
+
         return back()->with($ebay_flag, $this->ebay_result)
             ->with($onbuy_flag,$this->onbuy_result)
             ->with($woocom_flag,$this->woocom_result)
-            ->with($wms_flag,$this->wms);
+            ->with($wms_flag,$this->wms)
+            ->with($shopify_flag, $shopify_result_message);
     }
     public function addProductDraftValue(Request $request){
         $result = null;
@@ -1752,7 +1977,7 @@ class ProductDraftController extends Controller
      * Route : product-draft.destroy
      * parameters: $id (This is the master catalogue id)
      * Creator : Kazol
-     * Modifier : Kazol
+     * Modifier : Kazol 
      * Description : This function is used for deleting master catalogue with all channel catalogue and variations
      * Created Date: unknown
      * Modified Date : 13-11-2020, 15-11-2020
@@ -1918,12 +2143,15 @@ class ProductDraftController extends Controller
                     }
                     $catalogue_info->delete();
                 });
-                return back()->with('success', 'Catalogue Successfully Deleted'. $ebayExceptionMsg . $woocommerceExceptionMsg .$onbuyExceptionMsg);
+                // return back()->with('success', 'Catalogue Successfully Deleted'. $ebayExceptionMsg . $woocommerceExceptionMsg .$onbuyExceptionMsg);
+                return response()->json(['message' => 'Catalogue Successfully Deleted'. $ebayExceptionMsg . $woocommerceExceptionMsg .$onbuyExceptionMsg]);
             }else{
-                return back()->with('error','Catalogue is not found');
+                // return back()->with('error','Catalogue is not found');
+                return response()->json(['catalog_not_found' => 'Catalogue is not found']);
             }
         }catch (HttpClientException $exception){
-            return back()->with('error', $exception->getMessage());
+            // return back()->with('error', $exception->getMessage());
+            return response()->json(['error' => $exception->getMessage()]);
         }
     }
 
@@ -2078,7 +2306,7 @@ class ProductDraftController extends Controller
                 $this->orderWithoutCancelAndReturn($query);
             },'get_reshelved_product' => function($reshelve){
                 $reshelve->where('status',0)->select('variation_id',DB::raw('sum(reshelved_product.quantity) pending_reshelve'))->groupBy('variation_id');
-            }]);
+            },'parent_bundle_product','child_bundle_product']);
         }])
 //            ->whereIn('status', $data_arr)->where(function($q) use($request){
 //                $q->where('name','LIKE','%'. $request->name.'%')->orWhere('id','LIKE','%'.$request->name.'%');
@@ -2103,6 +2331,10 @@ class ProductDraftController extends Controller
         $ids = $request->ids;
         $woocommerceSiteUrl = WoocommerceAccount::first();
 
+        $page_status = $request->page_status;
+        $settingData = $this->paginationSetting('', '');
+        $setting = $settingData['setting'];
+
 //        return $request;
         $matched_product_array = array();
         if (is_numeric($search_keyword)){
@@ -2113,7 +2345,8 @@ class ProductDraftController extends Controller
                     $search_draft_result = $this->getProductDraft('id',$matched_product_array,$status,$take,$skip,$ids);
                     $search_result = $search_draft_result['search'];
                     $ids = $search_draft_result['ids'];
-                    return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    $product_id = $find_variation->id;
+                    return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status','product_id'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'page_status' => $page_status,'setting' => $setting,'product_id' => $product_id]);
                 }else{
                     $search_result_by_word = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
                     $search_result = $search_result_by_word["search"];
@@ -2126,12 +2359,16 @@ class ProductDraftController extends Controller
                         $search_result = $search_sku_result['search'];
                         $ids = $search_sku_result['ids'];
                     }
-                    return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                    return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'page_status' => $page_status,'setting' => $setting]);
                 }
             }else{
                 $search_draft_result = $this->searchAsId($search_keyword,$status,$take,$skip,$ids);
                 $search_result = $search_draft_result['search'];
                 $ids = $search_draft_result['ids'];
+
+                $product = ProductVariation::where('id', $search_keyword)->first();
+                $product_id = $product->id ?? null;
+
                 if($search_result->isEmpty()){
                     $skip = 0;
                     $search_result_by_word = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
@@ -2145,7 +2382,7 @@ class ProductDraftController extends Controller
                         $ids = $search_sku_result['ids'];
                     }
                 }
-                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'page_status' => $page_status,'setting' => $setting,'product_id' => $product_id]);
             }
 
         }else{
@@ -2155,11 +2392,12 @@ class ProductDraftController extends Controller
                 $search_result = $search_result_by_word["search"];
                 $search_priority = $search_result_by_word["search_priority"];
                 $ids = $search_result_by_word["ids"];
-                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids,'page_status' => $page_status,'setting' => $setting]);
             }else{
                 $search_sku_result = $this->searchAsSku($search_keyword,$status,$search_priority,$take,$skip,$ids);
                 $search_result = $search_sku_result['search'];
                 $ids = $search_sku_result['ids'];
+
                 if ($search_result== null){
                     $skip = 0;
                     $search_result_by_word = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
@@ -2168,7 +2406,10 @@ class ProductDraftController extends Controller
                     $ids = $search_result_by_word["ids"];
                 }
 
-                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids]);
+                $product = ProductVariation::where('sku', $search_keyword)->first();
+                $product_id = $product->id ?? null;
+
+                return response()->json(['html' => view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render(),'search_priority' => $search_priority,'skip' => $skip,'ids' => $ids, 'setting' => $setting,'page_status' => $page_status,'product_id' => $product_id]);
 
             }
 
@@ -3463,11 +3704,14 @@ class ProductDraftController extends Controller
                 }
                 $product_drafts = $product_drafts->orderBy('id','DESC')->paginate($pagination);
             if($request->has('is_clear_filter')){
-                $status = $request->get('status') ?? 'publish';
+                $status = 'draft';
+                $page_status = 'draft_catalog';
                 $date = '12345';
+                $settingData = $this->paginationSetting('', '');
+                $setting = $settingData['setting'];
                 $woocommerceSiteUrl = WoocommerceAccount::first();
                 $search_result = $product_drafts;
-                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render();
+                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render();
                 return response()->json(['html' => $view]);
             }
             $users = User::orderBy('name', 'ASC')->get();
@@ -4120,7 +4364,7 @@ class ProductDraftController extends Controller
             }
         }
         $catalogues = ProductDraft::select('id','name')->with(['ProductVariations' => function($query){
-            $query->select('id','product_draft_id','image','attribute','sku','ean_no');
+            $query->select('id','product_draft_id','image','attribute','sku','ean_no','actual_quantity');
         },'single_image_info:id,draft_product_id,image_url'])
         ->whereIn('id',$draftIds)
         ->skip($skip)
@@ -4146,14 +4390,15 @@ class ProductDraftController extends Controller
                             'image' => $product->image ?? asset('assets/common-assets/no_image.jpg'),
                             'variation' => rtrim($variation,','),
                             'sku' => $product->sku ?? '',
-                            'ean_no' => $product->ean_no ?? ''
+                            'ean_no' => $product->ean_no ?? '',
+                            'actual_quantity' => $product->actual_quantity
                         ];
                     }
                 }
                 $formatedCatalogues[] = [
                     'id' => $catalogue->id ?? '',
                     'name' => $catalogue->name ?? '',
-                    'image_url' => (filter_var($catalogue->single_image_info->image_url, FILTER_VALIDATE_URL) == FALSE) ? asset('/').$catalogue->single_image_info->image_url : $product_draft->single_image_info->image_url,
+                    'image_url' => (filter_var($catalogue->single_image_info->image_url ?? '', FILTER_VALIDATE_URL) == FALSE) ? asset('/').($catalogue->single_image_info->image_url ?? '') : $catalogue->single_image_info->image_url,
                     'products' => $formatedProducts
                 ];
             }
@@ -4162,8 +4407,11 @@ class ProductDraftController extends Controller
     }
 
     public function itemAttribute(){
-        $itemAttribute = ItemAttribute::with(['itemAttributeTerms','categories'])
+        $itemAttribute = ItemAttribute::with(['itemAttributeTerms' => function($attrTerm) {
+            $attrTerm->orderBy('position','asc');
+        },'categories'])
         ->where('is_active',1)
+        ->orderBy('position','asc')
         ->get();
         $categories = WooWmsCategory::all();
         $channels = Channel::where('is_active',1)->get();
@@ -4181,28 +4429,39 @@ class ProductDraftController extends Controller
         //dd($request->all());
         if($request->item_type == 'attribute'){
             if($request->action_type == 'add'){
-                if(count($request->item_attribute) > 0){
-                    foreach($request->item_attribute as $key => $attribute){
-                        $existCheckAttribute = ItemAttribute::where('item_attribute',$attribute)->first();
-                        if($existCheckAttribute){
-                            if(isset($request->category_id) && $request->category_id != null){
-                                foreach($request->category_id as $cat){
-                                    $existCheckAttribute->categories()->syncWithoutDetaching($cat);
-                                }
+                $existCheckAttribute = ItemAttribute::where('item_attribute',$request->item_attribute)->first();
+                if($existCheckAttribute){
+                    if(isset($request->category_id) && $request->category_id != null){
+                        foreach($request->category_id as $cat){
+                            $existCheckAttribute->categories()->syncWithoutDetaching($cat);
+                        }
+                    }
+                }else{
+                    $largestPosition = ItemAttribute::max('position');
+                    $insertInfo = ItemAttribute::create([
+                        'item_attribute' => $request->item_attribute,
+                        'item_attribute_slug' => strtolower(str_replace(' ','_',$request->item_attribute)),
+                        'is_active' => 1,
+                        'position' => $largestPosition != null ? $largestPosition + 1 : 1,
+                    ]);
+                    if($insertInfo){
+                        if(isset($request->category_id) && $request->category_id != null){
+                            foreach($request->category_id as $cat){
+                                $insertInfo->categories()->attach($cat);
                             }
-                        }else{
-                            $insertInfo = ItemAttribute::create([
-                                'item_attribute' => $attribute,
-                                'item_attribute_slug' => strtolower(str_replace(' ','_',$attribute)),
+                        }
+                    }
+                }
+                if(count($request->item_attribute_term) > 0){
+                    foreach($request->item_attribute_term as $key => $term){
+                        $existCheck = ItemAttributeTerm::where('item_attribute_id',$request->item_attribute)->where('item_attribute_term',$term)->first();
+                        if(!$existCheck){
+                            $itemTermInsert= ItemAttributeTerm::create([
+                                'item_attribute_id' => $existCheckAttribute->id ?? $insertInfo->id,
+                                'item_attribute_term' => $term,
+                                'item_attribute_term_slug' => strtolower(str_replace(' ','_',$term)),
                                 'is_active' => 1
                             ]);
-                            if($insertInfo){
-                                if(isset($request->category_id) && $request->category_id != null){
-                                    foreach($request->category_id as $cat){
-                                        $insertInfo->categories()->attach($cat);
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -4257,8 +4516,13 @@ class ProductDraftController extends Controller
 
     public function deleteItemTerm(Request $request){
         try{
-            $termInfo = ItemAttributeTerm::destroy($request->id);
-            return response()->json(['type' => 'success','msg' => 'Attribute Term Deleted Successfully']);
+            if(isset($request->type)) {
+                $attributeDeleteInfo = ItemAttribute::destroy($request->id);
+                $attributeTermDeleteInfo = ItemAttributeTerm::where('item_attribute_id',$request->id)->delete();
+            }else{
+                $termInfo = ItemAttributeTerm::destroy($request->id);
+            }
+            return response()->json(['type' => 'success','msg' => 'Deleted Successfully']);
         }catch(\Exception $ex){
             return response()->json(['type' => 'error','msg' => 'Something Went Wrong']);
         }
@@ -4287,23 +4551,39 @@ class ProductDraftController extends Controller
     }
 
     public function getCatalogueTabAttribute($category_id, $catalogue_id = null){
+        $isItemAttributePositioned = ItemAttribute::where('position','!=',null)->first();
+        if(!$isItemAttributePositioned) {
+            $allItemAttribute = ItemAttribute::get();
+            if(count($allItemAttribute) > 0) {
+                $position = 1;
+                foreach($allItemAttribute as $itemAttr) {
+                    $updateInfo = ItemAttribute::find($itemAttr->id)->update(['position' => $position]);
+                    $position++;
+                }
+            }
+        }
         $categoryInfo = WooWmsCategory::select('id','category_name','user_id')->with(['categoryAttribute' => function($catAttr) use ($catalogue_id){
-            $catAttr->select('id','category_id','item_attribute_id')->with(['attributes' => function($attribute)  use ($catalogue_id){
-                $attribute->select('id','item_attribute','item_attribute_slug','is_active')->with(['itemAttributeTerms' => function($term) use ($catalogue_id){
-                    $term->select('id','item_attribute_id','item_attribute_term','item_attribute_term_slug','is_active')
+            $catAttr->select('id','category_id','item_attribute_id')->whereHas('attributes')->with(['attributes' => function($attribute)  use ($catalogue_id){
+                $attribute->select('id','item_attribute','item_attribute_slug','is_active','position')->with(['itemAttributeTerms' => function($term) use ($catalogue_id){
+                    $term->select('id','item_attribute_id','item_attribute_term','item_attribute_term_slug','is_active','position')
                     ->with(['catalogueItemAttribute' => function($catalogue) use ($catalogue_id){
                         $catalogue->select('id','catalogue_id','attribute_id','attribute_term_id')
                         ->with(['itemAttributeTermValue' => function($value){
                             $value->select('id','item_attribute_term_id','item_attribute_term_value');
                         }])
                         ->where('catalogue_id',$catalogue_id);
-                    }])->where('is_active',1);
-                }])->where('is_active',1);
+                    }])->where('is_active',1)->orderBy('position');
+                }])->where('is_active',1)->orderBy('position','asc');
             }]);
         }])
         ->where('id',$category_id)
         ->first();
-        return $categoryInfo;
+        $itemAttributes = [];
+        $itemAttributeIds = CategoryItemAttribute::where('category_id',$category_id)->pluck('item_attribute_id')->toArray();
+        if(count($itemAttributeIds) > 0) {
+            $itemAttributes = ItemAttribute::select('id','position')->whereIn('id',$itemAttributeIds)->where('is_active',1)->orderBy('position')->get();
+        }
+        return ['categoryInfo' => $categoryInfo, 'sortItemAttribue' => $itemAttributes];
     }
 
     public function getMappingField(Request $request){
@@ -4375,9 +4655,12 @@ class ProductDraftController extends Controller
         return redirect('completed-catalogue-list');
     }
 
-    public function getItemAttributeTerm($attrId) {
+    public function getItemAttributeTerm($attrId, $channelId = null) {
         try {
-            $itemAttributeTerms = ItemAttribute::with(['itemAttributeTerms'])->find($attrId);
+            $mappingData = Mapping::where('channel_id',$channelId)->get()->pluck('attribute_term_id');
+            $itemAttributeTerms = ItemAttribute::with(['itemAttributeTerms' => function($query) use ($mappingData) {
+                $query->whereNotIn('id',$mappingData);
+            }])->find($attrId);
             return response()->json(['type' => 'success', 'attribute' => $itemAttributeTerms]);
         }catch(\Exception $ex) {
             return response()->json(['type' => 'error','msg' => 'Something Went Wrong']);
@@ -4396,6 +4679,131 @@ class ProductDraftController extends Controller
         }
     }
 
+    public function itemAttributeSortable(Request $request) {
+        //dd($request->positionArr);
+        try{
+            if(count($request->positionArr) > 0) {
+                foreach($request->positionArr as $pos) {
+                    if($request->dataType == 'attribute'){
+                        $itemInfo = ItemAttribute::find($pos['id']);
+                        if($itemInfo) {
+                            $itemInfo->position = $pos['position'];
+                            $itemInfo->save();
+                        }
+                    }else {
+                        $itemInfo = ItemAttributeTerm::find($pos['id']);
+                        if($itemInfo) {
+                            $itemInfo->position = $pos['position'];
+                            $itemInfo->save();
+                        }
+                    }
+                }
+                return response()->json(['success' => true]);
+            }
+            return response()->json(['success' => false]);
+        }catch(\Exception $ex) {
+            return response()->json(['success' => false]);
+        }
+    }
+
+    public function deleteBundleProduct($variationId) {
+        $deleteCount = BundleSku::where('parent_variation_id',$variationId)->delete();
+        $parentVariationInfo = ProductVariation::find($variationId)->update(['actual_quantity' => 0]);
+        $shelfProductDelete  = ShelfedProduct::where('variation_id',$variationId)->delete();
+        return $deleteCount;
+    }
+
+    public function makeSKUBundle(Request $request) {
+        try{
+            if(count($request->sku) > 0) {
+                $parentVariationInfo = ProductVariation::find($request->parent_bundle_id);
+                if($parentVariationInfo) {
+                    if($request->parent_bundle_type == 'edit') {
+                        $deleteInfo = $this->deleteBundleProduct($request->parent_bundle_id);
+                    }
+                    foreach($request->sku as $key => $sku) {
+                        $variationInfo = ProductVariation::where('sku',$sku)->first();
+                        if($variationInfo) {
+                            $bundleSave = BundleSku::create([
+                                'parent_variation_id' => $request->parent_bundle_id,
+                                'child_variation_id' => $variationInfo->id,
+                                'quantity' => $request->quantity[$key],
+                            ]);
+                        }
+                    }
+                    $this->bundleSKUSyncQuantity($request->parent_bundle_id);
+                }
+                return back()->with('success','Bundle create successfully');
+            }else {
+                return back()->with('error','Not found any SKU');
+            }
+        }catch(\Exception $exception) {
+            return back()->with('error','Something Went Wrong');
+        } 
+    }
+
+    public function bundleVariationView($variation,$bundle) {
+        $image = $variation->image ?? $variation->master_single_image->image_url ?? '';
+        $title = $variation->product_draft->name ?? '';
+        $quantity = $bundle->quantity ?? '';
+        $sku = $variation->sku ?? '';
+        $html = '<div class="col-md-2"><img src="'.$image.'" alt="image" style="height: 120px"></div>
+        <div class="col-md-9">
+            <h5>'.$title.'</h5>
+            <h7>SKU: <a href="'.url('').'/filter-product-draft-view/'.$variation->id.'"> '.$sku.' </a></h7>
+            <p>Quantity: '.$quantity.'</p>
+        </div>';
+        return $html;
+    }
+
+    public function bundleVariationEdit($variation,$bundle) {
+        $sku = $variation->sku ?? '';
+        $quantity = $bundle->quantity ?? '';
+        $html = '<div class="input-group mt-3">
+            <input type="text" name="sku[]" class="form-control bundle-sku" value-type="sku" value="'.$sku.'" placeholder="Enter SKU" required>
+            <input type="text" name="quantity[]" class="form-control bundle-quantity" value-type="quantity" value="'.$quantity.'" placeholder="Enter Quantity" required>
+            <button type="button" class="btn btn-danger btn-sm remove-sku-bundle-row"><i class="fa fa-remove"></i></button>
+        </div>';
+        return $html;
+    }
+
+    public function modifySKUBundle(Request $request) {
+        $variationInfo = ProductVariation::find($request->variationId);
+        if($variationInfo) {
+            if($request->type != 'remove') {
+                if($request->type == 'child') {
+                    $bundleProduct = BundleSku::where('child_variation_id',$request->variationId)->get();
+                }else {
+                    $bundleProduct = BundleSku::where('parent_variation_id',$request->variationId)->get();
+                }
+                $viewBundleProduct = '';
+                $editBundleProduct = '';
+                if(count($bundleProduct) > 0) {
+                    foreach($bundleProduct as $bundle) {
+                        if($request->type == 'child') {
+                            $variationCatalogue =  ProductVariation::with(['product_draft','master_single_image'])->find($bundle->parent_variation_id);
+                        }else {
+                            $variationCatalogue =  ProductVariation::with(['product_draft','master_single_image'])->find($bundle->child_variation_id);
+                        }
+                        if($variationCatalogue) {
+                            $viewBundleProduct .= $this->bundleVariationView($variationCatalogue,$bundle);
+                            if($request->type == 'edit') {
+                                $editBundleProduct .= $this->bundleVariationEdit($variationCatalogue,$bundle);
+                            }
+                        }
+                    }
+                    return response()->json(['type' => 'success', 'viewData' => $viewBundleProduct,'editData' => $editBundleProduct]);
+                }else {
+                    return response()->json(['type' => 'error','msg' => 'Not found any bundle product']);
+                }
+            }elseif($request->type == 'remove') {
+                $deleteInfo = $this->deleteBundleProduct($request->variationId);
+                return response()->json(['type' => 'success','msg' => 'Bundle sku remove successfully']);
+            }
+        }else {
+            return response()->json(['type' => 'error','msg' => 'Product not found']);
+        }
+    }
 
 
 }

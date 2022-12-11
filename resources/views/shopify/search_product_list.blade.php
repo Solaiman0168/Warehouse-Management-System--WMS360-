@@ -6,7 +6,7 @@
                 {{--                                <td style="width: 6%; text-align: center !important;">--}}
                 {{--                                    <input type="checkbox" class="checkBoxClass" id="checkItem{{$index}}" name="masterProduct[{{$index}}]" value="{{$product_list->id}}">--}}
                 {{--                                </td>--}}
-                <td class="image" style="cursor: pointer; width: 6% !important;" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
+                <td class="image @if(isset($setting['shopify']['shopify_active_product']['image']) && $setting['shopify']['shopify_active_product']['image'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['image']) && $setting['shopify']['shopify_active_product']['image'] == 1) @else  @endif" style="cursor: pointer; width: 6% !important; text-align: center !important" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
                     <!--Start each row loader-->
                     <div id="product_variation_loading{{$search_result_single->id}}" class="variation_load" style="display: none;"></div>
                     <!--End each row loader-->
@@ -18,7 +18,7 @@
                     @endif
 
                 </td>
-                <td class="item-id" style="width: 8%">
+                <td class="item-id @if(isset($setting['shopify']['shopify_active_product']['item-id']) && $setting['shopify']['shopify_active_product']['item-id'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['item-id']) && $setting['shopify']['shopify_active_product']['item-id'] == 1) @else  @endif" style="width: 8%">
                         <span id="master_opc_{{$search_result_single->id}}">
                                 <div class="id_tooltip_container d-flex justify-content-start align-items-center">
                                 <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$search_result_single->id}}</span>
@@ -26,7 +26,7 @@
                                 </div>
                         </span>
                 </td>
-                <td class="item-id" style="width: 20%">
+                <td class="collection @if(isset($setting['shopify']['shopify_active_product']['collection']) && $setting['shopify']['shopify_active_product']['collection'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['collection']) && $setting['shopify']['shopify_active_product']['collection'] == 1) @else  @endif" style="width: 20%">
                     <span id="master_opc_{{$search_result_single->product_type}}">
                          <div class="id_tooltip_container d-flex justify-content-start align-items-center">
                             <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">
@@ -60,18 +60,18 @@
                 {{--                                    </div>--}}
                 {{--                                </td>--}}
                 {{--                                        <td class="catalogue-id" style="cursor: pointer; width: 10%; text-align: center !important;" data-toggle="collapse" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" data-target="#demo{{$product_list->id}}" class="accordion-toggle">--}}
-                <td class="catalogue-id" style="width: 8%; text-align: center !important;">
+                <td class="catalogue-id @if(isset($setting['shopify']['shopify_active_product']['catalogue-id']) && $setting['shopify']['shopify_active_product']['catalogue-id'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['catalogue-id']) && $setting['shopify']['shopify_active_product']['catalogue-id'] == 1) @else  @endif" style="width: 8%; text-align: center !important;">
                     <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                         <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$search_result_single->master_catalogue_id}}</span>
                         <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
                     </div>
                 </td>
-                <td class="account" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->account_id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->account_id}}" class="accordion-toggle">
+                <td class="account @if(isset($setting['shopify']['shopify_active_product']['account']) && $setting['shopify']['shopify_active_product']['account'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['account']) && $setting['shopify']['shopify_active_product']['account'] == 1) @else  @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->account_id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->account_id}}" class="accordion-toggle">
                     @isset(\App\shopify\ShopifyAccount::find($search_result_single->account_id)->account_name)
                         {{\App\shopify\ShopifyAccount::find($search_result_single->account_id)->account_name}}
                     @endisset
                 </td>
-                <td class="product-name" style="cursor: pointer; width: 20%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" data-target="#demo{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top" title="{{$search_result_single->title}}">
+                <td class="product-name @if(isset($setting['shopify']['shopify_active_product']['product-name']) && $setting['shopify']['shopify_active_product']['product-name'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['product-name']) && $setting['shopify']['shopify_active_product']['product-name'] == 1) @else  @endif" style="cursor: pointer; width: 20%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" data-target="#demo{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top" title="{{$search_result_single->title}}">
                     <a class="ebay-product-name" href="" target="_blank">
                         {!! Str::limit(strip_tags($search_result_single->title),$limit = 45, $end = '...') !!}
                     </a>
@@ -84,9 +84,9 @@
                     $creatorInfo = \App\User::withTrashed()->find($search_result_single->creator_id);
                     $modifierInfo = \App\User::withTrashed()->find($search_result_single->modifier_id);
                 @endphp
-                <td class="stock" style="cursor: pointer; text-align: center !important; width: 5%" data-toggle="collapse" data-target="#demo{{$search_result_single->id}}" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_quantity}}
+                <td class="stock text-center @if(isset($setting['shopify']['shopify_active_product']['stock']) && $setting['shopify']['shopify_active_product']['stock'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['stock']) && $setting['shopify']['shopify_active_product']['stock'] == 1) @else  @endif" style="cursor: pointer; text-align: center !important; width: 5%" data-toggle="collapse" data-target="#demo{{$search_result_single->id}}" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_quantity}}
                 </td>
-                <td class="status" style="cursor: pointer; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" data-target="#demo{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top">
+                <td class="status text-center @if(isset($setting['shopify']['shopify_active_product']['status']) && $setting['shopify']['shopify_active_product']['status'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['status']) && $setting['shopify']['shopify_active_product']['status'] == 1) @else  @endif" style="cursor: pointer; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" data-target="#demo{{$search_result_single->id}}" onclick="getVariation(this)" class="accordion-toggle" data-toggle="tooltip" data-placement="top">
                     {{$search_result_single->status}}
                 </td>
                 {{--                                <td class="category" style="cursor: pointer; width: 20%" data-toggle="collapse" data-target="#demo{{$product_list->id}}" id="mtr-{{$product_list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$product_list->category_name}}</td>--}}
@@ -112,7 +112,7 @@
                 {{--                                </td>--}}
 
 
-                <td class="creator" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
+                <td class="creator @if(isset($setting['shopify']['shopify_active_product']['creator']) && $setting['shopify']['shopify_active_product']['creator'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['creator']) && $setting['shopify']['shopify_active_product']['creator'] == 1) @else  @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
                     @if(isset($creatorInfo->name))
                     <div class="wms-name-creator">
                         <div data-tip="on {{date('d-m-Y', strtotime($search_result_single->created_at))}}">
@@ -121,7 +121,7 @@
                     </div>
                     @endif
                 </td>
-                <td class="modifier" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
+                <td class="modifier @if(isset($setting['shopify']['shopify_active_product']['modifier']) && $setting['shopify']['shopify_active_product']['modifier'] == 0) hide  @elseif(isset($setting['shopify']['shopify_active_product']['modifier']) && $setting['shopify']['shopify_active_product']['modifier'] == 1) @else  @endif" style="cursor: pointer; text-align: center !important; width: 8%" data-toggle="collapse" id="mtr-{{$search_result_single->id}}" onclick="getVariation(this)" data-target="#demo{{$search_result_single->id}}" class="accordion-toggle">
                     @if(isset($modifierInfo->name))
                         <div class="wms-name-modifier1">
                             <div data-tip="on {{date('d-m-Y', strtotime($search_result_single->updated_at))}}">
@@ -136,7 +136,7 @@
                         </div>
                     @endif
                 </td>
-                <td class="actions" style="width: 6%">
+                <td class="actions text-center" style="width: 6%">
                     <!--start manage button area-->
                     <div class="btn-group dropup">
                         <button type="button" class="btn manage-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -175,3 +175,59 @@
         @endforeach
     @endif
 @endif
+
+<script>
+
+
+
+    // table column hide and show toggle checkbox
+    $("input:checkbox").click(function(){
+        let column = "."+$(this).attr("name");
+        $(column).toggle();
+    });
+
+    //table column by default hide
+    $("input:checkbox:not(:checked)").each(function() {
+        var column = "table ." + $(this).attr("name");
+        $(column).hide();
+    });
+
+    //prevent onclick dropdown menu close
+    $('.filter-content').on('click', function(event){
+        event.stopPropagation();
+    });
+
+
+    $(document).ready(function(){
+        var tr_length = $('.order-table tbody tr').length
+        var tr_length_pro_draft = $('.product-draft-table tbody tr').length
+        var tr_length_onbuy = $('.onbuy-table tbody tr').length
+        var tr_length_ebay = $('.ebay-table tbody tr').length
+        var tr_length_amazon = $('.amazon-table tbody tr').length
+        if(tr_length == 0 || tr_length == 1 || tr_length == 2 || tr_length == 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length > 3){
+            $('.order-content .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_pro_draft == 0 || tr_length_pro_draft == 1 || tr_length_pro_draft == 2 || tr_length_pro_draft == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_pro_draft > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_onbuy == 0 || tr_length_onbuy == 1 || tr_length_onbuy == 2 || tr_length_onbuy == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_onbuy > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_ebay == 0 || tr_length_ebay == 1 || tr_length_ebay == 2 || tr_length_ebay == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_ebay > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+        if(tr_length_amazon == 0 || tr_length_amazon == 1 || tr_length_amazon == 2 || tr_length_amazon == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_amazon > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+    })
+</script>

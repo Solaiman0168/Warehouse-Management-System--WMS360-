@@ -120,7 +120,7 @@ class Ebay implements EChannel
                       </Item>
                     </ReviseFixedPriceItemRequest>';
                         try {
-                            $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, null, Auth::user()->name ?? 'Quantity Sync', $product->quantity, $update_quantity, Carbon::now(), 2, 2);
+                            $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, null, Auth::user()->name ?? 'Cron Job', $product->quantity, $update_quantity, Carbon::now(), 2, 2);
                             $update_ebay_product = $this->curl($url, $headers, $body, 'POST');
                             $update_ebay_product = simplexml_load_string($update_ebay_product);
                             $update_ebay_product = json_decode(json_encode($update_ebay_product), true);
@@ -135,7 +135,7 @@ class Ebay implements EChannel
                                 $updateResponse = $this->updateResponse($logInsertData->id, $update_ebay_product, 0, 0);
                             }
                         } catch (\Exception $exception) {
-                            $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, $exception, Auth::user()->name ?? 'Quantity Sync', $product->quantity, $update_quantity, Carbon::now(), 0, 0);
+                            $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, $exception, Auth::user()->name ?? 'Cron Job', $product->quantity, $update_quantity, Carbon::now(), 0, 0);
                         }
                     }
 
@@ -186,7 +186,7 @@ class Ebay implements EChannel
                       </Item>
                     </ReviseFixedPriceItemRequest>';
                     try {
-                        $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, null, Auth::user()->name ?? 'Quantity Sync', $product->quantity, $quantity, Carbon::now(), 2, 2);
+                        $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, null, Auth::user()->name ?? 'Cron Job', $product->quantity, $quantity, Carbon::now(), 2, 2);
                         $update_ebay_product = $this->curl($url, $headers, $body, 'POST');
                         $update_ebay_product = simplexml_load_string($update_ebay_product);
                         $update_ebay_product = json_decode(json_encode($update_ebay_product), true);
@@ -201,7 +201,7 @@ class Ebay implements EChannel
                             $updateResponse = $this->updateResponse($logInsertData->id, $update_ebay_product, 0, 0);
                         }
                     } catch (\Exception $exception) {
-                    $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, $exception, Auth::user()->name ?? 'Quantity Sync', $product->quantity, $update_quantity, Carbon::now(), 0, 0);
+                    $logInsertData = $this->paramToArray(url()->full(), $change_reason, 'Ebay', $account_result->id, $sku, $body, $exception, Auth::user()->name ?? 'Cron Job', $product->quantity, $update_quantity, Carbon::now(), 0, 0);
                 }
 
 //                        $quantity = $product->masterProduct->custom_feeder_quantity;

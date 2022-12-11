@@ -2,6 +2,64 @@
 @section('content')
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script>
+    $(function() {
+        $( "#all_item_attribute,.all_item_attribute_term" ).sortable({
+            cancel: ".ui-sortable-disabled",
+            update: function(event, ui) {
+                var dataType = event.target.dataset.type
+                var newPositionArr = []
+                if(dataType == 'attribute'){
+                    $('.item-attribute-sortable').each(function(index, content){
+                        var UpdatedPosition = index + 1
+                        $(this).attr('position',UpdatedPosition)
+                        newPositionArr.push({'id': $(this).attr('data-id'),'position': UpdatedPosition})
+                    })
+                }else {
+                    var dataId = event.target.id.split('-')[1]
+                    $('#attributeTermId-'+dataId+' .attr-term-div').each(function(index, content){
+                        var UpdatedPosition = index + 1
+                        $(this).attr('position',UpdatedPosition)
+                        newPositionArr.push({'id': $(this).attr('data-id'),'position': UpdatedPosition})
+                    })
+                }
+                $.ajax({
+                    type: "POST",
+                    url: "{{asset('item-attribute-sortable')}}",
+                    data: {
+                        "dataType": dataType,
+                        "positionArr": newPositionArr,
+                        "_token": "{{csrf_token()}}"
+                    },
+                    beforeSend: function() {
+                        $('#ajax_loader').show()
+                    },
+                    success: function(response) {
+                        if(response.success) {
+                            Swal.fire({
+                                title: 'Successfully Positioned',
+                                icon: 'success',
+                                position: 'top-end',
+                                toast: true,
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                            });
+                        }else {
+                            Swal.fire('Oops', 'Something went wrong when positioning','error');
+                        }
+                    },
+                    error: function(error) {
+                        Swal.fire('Oops!', 'Something went wrong', 'error');
+                    },
+                    complete: function() {
+                        $('#ajax_loader').hide()
+                    }
+                })
+            }
+        });
+    });
+</script>
 <div class="content-page draft-page">
     <div class="content">
         <div class="container-fluid">
@@ -34,24 +92,31 @@
                 </li>
             </ul>
             <div class="tab-content p-50">
-                <div id="all_item_attribute" class="tab-pane active m-b-20">
-                    <div class="row">
+                <div id="all_item_attribute" class="tab-pane active m-b-20" data-type="attribute">
+                    <div class="row ui-sortable-disabled">
                         <div class="col-md-2">
                             <h5 class="text-center">Attribute</h5>
                         </div>
-                        <div class="col-md-10">
+                        <div class="col-md-10 d-flex justify-content-between">
+                            <div></div>
                             <h5 class="text-center">Attribute Term</h5>
+                            <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#tabTitleModal">
+                                Add Attribute
+                            </button>
                         </div>
                     </div><hr>
                     @if(count($itemAttribute) > 0)
-                        @foreach ($itemAttribute as $value)
+                        @foreach ($itemAttribute as $key => $value)
+                        <div class="card p-2 m-2 item-attribute-sortable" data-id="{{$value->id}}" position="{{$value->position}}">
                             <div class="row">
                                 <div class="col-md-2">
                                     <div class="card">
                                         <h5 class="text-center">{{$value->item_attribute ?? ''}}</h5>
                                         <!-- <a href="javascript::void(0)" class="text-center edit-item-attribute" data="edit/{{$value->id}}/{{$value->item_attribute}}" title="Edit"><i class="fa fa-edit" aria-hidden="true"></i></a> -->
-                                        <a href="javascript::void(0)" class="text-center" data-toggle="modal" data-target="#categoryModal{{$value->id}}" title="Edit/Show Category"><i class="fa fa-edit"></i></a>
-                                        
+                                        <div class="d-flex justify-content-center">
+                                        <a href="javascript::void(0)" class="text-center text-success mx-1 h4" data-toggle="modal" data-target="#categoryModal{{$value->id}}" title="Edit/Show Category"><i class="fa fa-edit"></i></a>
+                                        <a href="javascript:void(0)" class="text-center text-danger mx-1 h4 delete-attribute" data="{{$value->id}}" title="Delete"><i class="fa fa-trash"></i></a>
+                                        </div>
                                         <div class="modal fade" id="categoryModal{{$value->id}}" tabindex="-1" role="dialog" aria-labelledby="categoryModalTitle" aria-hidden="true">
                                             <div class="modal-dialog modal-dialog-scrollable" role="document">
                                                 <div class="modal-content">
@@ -164,18 +229,18 @@
                                 </div>
                                 <div class="col-md-10">
                                     <div class="card p-3">
-                                        <div class="row">
+                                        <div class="row all_item_attribute_term" data-type="attribute-term" id="attributeTermId-{{$value->id}}">
                                             @if(count($value->itemAttributeTerms) > 0)
                                                 @foreach ($value->itemAttributeTerms as $term)
-                                                    <div class="card col-md-4 d-inline mb-1 attr-term-div pb-1 mr-1">
+                                                    <div class="card col-md-4 d-inline mb-1 attr-term-div pb-1 mr-1" data-id="{{$term->id}}">
                                                         <div class="align-item-center">
-                                                    <div class="float-left">
-                                                            <P>{{$term->item_attribute_term}}</P>
-                                                        </div>
-                                                        <div class="float-right attr-term-div-action hide">
-                                                            <button class="btn btn-success btn-sm edit-term" data="{{$term->id}}/{{$term->item_attribute_term}}"><i class="fa fa-edit"></i></button>
-                                                            <button class="btn btn-danger btn-sm remove-term" data="{{$term->id}}"><i class="fa fa-trash"></i></button>
-                                                        </div>
+                                                            <div class="float-left">
+                                                                <P>{{$term->item_attribute_term}}</P>
+                                                            </div>
+                                                            <div class="float-right attr-term-div-action hide">
+                                                                <button class="btn btn-success btn-sm edit-term" data="{{$term->id}}/{{$term->item_attribute_term}}"><i class="fa fa-edit"></i></button>
+                                                                <button class="btn btn-danger btn-sm remove-term" data="{{$term->id}}"><i class="fa fa-trash"></i></button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -188,14 +253,15 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div><br><hr>
+                            </div>
+                        </div>
                         @endforeach
                         <!-- <button class="btn btn-primary add-attribute">Add Title</button> -->
                         
                     @endif
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#tabTitleModal">
+                    <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#tabTitleModal">
                         Add Attribute
-                    </button>
+                    </button> -->
                 </div>
                 <div id="map_item_term" class="tab-pane m-b-20">
                     <form action="{{url('save-mapping-item-term')}}" method="post">
@@ -304,9 +370,16 @@
                                 @endif
                             </select>
                         </div>
+
+                        <div class="p-10">
+                            <div class="input-group mb-2">
+                                <input type="text" name="item_attribute" class="form-control" placeholder="Item Attribute" required>
+                            </div>
+                        </div>
+
                         <div class="p-10 item-attribute-div">
-                            <div class="input-group mb-3">
-                                <input type="text" name="item_attribute[]" class="form-control" placeholder="Tab Title" required>
+                            <div class="input-group mb-2">
+                                <input type="text" name="item_attribute_term[]" class="form-control" placeholder="Item Attribute Term" required>
                                 <!-- <select name="item_status[]" id="item_status" class="form-control">
                                     <option value="1">Active</option>
                                     <option value="0">InActive</option>
@@ -457,8 +530,8 @@
             }
         })
         $('.add-more-item-attribute').click(function(){
-            let itemAttrContainer = '<div class="input-group mb-3">'
-                                    +'<input type="text" name="item_attribute[]" class="form-control" placeholder="Tab Title" required>'
+            let itemAttrContainer = '<div class="input-group mb-2">'
+                                    +'<input type="text" name="item_attribute_term[]" class="form-control" placeholder="Item Attribute Term" required>'
                                     // +'<select name="item_status[]" id="item_status" class="form-control">'
                                     //     +'<option value="1">Active</option>'
                                     //     +'<option value="0">InActive</option>'
@@ -546,13 +619,72 @@
                 }
             })
         })
+
+        $('a.delete-attribute').on('click',function(){
+            var attributeId = $(this).attr('data')
+            if(attributeId == '' || attributeId == 'undefined') {
+                swal.fire('Oops','Attribute Not Found')
+                return false
+            }
+            var parentDiv = $(this).closest('.item-attribute-sortable')
+            swal.fire({
+                title: 'Are you sure?',
+                text: 'All terms belongs to this attribute will also be deleted',
+                icon: 'warning',
+                showConfirmButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonColor: '#d33',
+                showLoaderOnConfirm: true,
+                preConfirm: (value) => {
+                    let url = "{{url('/delete-item-term')}}"
+                    let token = "{{csrf_token()}}"
+                    let dataObj = {
+                        "type": "attribute",
+                        "id" : attributeId,
+                        "_token" : token
+                        }
+                        //return false
+                    return fetch(url, {
+                        method: 'POST', // or 'PUT'
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(dataObj),
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                        throw new Error(response.statusText)
+                        }
+                        return response.json()
+                    })
+                    .then(data => {
+                        if(data.type == 'success') {
+                            parentDiv.remove()
+                            Swal.fire('Success',data.msg,'success')
+                        }else {
+                            Swal.fire('Error',data.msg,'error')
+                        }
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(
+                        `Request failed: ${error}`
+                        )
+                    })
+                }
+            })
+
+        })
         
         $('button.remove-term').click(function(){
             var termId = $(this).attr('data')
+            var parentDiv = $(this).closest('.card')
             Swal.fire({
             title: 'Are You Sure To Delete It?',
             icon: 'warning',
             showCancelButton: true,
+            cancelButtonColor: '#d33',
             confirmButtonText: 'Yes',
             showLoaderOnConfirm: true,
             preConfirm: (value) => {
@@ -587,6 +719,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     if(result.value.type == 'success'){
+                        parentDiv.remove()
                         Swal.fire({
                             title: result.value.msg,
                             icon: 'success'
@@ -839,17 +972,19 @@
 
         $('select#map_item_attribute').on('change',function(){
             var attrId = $(this).val()
-            if(attrId == '') {
+            var channelId = $('#channel').val()
+            if(attrId == '' || channelId == '') {
+                Swal.fire('Oops','Select channel and attribute field','error');
                 return false
             }
-            var existDiv = $('.item_attribute_channel_field_div').find('.attr-div-'+attrId).length
-            if(existDiv > 0) {
-                $('.exist-attr-message').html('Already Chosen')
-                return false
-            }else{
-                $('.exist-attr-message').html('')
-            }
-            var url = "{{url('get-item-attribute-term')}}"+"/"+attrId
+            // var existDiv = $('.item_attribute_channel_field_div').find('.attr-div-'+attrId).length
+            // if(existDiv > 0) {
+            //     $('.exist-attr-message').html('Already Chosen')
+            //     return false
+            // }else{
+            //     $('.exist-attr-message').html('')
+            // }
+            var url = "{{url('get-item-attribute-term')}}"+"/"+attrId+"/"+channelId
             return fetch(url)
             .then(response => {
                 if (!response.ok) {

@@ -20,6 +20,8 @@ use Crypt;
 use App\ShelfQuantityChangeReason;
 use Symfony\Component\Process\Process;
 use App\Traits\CommonFunction;
+use App\Warehouse;
+use Illuminate\Support\Facades\Log;
 
 
 class ShelfController extends Controller
@@ -65,7 +67,7 @@ class ShelfController extends Controller
         $search_opt_value = $request->get('opt_out');
         $search_filter_option = $request->get('filter_option');
 
-        $all_shelf = Shelf::with(['user','total_product']);
+        $all_shelf = Shelf::with(['user','total_product','warehouse']);
         $isSearch = $request->get('is_search') ? true : false;
         $allCondition = [];
         if($isSearch){
@@ -73,11 +75,13 @@ class ShelfController extends Controller
             $allCondition = $this->shelfConditionParams($request, $allCondition);
         }
         $all_shelf = $all_shelf->orderBy('id','DESC')->paginate($pagination);
+        $all_shelf = $all_shelf->appends($request->query());
         $shelfs = Shelf::get()->all();
         $total_shelf = Shelf::count();
         $users = User::all();
+        $warehouseList = Warehouse::where('status',1)->get();
         $all_decode_shelf = json_decode(json_encode($all_shelf));
-        $content = view('shelf.shelf_list',compact('all_shelf','all_decode_shelf','total_shelf','shelfs','users', 'setting', 'page_title', 'pagination','allCondition'));
+        $content = view('shelf.shelf_list',compact('all_shelf','all_decode_shelf','total_shelf','shelfs','users', 'setting', 'page_title', 'pagination','allCondition','warehouseList'));
         return view('master',compact('content'));
     }
 
@@ -147,7 +151,7 @@ class ShelfController extends Controller
 
                     }
                 }
-
+   
                 if ($temp == 0){
 //                    echo $update_quantity.'if';
                     ShelfedProduct::create(['shelf_id'=>$to->id,'variation_id' => $shelf_product->pivot->variation_id,'quantity' => $shelf_product->pivot->quantity]);
@@ -173,12 +177,21 @@ class ShelfController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = $request->validate([
-            'shelf_name' => 'required|unique:shelfs|max:255',
-        ]);
-
-        $request['user_id'] = Auth::user()->id;
-        $add_shelf = Shelf::create($request->all());
+        // $validator = $request->validate([
+        //     'shelf_name' => 'required|unique:shelfs|max:255',
+        // ]);
+        if(count($request->shelf_name) > 0) {
+            foreach($request->shelf_name as $name) {
+                $existCheck = Shelf::where('shelf_name',$name)->first();
+                if(!$existCheck) {
+                    $add_shelf = Shelf::create([
+                        'warehouse_id' => $request->warehouse_id ?? null,
+                        'shelf_name' => $name,
+                        'user_id' => Auth::user()->id,
+                    ]);
+                }
+            }
+        }
         return back()->with('shelf_add_success_msg','Shelf added successfully');
     }
 
@@ -198,6 +211,37 @@ class ShelfController extends Controller
 //        exit();
         $content = view('shelf.single_shelf_product_list',compact('single_shelf_product'));
         return view('master',compact('content'));
+    }
+
+    public function singleProductShelfView($id){
+
+        $single_shelf_product = Shelf::with(['total_product' => function($query){
+            $query->with('shelf_quantity');
+        }])->where('id',$id)->first();
+
+        // Log::info($single_shelf_product->shelf_name);
+
+        $product_variation_array = [];
+        $url = url('').'/print-barcode/'; 
+        if(count($single_shelf_product->total_product) > 0){
+            foreach ($single_shelf_product->total_product as $product_variation){
+                $product_variation_array[] = [
+                    'product_variation_id' => $product_variation->id,
+                    'product_variation_image' => $product_variation->image ?? null,
+                    'product_variation_sku' => $product_variation->sku,
+                    'product_variation_qr' => '<a href="'.$url.$product_variation->id.'" target="_blank">
+                                                '.\SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate($product_variation->sku).'
+                                                </a>',
+                    'product_variation_attribute' => \Opis\Closure\unserialize($product_variation->attribute),
+                    'product_variation_quantity' => $product_variation->pivot->quantity,
+                    'shelf_name' => $single_shelf_product->shelf_name,
+                ];
+            }
+        }
+
+        // dd($product_variation_array);
+        return response()->json(['products' => $product_variation_array, 'shelf_name' => $single_shelf_product->shelf_name]);
+
     }
 
     /**
@@ -298,6 +342,7 @@ class ShelfController extends Controller
         $all_reshelved_product_list = $all_reshelved_product_list->appends($request->query());
         $total_product = ReshelvedProduct::count();
         $all_decode_reshelved_product = json_decode(json_encode($all_reshelved_product_list));
+
         return view('shelf.reshelved_product_list',compact('all_reshelved_product_list','all_decode_reshelved_product','total_product','setting','page_title','pagination','allCondition'));
 
     }
@@ -743,6 +788,25 @@ class ShelfController extends Controller
                 return response()->json(['type' => 'error','msg' => 'Something went wrong','data' => $exception->getMessage()]);
             }
         }
+
+        public function existShelfCheck(Request $request) {
+            $shelfInfo = Shelf::where('shelf_name',$request->inputValue)->first();
+            if($shelfInfo) {
+                return response()->json(['success' => true]);
+            }
+            return response()->json(['success' => false]);
+        }
+
+        public function assignWarehouseToShelf(Request $request) {
+            $shelfIdsArr = explode(',',$request->shelf_ids);
+            if(count($shelfIdsArr) > 0) {
+                $shelfUpdateInfo = Shelf::whereIn('id',$shelfIdsArr)->update(['warehouse_id' => $request->assign_warehouse_id]);
+                return back()->with('success','Shelf assign to warehouse successfully');
+            }
+            return back()->with('error','No selected shelf found');
+        }
+
+
 
 
 }

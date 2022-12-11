@@ -125,7 +125,7 @@
                                     <div class="col-md-12 text-center">
                                         <button class="vendor-btn" type="submit" class="btn btn-primary waves-effect waves-light">
                                             <b> Update </b>
-                                        </button>
+                                        </button> 
                                     </div>
                                 </div>
                             </form>

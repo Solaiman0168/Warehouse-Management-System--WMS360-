@@ -245,7 +245,8 @@
                 <div class="container-fluid tab-content tab-content ebay-tab-content" id="privateListingDiv">
                     <div id="privateTab{{$profile_id}}" class="tab-pane active privateListingContent_{{$profile_id}}">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" name="private_listing[{{$profile_id}}]" value="1" class="custom-control-input private_listing" id="private_listing{{$profile_id}}">
+                            @include('partials.private_listing.check_box',['profile_id' => $profile_id,'result' => $result->private_listing])
+{{--                            <input type="checkbox" name="private_listing[{{$profile_id}}]" value="1" class="custom-control-input private_listing" id="private_listing{{$profile_id}}">--}}
                             <label class="custom-control-label" for="private_listing{{$profile_id}}"> </label>
                         </div>
                     </div>
@@ -280,10 +281,11 @@
                     </ul>
                     <div class="container-fluid tab-content tab-content ebay-tab-content" id="internationalVisibilityDiv">
                         <div id="internationalVisibilityTab{{$profile_id}}" class="tab-pane active interNationalSiteVisibility_{{$profile_id}}">
-                            <select name="cross_border_trade[{{$profile_id}}]" class="form-control" id="condition-select">
-                                <option value="None" selected>-</option>
-                                <option value="North America" >eBay US and Canada</option>
-                            </select>
+{{--                            <select name="cross_border_trade[{{$profile_id}}]" class="form-control" id="condition-select">--}}
+{{--                                <option value="None" selected>-</option>--}}
+{{--                                <option value="North America" >eBay US and Canada</option>--}}
+{{--                            </select>--}}
+                            @include('partials.cross_border_trade.drop_down',['profile_id' => $profile_id,'cross_border_trade' => $result->cross_border_trade])
                         </div>
                     </div>
                 </div>
@@ -882,29 +884,87 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-10">
+{{--                    @foreach($item_specific_results as $key => $value)--}}
+{{--                        <div class="col-md-3 mb-3">--}}
+{{--                            <label style="font-weight: normal">{{$key}}--}}
 
-
-                <div class="col-md-12">
-                    {{--                                                        <h5></h5><span>(Write your value after the already inserted id and don't give '/' slash in your input value)</span><br>--}}
-                </div>
-
-
-                <div class="row d-flex justify-content-between">
-                    @foreach($item_specific_results as $key => $value)
-                        <div class="col-md-3 mb-3">
-                            <label style="font-weight: normal">{{$key}}
-
-                            </label>
-                            <input type="text" class="form-control"  name='item_specific[{{$key}}]' value="{{$value}}">
+{{--                            </label>--}}
+{{--                            <input type="text" class="form-control"  name='item_specific[{{$key}}]' value="{{$value}}">--}}
+{{--                        </div>--}}
+{{--                    @endforeach--}}
+                    @isset($item_specifics["aspects"])
+                        <div class="col-md-10">
+                            <div class="col-md-12">
+                                {{--                                                        <h5></h5><span>(Write your value after the already inserted id and don't give '/' slash in your input value)</span><br>--}}
+                            </div>
+                            <div class="row d-flex justify-content-between">
+                                @foreach($item_specifics["aspects"] as $index => $aspect)
+                                    @php
+                                        $temp = 0;
+                                    @endphp
+                                    @if(isset($product_result[0]->attribute))
+                                        @foreach(\Opis\Closure\unserialize($product_result[0]->attribute) as $attribute_id => $attribute_array)
+                                            @foreach($attribute_array as $attribute_name => $terms_array)
+                                                @if($aspect['localizedAspectName'] == $attribute_name)
+                                                    @php
+                                                        $temp = 1;
+                                                    @endphp
+                                                @endif
+                                            @endforeach
+                                        @endforeach
+                                    @endif
+                                    @if(isset($aspect['localizedAspectName']) && $temp == 0)
+                                        <div class="col-md-3 mb-3">
+                                            <label style="font-weight: normal">{{$aspect['localizedAspectName']}}
+                                                @if($aspect['aspectConstraint']['aspectRequired'])
+                                                    <strong>*</strong>
+                                                @endif
+                                            </label>
+                                            @php
+                                                $mapping_value = null;
+                                                if(!isset($ebayMasterProductItemSpecifics[$aspect['localizedAspectName']])) {
+                                                    $catalogueAttributeTermValues = \App\CatalogueAttributeTerms::with(['itemAttributeTermValue'])->where('catalogue_id',$id)->get();
+                                                    if(count($catalogueAttributeTermValues) > 0) {
+                                                        foreach($catalogueAttributeTermValues as $c_a_t) {
+                                                            $attribute_term_id   = \App\Mapping::where('mapping_field',$aspect['localizedAspectName'])->where('attribute_term_id',$c_a_t->attribute_id)->where('channel_id',\App\Http\Controllers\Channel\ChannelFactory::eBay)->with(['attributeTerms'])->first();
+                                                            if ($attribute_term_id){
+                                                                //$term_ojb = \App\CatalogueAttributeTerms::where('catalogue_id',$id)->where('attribute_id',$attribute_term_id->attribute_term_id)->first();
+                                                                //if ($term_ojb){
+                                                                //$mapping_value = \App\ItemAttributeTermValue::find($term_ojb->attribute_term_id)->item_attribute_term_value;
+                                                                //} 
+                                                                $mapping_value = $c_a_t->itemAttributeTermValue->item_attribute_term_value ?? '';
+                                                            }
+                                                        }
+                                                    }  
+                                                }else {
+                                                    $mapping_value = $ebayMasterProductItemSpecifics[$aspect['localizedAspectName']];
+                                                }
+                                            @endphp
+                                            <input type="search" class="form-control" list="modelslist{{$index}}"  name='item_specific[{{$aspect['localizedAspectName']}}]' value="{{$mapping_value ?? $item_specific_results[$aspect['localizedAspectName']] ?? ''}}" multiple>
+                                            @if(isset($aspect['aspectValues']))
+                                                <datalist id="modelslist{{$index}}">
+                                                    @foreach($aspect['aspectValues'] as $recommendation)
+                                                        @if(isset($recommendation['localizedValue']))
+                                                            <option value="{{$recommendation['localizedValue']}}">
+                                                        @endif
+                                                    @endforeach
+                                                </datalist>
+                                            @endif
+                                            {{--                        <select name='item_specific[{{$item_specific['Name']}}]' class="form-control select2">--}}
+                                            {{--                            <option value="">Select-{{$item_specific['Name']}}</option>--}}
+                                            {{--                            <option value="">ABC</option>--}}
+                                            {{--                            <option value="">BDC</option>--}}
+                                            {{--                            <option value="">BDF</option>--}}
+                                            {{--                            <option value="">ADE</option>--}}
+                                            {{--                        </select>--}}
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
                         </div>
-                    @endforeach
+                    @endisset
                 </div>
 
-
-            </div>
-        </div>
-        </div>
 
             <!--Shop Category-->
             @isset($shop_categories['Store']['CustomCategories']['CustomCategory'])

@@ -25,7 +25,7 @@ class TestControllerTwo extends Controller
 
         $migration1 = new Process("git reset --hard");
         $migration2 = new Process("git pull git@gitlab.com:combosoft.ltd/wms-merge-with-master-app.git");
-        $migration3 = new Process("php artisan migrate");
+        $migration3 = new Process("php artisan migrate --force");
 
         $migration1->setWorkingDirectory(base_path());
 

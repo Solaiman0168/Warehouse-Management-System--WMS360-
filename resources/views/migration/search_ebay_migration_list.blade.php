@@ -41,6 +41,15 @@
         <!--End Edit eBay account Modal -->
 
 
-
+<script>
+    $(document).ready(function(){
+        var tr_length_ebay = $('.ebay-table tbody tr').length
+        if(tr_length_ebay == 0 || tr_length_ebay == 1 || tr_length_ebay == 2 || tr_length_ebay == 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue')
+        }else if(tr_length_ebay > 3){
+            $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+        }
+    })
+</script>
 
     @endforeach

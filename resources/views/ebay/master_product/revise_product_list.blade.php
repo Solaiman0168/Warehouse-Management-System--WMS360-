@@ -42,7 +42,7 @@
                                             <input type="checkbox" name="item-id" class="onoffswitch-checkbox" id="item-id" tabindex="0" @if(isset($setting['ebay']['ebay_revise_product']['item-id']) && $setting['ebay']['ebay_revise_product']['item-id'] == 1) checked @elseif(isset($setting['ebay']['ebay_revise_product']['item-id']) && $setting['ebay']['ebay_revise_product']['item-id'] == 0) @else checked @endif>
                                             <label class="onoffswitch-label" for="item-id">
                                                 <span class="onoffswitch-inner"></span>
-                                                <span class="onoffswitch-switch"></span>
+                                                 <span class="onoffswitch-switch"></span>
                                             </label>
                                         </div>
                                         <div class="ml-1"><p>Item ID</p></div>
@@ -164,7 +164,7 @@
 
 
                 <!--Card box start-->
-                <div class="row m-t-20">
+                <div class="row m-t-20 catalog">
                     <div class="col-md-12">
                         <div class="card-box ebay table-responsive shadow">
 
@@ -189,15 +189,31 @@
                                 <div class="product-inner">
 
                                     <div class="ebay-master-product-search-form">
-                                        <form class="d-flex" action="Javascript:void(0);" method="post">
+                                        <form class="d-flex" action="{{url('revise-product-list-generic-search')}}" method="get">
+                                            @csrf
                                             <div class="p-text-area">
-                                                <input type="text" name="search_value" id="search_value" class="form-control" placeholder="Search on eBay...." required>
+                                                <input type="text" name="search_value" class="form-control" value="{{isset($generic_search_value) ? $generic_search_value : ''}}" placeholder="Search on eBay...." required>
                                             </div>
                                             <div class="submit-btn">
-                                                <button class="search-btn waves-effect waves-light" type="submit" onclick="catalogue_search();">Search</button>
+                                                {{-- <button class="search-btn waves-effect waves-light" type="submit" onclick="catalogue_search();">Search</button> --}}
+                                                <button class="search-btn waves-effect waves-light" type="submit">Search</button>
                                             </div>
                                         </form>
                                     </div>
+
+                                    @if(isset($generic_search_value))
+                                        @if (count($master_product_list) == 0)
+                                            <script type="text/javascript">
+                                                $(document).ready(function() {
+                                                    Swal.fire(
+                                                        'No result found',
+                                                        '',
+                                                        'info'
+                                                    )
+                                                });
+                                            </script>
+                                        @endif
+                                    @endif
 
                                     <!--Pagination area-->
                                     <div class="pagination-area">
@@ -243,6 +259,12 @@
                                 </div>
                             </div>
 
+                            <div class="row show-selected-checkbox-count hide">
+                                <div class="col-md-12">
+                                    <h5><span></span> Items Selected</h5>
+                                </div>
+                            </div>
+
                             {{-- <div id="Load" class="load" style="display: none;">
                                 <div class="load__container">
                                     <div class="load__animation"></div>
@@ -251,10 +273,10 @@
                                 </div>
                             </div> --}}
 
-                            <table class="ebay-table ebay-table-n w-100">
+                            <table class="ebay-table ebay-table-n revise-table w-100">
                                 <thead>
                                 <tr>
-                                    <th style="width: 6%; text-align: center"><input type="checkbox" id="checkAll"> <div class="product-inner"><button type="button" class="btn btn-default" style="cursor: pointer"  target="_blank" data-toggle="tooltip" data-placement="top" title="Revise">Revise</button></div></th>
+                                    <th style="width: 6%; text-align: center"><input type="checkbox" id="checkAll"> <div class="revise-btn"><button type="button" class="btn btn-default" style="cursor: pointer"  target="_blank" data-toggle="tooltip" data-placement="top" title="Revise">Revise</button></div></th>
                                     <th class="image text-center">Image</th>
                                     <th class="item-id" style="width: 8%">
                                         <div class="d-flex justify-content-start">
@@ -593,7 +615,7 @@
                                     @endif
                                 @endisset
                                 @foreach($master_product_list as $index => $product_list)
-                                    <tr>
+                                    <tr id="revise-tr-{{$product_list->item_id}}">
                                         <td style="width: 6%; text-align: center !important;">
 
                                                 {{--                                                    <input type="checkbox" class="checkBoxClass" id="customCheck{{$pending->id}}" name="multiple_order[]" value="{{$pending->id}}">--}}
@@ -741,37 +763,37 @@
             });
         }
 
-        function catalogue_search(){
-            var search_value = $('#search_value').val();
-            if(search_value == '' ){
-                alert('Please type catalogue name in the search field.');
-                return false;
-            }
-            var category_id = $('#category_id').val();
-            console.log(status);
-            $.ajax({
-                type: "POST",
-                url: "{{url('onbuy/search-product-list')}}",
-                data: {
-                    "_token" : "{{csrf_token()}}",
-                    "name": search_value
-                },
-                beforeSend: function(){
-                    // Show image container
-                    $("#ajax_loader").show();
-                },
-                success: function(response){
-                    $('ul.pagination').hide();
-                    $('table tbody').html(response);
+        // function catalogue_search(){
+        //     var search_value = $('#search_value').val();
+        //     if(search_value == '' ){
+        //         alert('Please type catalogue name in the search field.');
+        //         return false;
+        //     }
+        //     var category_id = $('#category_id').val();
+        //     console.log(status);
+        //     $.ajax({
+        //         type: "POST",
+        //         url: "{{url('onbuy/search-product-list')}}",
+        //         data: {
+        //             "_token" : "{{csrf_token()}}",
+        //             "name": search_value
+        //         },
+        //         beforeSend: function(){
+        //             // Show image container
+        //             $("#ajax_loader").show();
+        //         },
+        //         success: function(response){
+        //             $('ul.pagination').hide();
+        //             $('table tbody').html(response);
 
 
-                },
-                complete:function(data){
-                    // Hide image container
-                    $("#ajax_loader").hide();
-                }
-            });
-        }
+        //         },
+        //         complete:function(data){
+        //             // Hide image container
+        //             $("#ajax_loader").hide();
+        //         }
+        //     });
+        // }
 
         //screen option toggle
         $(document).ready(function(){
@@ -802,13 +824,20 @@
 
         $("#checkAll").click(function () {
             $('input:checkbox').not(this).prop('checked', this.checked);
+            totalCheckBoxCount()
         });
-        $('.product-inner button').click(function () {
-            console.log('test');
+        $('.checkBoxClass').click(function(){
+            totalCheckBoxCount()
+        })
+        $('.revise-btn button').click(function () {
             var product_id = [];
             $('table tbody tr td :checkbox:checked').each(function(i){
                 product_id[i] = $(this).val();
             });
+            if(product_id.length == 0) {
+                Swal.fire('Oops!','Please select an item','error')
+                return false
+            }
 
             $.ajax({
                 type: "POST",
@@ -825,11 +854,28 @@
                 success: function (response) {
                     $("#ajax_loader").hide();
                     console.log(response);
-                    if(response != 0) {
-                        location.reload();
-                    }else{
-                        alert(response);
+                    
+                    if(response.type == 'success') {
+                        Swal.fire('Success','Item Revised Successfully','success')
+                        setTimeout(() => {
+                            location.reload();
+                        }, 3000);
+                    }else {
+                        response.errorMessages.forEach(function(content) {
+                            var html = '<tr class="alert alert-danger"><td class="text-center" colspan="10">Couldn\'t revise the above item. Error Messages: '
+                                content.errMessage.forEach(function(msg, index) {
+                                    html += '('+(index + 1)+') '+msg
+                                })
+                                html += '</td></tr>'
+                            $('#revise-tr-'+content.item_id).after(html)
+                            html = ''
+                        })
                     }
+                    // if(response != 0) {
+                    //     //location.reload();
+                    // }else{
+                    //     alert(response);
+                    // }
                 },
                 error: function(XMLHttpRequest, textStatus, errorThrown) {
                     //console.log(XMLHttpRequest.responseJSON.message);
@@ -839,6 +885,24 @@
                 }
             });
         });
+
+        function totalCheckBoxCount() {
+            var totalCheckBoxChecked = $('table tbody tr td :checkbox:checked').length
+            if(totalCheckBoxChecked > 0) {
+                $('.show-selected-checkbox-count span').text(totalCheckBoxChecked)
+                $('.show-selected-checkbox-count').fadeIn(500)
+            }else {
+                $('.show-selected-checkbox-count').fadeOut(50)
+            }
+        }
+
+        $(document).ready(function(){
+            var tr_length_ebay_revise = $('.revise-table tbody tr').length
+            if(tr_length_ebay_revise == 0 || tr_length_ebay_revise == 1 || tr_length_ebay_revise == 2 || tr_length_ebay_revise == 3){
+                $('.card-box').addClass('table-column-filter-issue')
+            }
+        })
+
 
     </script>
 

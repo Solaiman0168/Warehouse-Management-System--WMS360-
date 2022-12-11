@@ -50,6 +50,15 @@ use App\Traits\CommonFunction;
 use App\Traits\Ebay;
 use App\Traits\Onbuy;
 
+use App\shopify\ShopifyAccount;
+use App\shopify\ShopifyMasterProduct;
+use App\shopify\ShopifyVariation;
+use App\Traits\Shopify;
+use PHPShopify\ShopifySDK;
+use PHPShopify\AuthHelper;
+use App\Traits\BundleSKUTrait;
+use App\Channel;
+
 
 class ProductVariationController extends Controller
 {
@@ -60,6 +69,9 @@ class ProductVariationController extends Controller
     use CommonFunction;
     use Ebay;
     use Onbuy;
+    use Shopify;
+    use BundleSKUTrait;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -1057,8 +1069,11 @@ class ProductVariationController extends Controller
         }
 
 
-
-
+        $onbuyActive = Channel::where('channel','OnBuy')->where('is_active',1)->first();
+        $woocommerceActive = Channel::where('channel','Woocommerce')->where('is_active',1)->first();
+        $regularPrice = '';
+        $baseMaxPrice = '';
+        
         $product_variation_id = ProductVariation::find($id);
         $catalogueVariationInfo = ProductVariation::where('product_draft_id',$id)->where('image_attribute','!=',null)->groupBy('image_attribute')->get();
         $firstProduct = isset($catalogueVariationInfo[0]->image_attribute) ? unserialize($catalogueVariationInfo[0]->image_attribute) : [];
@@ -1205,6 +1220,20 @@ class ProductVariationController extends Controller
                         </td>';
                         }
                         $description_show = $description_show ?? '';
+                        
+                        if($woocommerceActive) {
+                            $regularPrice = '<td class="regular-price" style="text-align: center !important; width: 8%;">
+                                <input type="text" name="regular_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.($productVariation->regular_price ?? $product_draft_result->regular_price ?? '').'" data-parsley-maxlength="30" id="regular_price'.$index.'" class="regular-price text-center ap-input-css" style="width: 70px;">
+                            </td>';
+                        }
+                        if($onbuyActive) {
+                            $baseMaxPrice = '<td class="base-price" style="text-align: center !important; width: 8%;">
+                                <input type="text" name="base_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.($productVariation->base_price ?? $product_draft_result->base_price ?? '').'" data-parsley-maxlength="30" id="" class="base-price text-center ap-input-css" style="width: 70px;">
+                            </td>
+                            <td class="max-price" style="text-align: center !important; width: 8%;">
+                                <input type="text" name="max_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.($productVariation->max_price ?? $product_draft_result->max_price ?? '').'" data-parsley-maxlength="30" id="" class="max-price text-center ap-input-css" style="width: 70px;">
+                            </td>';
+                        }
 
                         $product_variation_combination_attribute_array[] = ['<tr id="cardId'.$index.'" class="tr-variation onloadMno old-add-pro-highlight">
                                     <td style="text-align: center !important; width: 5%;">
@@ -1225,25 +1254,22 @@ class ProductVariationController extends Controller
                                         <div class="d-flex justify-content-center align-items-center">
                                             <button type="button" id="buttonid'.$index.'" onclick="generate_sku(this)" class="btn btn-primary generate-sku">Generate SKU</button>
                                         </div>
-                                        <input type="text" onfocusin="inputFocusInValue(this)" oninput="nospaces(this)" name="sku[]" value="'.$productVariationSku.'" required="required" data-parsley-maxlength="30" id="sku'.$index.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
+                                        <input type="text" onfocusin="inputFocusInValue(this)" oninput="sku_validation(this)" onkeyup="uniqueSkuCheck(this)" name="sku[]" value="'.$productVariationSku.'" required="required" data-parsley-maxlength="30" id="sku'.$index.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
                                         <span class="text-red"></span>
+                                        <span class="text-red text-typed"></span>
                                     </td>
                                     <td class="ean" style="text-align: center !important; width: 15%;">
                                         <input type="text" name="ean_no[]" onfocusin="inputFocusInValue(this)" oninput="preventDefault(this,'.$index.')" value="'.$productVariationEan.'" maxlength="13" pattern="[0-9]{13}" id="ean_no'.$index.'" class="ean_class ap-input-css text-center" style="width: 115px;">
                                         <span id="ean_no_exist_msg'.$index.'"></span>
                                     </td>
-                                    <td class="regular-price" style="text-align: center !important; width: 8%;">
-                                        <input type="text" name="regular_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.$productVariation->regular_price.'" required="required" data-parsley-maxlength="30" id="regular_price'.$index.'" class="regular-price text-center ap-input-css" style="width: 70px;">
-                                    </td>
+                                    '.$regularPrice.'
                                     <td class="sale-price" style="text-align: center !important; width: 8%;">
                                         <input type="text" name="sale_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.$productVariation->sale_price.'" required="required" data-parsley-maxlength="30" id="sale_price'.$index.'" class="sale-price text-center ap-input-css" style="width: 70px;">
                                     </td>
                                     <td class="rrp" style="text-align: center !important; width: 8%;">
                                         <input type="text" name="rrp[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" data-parsley-maxlength="30" id="" value="'.$productVariation->rrp.'" class="rrp text-center ap-input-css" style="width: 70px;">
                                     </td>
-                                    <td class="base-price" style="text-align: center !important; width: 8%;">
-                                        <input type="text" name="base_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.$productVariation->base_price.'" data-parsley-maxlength="30" id="" class="base-price text-center ap-input-css" style="width: 70px;">
-                                    </td>
+                                    '.$baseMaxPrice.'
                                     <td class="cost-price" style="text-align: center !important; width: 8%;">
                                         <input type="text" name="cost_price[]" onfocusin="inputFocusInValue(this)" oninput="inputKeyUpValue(this)" value="'.$productVariation->cost_price.'" data-parsley-maxlength="30" id="" class="cost-price text-center ap-input-css" style="width: 70px;">
                                     </td>
@@ -1366,6 +1392,20 @@ class ProductVariationController extends Controller
                     }
                     $description_show2 = $description_show2 ?? '';
 
+                    if($woocommerceActive) {
+                        $regularPrice = '<td class="regular-price" style="text-align: center !important; width: 8%;">
+                            <input type="text" name="regular_price[]" value="'.($product_draft_result->regular_price ?? $product_draft_result->regular_price ?? '').'" data-parsley-maxlength="30" id="regular_price'.$existCount.'" class="regular-price text-center ap-input-css" style="width: 70px;">
+                        </td>';
+                    }
+                    if($onbuyActive) {
+                        $baseMaxPrice = '<td class="base-price" style="text-align: center !important; width: 8%;">
+                            <input type="text" name="base_price[]" value="'.($product_draft_result->base_price ?? $product_draft_result->base_price ?? '').'" data-parsley-maxlength="30" id="" class="base-price text-center ap-input-css" style="width: 70px;">
+                        </td>
+                        <td class="max-price" style="text-align: center !important; width: 8%;">
+                            <input type="text" name="max_price[]" value="'.($product_draft_result->max_price ?? $product_draft_result->max_price ?? '').'" data-parsley-maxlength="30" id="" class="max-price text-center ap-input-css" style="width: 70px;">
+                        </td>';
+                    }
+
                     $only_combination_array[] = [$variation_combination];
                     $combination_attribute_array[$existCount] = ['<tr id="cardId'.$existCount.'" class="tr-variation mno">
                             <td style="text-align: center !important; width: 5%;">
@@ -1384,25 +1424,22 @@ class ProductVariationController extends Controller
                                 <div class="d-flex justify-content-center align-items-center">
                                     <button type="button" id="buttonid'.$existCount.'" onclick="generate_sku(this)" class="btn btn-primary generate-sku">Generate SKU</button>
                                 </div>
-                                <input type="text" oninput="nospaces(this)" name="sku[]" value="" required="required" data-parsley-maxlength="30" id="sku'.$existCount.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
+                                <input type="text" oninput="sku_validation(this)" onkeyup="uniqueSkuCheck(this)" name="sku[]" value="" required="required" data-parsley-maxlength="30" id="sku'.$existCount.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
                                 <span class="text-red"></span>
+                                <span class="text-red text-typed"></span>
                             </td>
                             <td class="ean" style="text-align: center !important; width: 15%;">
                                 <input type="text" name="ean_no[]" oninput="preventDefault('.$existCount.')" maxlength="13" pattern="[0-9]{13}" id="ean_no'.$existCount.'" class="ean_class ap-input-css text-center" style="width: 115px;">
                                 <span id="ean_no_exist_msg'.$existCount.'"></span>
                             </td>
-                            <td class="regular-price" style="text-align: center !important; width: 8%;">
-                                <input type="text" name="regular_price[]" value="'.$product_draft_result->regular_price.'" required="required" data-parsley-maxlength="30" id="regular_price'.$existCount.'" class="regular-price text-center ap-input-css" style="width: 70px;">
-                            </td>
+                            '.$regularPrice.'
                             <td class="sale-price" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="sale_price[]" value="'.$product_draft_result->sale_price.'" required="required" data-parsley-maxlength="30" id="sale_price'.$existCount.'" class="sale-price text-center ap-input-css" style="width: 70px;">
                             </td>
                             <td class="rrp" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="rrp[]" data-parsley-maxlength="30" id="" value="'.$product_draft_result->rrp.'" class="rrp text-center ap-input-css" style="width: 70px;">
                             </td>
-                            <td class="base-price" style="text-align: center !important; width: 8%;">
-                                <input type="text" name="base_price[]" value="'.$product_draft_result->base_price.'" data-parsley-maxlength="30" id="" class="base-price text-center ap-input-css" style="width: 70px;">
-                            </td>
+                            '.$baseMaxPrice.'
                             <td class="cost-price" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="cost_price[]" value="'.$product_draft_result->cost_price.'" data-parsley-maxlength="30" id="" class="cost-price text-center ap-input-css" style="width: 70px;">
                             </td>
@@ -1434,25 +1471,22 @@ class ProductVariationController extends Controller
                                 <div class="d-flex justify-content-center align-items-center">
                                     <button type="button" id="buttonid'.$existCount.'" onclick="generate_sku(this)" class="btn btn-primary generate-sku">Generate SKU</button>
                                 </div>
-                                <input type="text" oninput="nospaces(this)" name="sku[]" value="" required="required" data-parsley-maxlength="30" id="sku'.$existCount.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
+                                <input type="text" oninput="sku_validation(this)" onkeyup="uniqueSkuCheck(this)" name="sku[]" value="" required="required" data-parsley-maxlength="30" id="sku'.$existCount.'" placeholder="" class="blank_all form-control-sku_class ap-input-css text-center">
                                 <span class="text-red"></span>
+                                <span class="text-red text-typed"></span>
                             </td>
                             <td class="ean" style="text-align: center !important; width: 15%;">
                                 <input type="text" name="ean_no[]" oninput="preventDefault('.$existCount.')" maxlength="13" pattern="[0-9]{13}" id="ean_no'.$existCount.'" class="ean_class ap-input-css text-center" style="width: 115px;">
                                 <span id="ean_no_exist_msg'.$existCount.'"></span>
                             </td>
-                            <td class="regular-price" style="text-align: center !important; width: 8%;">
-                                <input type="text" name="regular_price[]" value="'.$product_draft_result->regular_price.'" required="required" data-parsley-maxlength="30" id="regular_price'.$existCount.'" class="regular-price text-center ap-input-css" style="width: 70px;">
-                            </td>
+                            '.$regularPrice.'
                             <td class="sale-price" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="sale_price[]" value="'.$product_draft_result->sale_price.'" required="required" data-parsley-maxlength="30" id="sale_price'.$existCount.'" class="sale-price text-center ap-input-css" style="width: 70px;">
                             </td>
                             <td class="rrp" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="rrp[]" data-parsley-maxlength="30" id="" value="'.$product_draft_result->rrp.'" class="rrp text-center ap-input-css" style="width: 70px;">
                             </td>
-                            <td class="base-price" style="text-align: center !important; width: 8%;">
-                                <input type="text" name="base_price[]" value="'.$product_draft_result->base_price.'" data-parsley-maxlength="30" id="" class="base-price text-center ap-input-css" style="width: 70px;">
-                            </td>
+                            '.$baseMaxPrice.'
                             <td class="cost-price" style="text-align: center !important; width: 8%;">
                                 <input type="text" name="cost_price[]" value="'.$product_draft_result->cost_price.'" data-parsley-maxlength="30" id="" class="cost-price text-center ap-input-css" style="width: 70px;">
                             </td>
@@ -1478,7 +1512,7 @@ class ProductVariationController extends Controller
 
 
 
-                $content = view('product_variation.catalogue_product', compact('attributeTermImageArray','attribute_array', 'product_draft_result', 'cartesian_attributes','ebayExistProduct','attribute_info','attribute_terms','productVariationExist','existAttr','id','combination_attribute_array','only_combination_array','product_variation_id','product_variation_combination_attribute_array','productVariation','totlaExistCount','existCount','new_combination_attributes'));
+                $content = view('product_variation.catalogue_product', compact('attributeTermImageArray','attribute_array', 'product_draft_result', 'cartesian_attributes','ebayExistProduct','attribute_info','attribute_terms','productVariationExist','existAttr','id','combination_attribute_array','only_combination_array','product_variation_id','product_variation_combination_attribute_array','productVariation','totlaExistCount','existCount','new_combination_attributes','onbuyActive','woocommerceActive'));
                 return view('master', compact('content'));
             }
         }
@@ -1589,7 +1623,7 @@ class ProductVariationController extends Controller
     //    print_r($request->all());
     //    exit();
 
-        set_time_limit(5000);
+        set_time_limit(1000000);
         if ($request->sku != null) {
 
             $commonImageUrl = '';
@@ -1757,7 +1791,8 @@ class ProductVariationController extends Controller
                                                     'sale_price' => $request->sale_price[$key] ?? null,
                                                     'rrp' => $request->rrp[$key] ?? $request->regular_price[$key] ?? null,
                                                     'cost_price' => $request->cost_price[$key] ?? null,
-                                                    'base_price' => $request->base_price[$key],
+                                                    'base_price' => $request->base_price[$key] ?? null,
+                                                    'max_price' => $request->max_price[$key] ?? null,
                                                     'product_code' => $request->product_code[$key] ?? null,
                                                     'color_code' => $request->color_code[$key] ?? null,
                                                     'low_quantity' => $request->low_quantity[$key] ?? null,
@@ -1778,7 +1813,7 @@ class ProductVariationController extends Controller
                                     $product_variation_result = ProductVariation::create(['product_draft_id' => $request->product_draft_id, 'image' => ($imageUrl != '') ? $imageUrl : null,
                                         'image_attribute' => $attribute_and_terms ? \Opis\Closure\serialize($attribute_and_terms) : null, 'variation_images' => $serializeVariationImages ? \Opis\Closure\serialize($serializeVariationImages) : null, 'attribute' => $attribute_value_serialize ?? null,
                                         'sku' => $request->sku[$key], 'ean_no' => $request->ean_no[$key] ?? null, 'regular_price' => $request->regular_price[$key] ?? null, 'sale_price' => $request->sale_price[$key] ?? null, 'rrp' => $request->rrp[$key] ?? $request->regular_price[$key] ?? null,
-                                        'cost_price' => $request->cost_price[$key] ?? null, 'base_price' => $request->base_price[$key], 'product_code' => $request->product_code[$key] ?? null, 'color_code' => $request->color_code[$key] ?? null, 'low_quantity' => $request->low_quantity[$key] ?? null,
+                                        'cost_price' => $request->cost_price[$key] ?? null, 'base_price' => $request->base_price[$key] ?? null,'max_price' => $request->max_price[$key] ?? null, 'product_code' => $request->product_code[$key] ?? null, 'color_code' => $request->color_code[$key] ?? null, 'low_quantity' => $request->low_quantity[$key] ?? null,
                                         'description' => empty($request->description[$key]) ? null : $request->description[$key], 'notification_status' => (isset($request->notificationStatus[$key])) ? true : false,
                                         'manage_stock' => true
                                     ]);
@@ -2011,7 +2046,7 @@ class ProductVariationController extends Controller
                                                             'sku' => $request->sku[$key], 'variation_specifics' => $variation_specifics, 'start_price' => $request->sale_price[$key] ?? 0.00, 'rrp' => $request->regular_price[$key] ?? null,
                                                             'ean' => $request->ean_no[$key] ?? null]);
                                                     }else{
-                                                        $product_variation_result = EbayVariationProduct::where('master_variation_id', $request->product_variation_id[$key])->first();
+                                                        $product_variation_result = EbayVariationProduct::where('master_variation_id', $request->product_variation_id[$key]);
                                                         if (isset($product_variation_result)){
                                                             $product_variation_result->update([
                                                                 'sku' => $request->sku[$key], 'variation_specifics' => $variation_specifics, 'start_price' => $request->sale_price[$key] ?? 0.00, 'rrp' => $request->regular_price[$key] ?? null,
@@ -2025,6 +2060,53 @@ class ProductVariationController extends Controller
                                         }
                                     }
                                 }
+
+
+
+                                 
+                                // Shopify start
+                                if(Session::get('shopify') == 1){
+                                    $shopify_products = ShopifyMasterProduct::where('master_catalogue_id', $request->product_draft_id)->where('deleted_at', '=', NULL)->first();
+                                    // dd($shopify_products);
+                                    if(isset($shopify_products)){
+                                        $shopify_account_info = ShopifyAccount::find($shopify_products['account_id']);
+                                        $shopify = $this->getConfig($shopify_account_info->shop_url,$shopify_account_info->api_key,$shopify_account_info->password);
+                                        if($request->product_variation_id[$key] != 'new'){
+                                            $shopify_product_variation_info = ShopifyVariation::where('master_variation_id', $request->product_variation_id[$key])->first();
+                                            // dd($shopify_product_variation_info);
+                                            if(isset($shopify_product_variation_info)){
+                                                $variations = array();
+                                                $variations['price'] = $request->sale_price[$key] ?? 0.00;
+                                                $variations['sku'] = $request->sku[$key];
+                                                
+                                                // dd($variations, $attribute_option);
+                                                $postArray = array(
+                                                    "variants" => $variations,
+                                                );
+                                                $single_product = $shopify->ProductVariant($shopify_product_variation_info->shopify_variant_it)->put($postArray['variants']);
+                                                // dd($single_product['id'], $single_product['image_id']);
+                                                // dd($single_product);
+                                               
+                                                if(isset($single_product)){
+                                                    if($single_product['sku'] == $request->sku[$key]){
+                                                        $shopify_product_variation_info->update([
+                                                            'sku' => $request->sku[$key],
+                                                            'regular_price' => $request->regular_price[$key] ?? null,
+                                                            'sale_price' => $request->sale_price[$key] ?? null,
+                                                            'rrp' => $request->rrp[$key] ?? $request->regular_price[$key] ?? null,
+                                                            // 'image' => ,
+                                                        ]);
+                                                    }
+                                                }
+                                                
+                                            }
+                                        } 
+                                    }
+                                }
+                                // Shopify end
+
+
+                                
 
                             } catch (Exception $exception) {
                                 return back()->with('error', $exception);
@@ -2040,14 +2122,11 @@ class ProductVariationController extends Controller
             }
         }
 
-
-
-
         if($all_sku_count == $exist_sku_count){
             return back()->with('updated_success', 'Product updated successfully.');
         }else {
-            return redirect('catalogue-product-invoice-receive/' . $request->product_draft_id)
-                ->with('new_product_success', 'Product created successfully.');
+            // return redirect('catalogue-product-invoice-receive/' . $request->product_draft_id )->with('new_product_success', 'Product created successfully.');
+            return back()->with('new_product_success', 'Product created successfully.');
         }
 
 
@@ -2077,7 +2156,7 @@ class ProductVariationController extends Controller
         }
     }
 
-    
+
 
     public function _multipleProductAdd(Request $request)
     {
@@ -2189,7 +2268,7 @@ class ProductVariationController extends Controller
                                         $attribute_and_terms = [
                                             $attributeInfo[1] => $terms
                                         ];
-                                        if (isset($request->newUploadImage[$termId])) {
+                                        if (isset($request->newUploadImage[$termId])) { 
                                             if (array_key_exists($termId, $serializeAllVariationImages)) {
                                                 $serializeVariationImages = $serializeAllVariationImages[$termId];
                                             } else {
@@ -2886,9 +2965,10 @@ class ProductVariationController extends Controller
             }, 'shelf_quantity'])->where('actual_quantity', '<', 0)->get();
 
             $all_unmatched_quantity = ProductVariation::
-            select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity) as shelf_quantity'))
+            select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity)) as shelf_quantity'))
                 ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
-                ->having('product_variation.actual_quantity', '>', DB::raw('SUM(product_shelfs.quantity)'))
+                ->join('reshelved_product', 'reshelved_product.variation_id', '=', 'product_variation.id')
+                ->having('product_variation.actual_quantity', '>', DB::raw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity))'))
                 ->groupBy('product_variation.id')
                 ->groupBy('product_variation.actual_quantity')
                 ->orderBy('product_variation.id', 'DESC')
@@ -2897,13 +2977,21 @@ class ProductVariationController extends Controller
             $all_variation_info = $this->getProductInfoByUnmatchedId($all_unmatched_quantity);
             $threshold_quantity = 5;
             $shelve_qnty_larger = ProductVariation::
-            select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity) as shelf_quantity'))
-                ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
-                ->havingRaw('SUM(product_shelfs.quantity) - product_variation.actual_quantity >=' . $threshold_quantity)
-                ->groupBy('product_variation.id')
-                ->groupBy('product_variation.actual_quantity')
-                ->orderBy('product_variation.id', 'DESC')
-                ->get();
+            // select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity) as shelf_quantity'))
+            //     ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
+            //     ->havingRaw('SUM(product_shelfs.quantity) - product_variation.actual_quantity >=' . $threshold_quantity)
+            //     ->groupBy('product_variation.id')
+            //     ->groupBy('product_variation.actual_quantity')
+            //     ->orderBy('product_variation.id', 'DESC')
+            //     ->get();
+            select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity)) as shelf_quantity'))
+            ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
+            ->join('reshelved_product', 'reshelved_product.variation_id', '=', 'product_variation.id')
+            ->havingRaw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity)) - product_variation.actual_quantity >=' . $threshold_quantity)
+            ->groupBy('product_variation.id')
+            ->groupBy('product_variation.actual_quantity')
+            ->orderBy('product_variation.id', 'DESC')
+            ->get();
             $shelve_qnty_larger_than_available = $this->getProductInfoByUnmatchedId($shelve_qnty_larger);
 
             $content = view('product_variation.unmatched_inventory_list', compact('all_variation_info', 'shelve_qnty_larger_than_available', 'threshold_quantity', 'negative_quantity','shelf_use','ebay_accounts'));
@@ -2969,13 +3057,21 @@ class ProductVariationController extends Controller
         try {
             $threshold_quantity = $request->threshold_value;
             $shelve_qnty_larger = ProductVariation::
-            select('product_variation.id','product_variation.actual_quantity',DB::raw('SUM(product_shelfs.quantity) as shelf_quantity'))
-                ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
-                ->havingRaw('SUM(product_shelfs.quantity) - product_variation.actual_quantity >='.$threshold_quantity)
-                ->groupBy('product_variation.id')
-                ->groupBy('product_variation.actual_quantity')
-                ->orderBy('product_variation.id','DESC')
-                ->get();
+            // select('product_variation.id','product_variation.actual_quantity',DB::raw('SUM(product_shelfs.quantity) as shelf_quantity'))
+            //     ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
+            //     ->havingRaw('SUM(product_shelfs.quantity) - product_variation.actual_quantity >='.$threshold_quantity)
+            //     ->groupBy('product_variation.id')
+            //     ->groupBy('product_variation.actual_quantity')
+            //     ->orderBy('product_variation.id','DESC')
+            //     ->get();
+            select('product_variation.id', 'product_variation.actual_quantity', DB::raw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity)) as shelf_quantity'))
+            ->join('product_shelfs', 'product_variation.id', '=', 'product_shelfs.variation_id')
+            ->join('reshelved_product', 'reshelved_product.variation_id', '=', 'product_variation.id')
+            ->havingRaw('SUM(product_shelfs.quantity + (reshelved_product.quantity - reshelved_product.shelved_quantity)) - product_variation.actual_quantity >=' . $threshold_quantity)
+            ->groupBy('product_variation.id')
+            ->groupBy('product_variation.actual_quantity')
+            ->orderBy('product_variation.id', 'DESC')
+            ->get();
             $shelve_qnty_larger_than_available = $this->getProductInfoByUnmatchedId($shelve_qnty_larger);
             $result_row = count($shelve_qnty_larger_than_available);
             $content = view('product_variation.search_threshold_unmatched_product',compact('shelve_qnty_larger_than_available','threshold_quantity'))->render();
@@ -3019,6 +3115,7 @@ class ProductVariationController extends Controller
                     ]);
                     $check_quantity = new CheckQuantity();
                     $check_quantity->checkQuantity($master_variation_info->sku, null,$request->input_value, 'Manually Available Quantity Update',null,true);
+                    $this->bundleSKUSyncQuantity($variation_id);
                 }else{
                     $update_info = ProductVariation::where('id', $variation_id)->update([$request->input_field => $request->input_value]);
                     $newUpdatedData = $request->input_value;
@@ -3627,6 +3724,7 @@ class ProductVariationController extends Controller
             $variationInfo = ProductVariation::find($info['id']);
             $check_quantity = new CheckQuantity();
             $check_quantity->checkQuantity($variationInfo->sku, null, null, 'Shelf And Available Bulk Sync',null,true);
+            $this->bundleSKUSyncQuantity($info['id']);
         }
         return response()->json(['data' => 'success','msg' => 'Available and Shelf Quantity Sync Successfully','largerAvaiableQuantity' => $largerAvailableQuantityProducts]);
     }
@@ -4046,6 +4144,24 @@ class ProductVariationController extends Controller
             }
         }
         return response()->json(['type' => 'success','msg' => 'Variation image reformated successfully']);
+    }
+
+    public function singleVariationInfo(Request $request) {
+        try {
+            $variationInfo = ProductVariation::with(['product_draft','master_single_image'])->where('sku',$request->inputSKU)->first();
+            // if($variationInfo && ($request->valueType == 'quantity')) {
+            //     if($variationInfo->actual_quantity < $request->inputQuantity) {
+            //         return response()->json(['type' => 'error', 'msg' => 'Input quantity is bigger than actual quantity']);
+            //     }
+            // }
+            if($variationInfo) {
+                return response()->json(['type' => 'success', 'data' => $variationInfo]);
+            }else {
+                return response()->json(['type' => 'error', 'msg' => 'Could Not Found The SKU']);
+            }
+        }catch(\Exception $exception) {
+            return response()->json(['type' => 'error', 'msg' => 'Something Went Wrong']);
+        } 
     }
 
 

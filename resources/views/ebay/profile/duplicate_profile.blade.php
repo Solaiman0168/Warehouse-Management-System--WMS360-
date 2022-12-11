@@ -141,7 +141,7 @@
                                     <div id="add_variant_product">
                                         <div class="form-group row ">
                                             <label for="Category" class="col-md-2 col-form-label required">Item Specifies</label>
-                                            @isset($item_specifics['Recommendations']['NameRecommendation'])
+                                            @isset($item_specifics['aspects'])
                                                 <div class="col-md-10 wow pulse">
 
 
@@ -151,17 +151,17 @@
 
 
                                                     <div class="row d-flex justify-content-between">
-                                                        @foreach($item_specifics['Recommendations']['NameRecommendation'] as $item_specific)
-                                                            @isset($item_specific['Name'])
+                                                        @foreach($item_specifics['aspects'] as $aspect)
+                                                            @isset($aspect['localizedAspectName'])
                                                                 <div class="col-md-4 mb-3">
-                                                                    <label style="font-weight: normal">{{$item_specific['Name']}}
-                                                                        @if($item_specific['ValidationRules']['UsageConstraint'] == 'Required')
+                                                                    <label style="font-weight: normal">{{$aspect['localizedAspectName']}}
+                                                                        @if($aspect['aspectConstraint']['aspectRequired'])
                                                                             <strong>*</strong>
                                                                         @endif
                                                                     </label>
                                                                     @foreach($item_specific_results as $key => $item_specific_result)
-                                                                        @if($item_specific['Name'] == $key)
-                                                                            <input type="text" class="form-control" name='item_specific[{{$item_specific['Name']}}]' value="{{$item_specific_result}}">
+                                                                        @if($aspect['localizedAspectName'] == $key)
+                                                                            <input type="text" class="form-control" name='item_specific[{{$aspect['localizedAspectName']}}]' value="{{$item_specific_result}}">
                                                                         @endif
                                                                     @endforeach
                                                                     {{--                        <select name='item_specific[{{$item_specific['Name']}}]' class="form-control">--}}

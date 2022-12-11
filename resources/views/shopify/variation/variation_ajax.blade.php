@@ -168,10 +168,11 @@
                     <table class="product-draft-table row-expand-table w-100">
                         <thead>
                         <tr>
-                            <th class="id" style="text-align: center !important; width: 7%;">ID</th>
+                            <th class="item-id" style="text-align: center !important; width: 7%;">ID</th>
                             <th class="sku" style="width: 10%">SKU</th>
                             <th class="qr" style="width: 7%;">QR</th>
                             <th class="variation" style="width: 10%">Variation</th>
+                            <th class="variant-id">Variant Id</th>
 {{--                            <th class="ean" style="width: 10% !important; text-align: center !important;">EAN</th>--}}
                             <th class="regular-price" style="width: 10% !important; text-align: center !important;">Regular Price</th>
                             <th class="sales-price" style="width: 10% !important; text-align: center !important;">Sales Price</th>
@@ -193,7 +194,7 @@
 
                                 @endphp
                                 <tr>
-                                    <td class="id" style="text-align: center !important; width: 7%;">
+                                    <td class="item-id" style="text-align: center !important; width: 7%;">
                                         <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                                             <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$product_variation->id}}</span>
                                             <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
@@ -219,6 +220,7 @@
                                             @endforeach
                                         @endisset
                                     </td>
+                                    <td class="variant-id">{{$product_variation->shopify_variant_it}}</td>
 {{--                                    <td class="ean" style="width: 10%; text-align: center !important;">{{$product_variation->ean_no}}</td>--}}
                                     <td class="regular-price" style="width: 10% !important;">
                                         <div class="d-flex justify-content-center align-items-center">

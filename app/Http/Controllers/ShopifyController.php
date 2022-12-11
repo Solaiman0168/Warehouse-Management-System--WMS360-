@@ -25,12 +25,14 @@ use Illuminate\Http\Request;
 use Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
 use PHPShopify\ShopifySDK;
 use PHPShopify\AuthHelper;
 use App\ProductDraft;
 use App\ProductVariation;
 use App\EbayAccount;
 use App\User;
+use App\Client;
 use Arr;
 use App\Attribute;
 use SebastianBergmann\CodeCoverage\Report\Xml\Totals;
@@ -46,6 +48,10 @@ class ShopifyController extends Controller
 
     public function __construct(){
         $this->middleware('auth');
+        $this->shelf_use = Session::get('shelf_use');
+        if($this->shelf_use == ''){
+            $this->shelf_use = Client::first()->shelf_use ?? 0;
+        }
     }
 
     public function shopifyApiTest(){
@@ -119,9 +125,7 @@ class ShopifyController extends Controller
             }else {
                 $master_catalogue_details = ProductDraft::find($request->product_draft_id);
                 $attribute_terms_details = ProductVariation::where('product_draft_id', $request->product_draft_id)->get();
-
                 foreach ($request->account_name as $account){
-
                     $shopify_account_info = ShopifyAccount::find($account);
                     $shopify = $this->getConfig($shopify_account_info->shop_url,$shopify_account_info->api_key,$shopify_account_info->password);
 
@@ -169,7 +173,6 @@ class ShopifyController extends Controller
                             }
                         }
                         $main_img = $product_image;
-
                         // all tag collection
                         $tags = array();
                         $main_tags = $request->tags;
@@ -192,9 +195,9 @@ class ShopifyController extends Controller
     //             print_r($request->all());
     //             exit();
                         $product_single = $shopify->Product->post($postArray);
-    //                echo '<pre>';
-    //                print_r($product_single);
-    //                exit();
+                //    echo '<pre>';
+                //    print_r($product_single);
+                //    exit();
                         foreach ($product_single['variants'] as $variantImg){
 
                             if(isset($variantImg['sku'])){
@@ -215,7 +218,7 @@ class ShopifyController extends Controller
                                             $variantsArray =
                                                 [
                                                     "id" => $variationId,
-                                                    "image_id" => $productImages['id'],
+                                                    "image_id" => $productImages['id'], 
                                                 ];
                                             $productVariantImgSave = $shopify->ProductVariant($variantImg['id'])->put($variantsArray);
     //                                    echo '<pre>';
@@ -435,10 +438,11 @@ class ShopifyController extends Controller
     public function activeCatalogues(Request $request){
         try {
             $page_title = 'Shopify Active | WMS360';
-            $settingData = $this->paginationSetting('ebay', 'ebay_active_product');
+            $settingData = $this->paginationSetting('shopify', 'shopify_active_product');
             $setting = $settingData['setting'];
             $pagination = $settingData['pagination'];
 
+            // dd($setting);
             $master_product_list = ShopifyMasterProduct::where('status', 'active')->with(['variationProducts' => function($query){
                 $query->select('shopify_master_product_id', DB::raw('sum(shopify_variations.quantity) stock'))
                     ->groupBy('shopify_master_product_id');
@@ -450,13 +454,18 @@ class ShopifyController extends Controller
                 $allCondition = $this->activeCatalogueSearchParams($request, $allCondition);
             }
 
+            if($request->has('search_value')){
+                $searchValue = $request->get('search_value');
+                $search_shopify_catalogue_ids = $this->shopifyCatalogueProductSearch($searchValue);
+                $master_product_list = $master_product_list->whereIn('id', $search_shopify_catalogue_ids);
+            }
+
             $master_product_list = $master_product_list->orderBy('id','DESC')->paginate($pagination);
             $master_decode_product_list = json_decode(json_encode($master_product_list));
             $users = User::orderBy('name', 'ASC')->get();
             $channels = array();
             $temp = array();
             $channels = ShopifyAccount::get()->all();
-
 
             if($request->has('is_clear_filter')){
                 $status = $request->get('status') ?? 'publish';
@@ -470,17 +479,18 @@ class ShopifyController extends Controller
                 return response()->json(['html' => $view]);
             }
 
-            return view('shopify.master_product_list', compact('master_product_list','page_title','master_decode_product_list','allCondition','users','channels'));
+            return view('shopify.master_product_list', compact('master_product_list','page_title','master_decode_product_list','allCondition','users','channels','setting','pagination'));
         }catch (HttpClientException $exception){
             return back()->with('error', $exception->getMessage());
         }
     }
 
+
     // Draft catalogue list function --------
     public function draftCatalogues(Request $request){
         try {
             $page_title = 'Shopify Draft | WMS360';
-            $settingData = $this->paginationSetting('ebay', 'ebay_active_product');
+            $settingData = $this->paginationSetting('shopify', 'shopify_draft_product');
             $setting = $settingData['setting'];
             $pagination = $settingData['pagination'];
 
@@ -496,32 +506,52 @@ class ShopifyController extends Controller
                 $allCondition = $this->activeCatalogueSearchParams($request, $allCondition);
             }
 
+            if($request->has('search_value')){
+                $searchValue = $request->get('search_value');
+                $search_shopify_catalogue_ids = $this->shopifyCatalogueProductSearch($searchValue);
+                $master_product_list = $master_product_list->whereIn('id', $search_shopify_catalogue_ids);
+            }
+
             $master_product_list = $master_product_list->orderBy('id','DESC')->paginate($pagination);
             $master_decode_product_list = json_decode(json_encode($master_product_list));
 
             $users = User::orderBy('name', 'ASC')->get();
             $channels = array();
+
             $temp = array();
             $channels = ShopifyAccount::get()->all();
 
 
             if($request->has('is_clear_filter')){
-                $status = $request->get('status') ?? 'publish';
-                $date = '12345';
 //                $woocommerceSiteUrl = WoocommerceAccount::first();
                 $search_result = $master_product_list;
 //                echo '<pre>';
 //                print_r($search_results);
 //                exit();
-                $view = view('shopify.search_product_list', compact('search_result', 'status', 'date'))->render();
+                $view = view('shopify.search_draft_product_list', compact('search_result','setting'))->render();
                 return response()->json(['html' => $view]);
             }
 
-            return view('shopify.draft_product_list', compact('master_product_list','page_title','master_decode_product_list','allCondition','channels','users'));
+            return view('shopify.draft_product_list', compact('master_product_list','page_title','master_decode_product_list','allCondition','channels','users','setting'));
         }catch (HttpClientException $exception){
             return back()->with('error', $exception->getMessage());
         }
     }
+
+
+    public function shopifyCatalogueProductSearch($searchKeyword){
+        if(is_numeric($searchKeyword)){
+            $shopifyCatalogueIds = ShopifyMasterProduct::select('id')->where('id', $searchKeyword)->get()->toArray();
+            return $shopifyCatalogueIds;
+        }else{
+            $shopifyCatalogueSkuIds = ShopifyVariation::select('shopify_master_product_id')->where('sku', $searchKeyword)->get()->toArray();
+            $shopifyCatalogueTitleIds = ShopifyMasterProduct::select('id')->where('title', 'Like', '%' .$searchKeyword. '%')->get()->toArray();
+            // dd($shopifyCatalogueSkuIds);
+            return array_merge($shopifyCatalogueSkuIds, $shopifyCatalogueTitleIds);
+        }
+    }
+
+    
 
     // shopify pending catalogue function ============
     public function pendingCatalogue(Request $request){
@@ -530,9 +560,10 @@ class ShopifyController extends Controller
             // exit();
             $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
             //Start page title and pagination setting
-//            $shelf_use = $this->shelf_use;
-            $settingData = $this->paginationSetting('catalogue', 'active_catalogue');
+            $shelf_use = $this->shelf_use;
+            $settingData = $this->paginationSetting('shopify', 'shopify_pending_product');
             $setting = $settingData['setting'];
+            // dd($setting);
             $page_title = '';
             $see_more = 0;
             $pagination = $settingData['pagination'];
@@ -584,17 +615,18 @@ class ShopifyController extends Controller
 
             if($request->has('is_clear_filter')){
                 $status = $request->get('status') ?? 'publish';
+                $page_status = 'shopify_pending';
                 $date = '12345';
                 $woocommerceSiteUrl = WoocommerceAccount::first();
                 $search_result = $product_drafts;
-                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl'))->render();
+                $view = view('product_draft.search_product_list', compact('search_result', 'status', 'date','woocommerceSiteUrl','setting','page_status'))->render();
                 return response()->json(['html' => $view]);
             }
 
             $users = User::orderBy('name', 'ASC')->get();
             $product_drafts_info = json_decode(json_encode($product_drafts));
             $total_product_drafts = ProductDraft::where('status','publish')->count();
-            return view('shopify.pending_product_list', compact('product_drafts','total_product_drafts','product_drafts_info','setting','pagination','users','see_more','woocommerceSiteUrl','channels','allCondition','url'));
+            return view('shopify.pending_product_list', compact('product_drafts','total_product_drafts','product_drafts_info','setting','pagination','users','see_more','woocommerceSiteUrl','channels','allCondition','url','shelf_use'));
         }catch (HttpClientException $exception){
             return back()->with('error', $exception->getMessage());
         }
@@ -691,7 +723,6 @@ class ShopifyController extends Controller
     public function show($id){
         try {
             $product_draft = ShopifyMasterProduct::with('variationProducts')->find($id);
-//            echo '<pre>';
             $masterImages = unserialize($product_draft['image']);
 //            foreach ($masterImages as $images){
 //                var_dump($images['src']);
@@ -759,6 +790,7 @@ class ShopifyController extends Controller
 //            print_r($shopify_master_product->shopify_product_id);
 //            exit();
             $shopify = $this->getConfig($shopify_account_info->shop_url,$shopify_account_info->api_key,$shopify_account_info->password);
+
             $postArray = array(
                 "title" => $request->title,
                 "body_html" => $request->description,

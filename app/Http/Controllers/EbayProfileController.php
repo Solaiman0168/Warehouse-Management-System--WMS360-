@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Traits\StringConverter;
 use App\EbayMigration;
 use Illuminate\Support\Facades\Session;
+use Arr;
 
 class EbayProfileController extends Controller
 {
@@ -36,12 +37,17 @@ class EbayProfileController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $results = EbayProfile::paginate(50);
+        $url = $request->getQueryString() ? '&'.http_build_query(Arr::except(request()->query(), ['page'])) : '';
+        $results = $results = EbayProfile::query();
+        if($request->has('search_value')) {
+            $results = $results->where('profile_name','LIKE', '%'. $request->search_value.'%');
+        }
+        $results = $results->paginate(50)->appends($request->query());
         $total_ebay_profile = EbayProfile::count();
         $all_decode_EbayProfile = json_decode(json_encode($results));
-        return view('ebay.profile.index' ,compact('results', 'total_ebay_profile', 'all_decode_EbayProfile'));
+        return view('ebay.profile.index' ,compact('results', 'total_ebay_profile', 'all_decode_EbayProfile','url'));
     }
 
     /**
@@ -229,7 +235,7 @@ class EbayProfileController extends Controller
 
         $result = EbayProfile::create(['account_id' => $request->account_id,'site_id' => $request->site_id,'profile_name' => $request->profile_name,'profile_description' => $request->profile_description,'product_type' => $request->product_type,'start_price' => $request->start_price,'condition_id' => $condition[0] ?? NULL,'condition_name' => $condition[1] ?? NULL,'condition_description' => $request->condition_description ?? NULL,
             'category_id' => $request->last_cat_id,'sub_category_id' => $request->last_cat2_id,'store_id' => $store_one[0] ?? null,'store_name' => $store_one[1] ?? null,'store2_id' => $store_two[0] ?? null,'store2_name' => $store_two[1] ?? null,'duration' => $request->duration,'location' => $request->location,'country' => $request->country,'post_code' => $request->post_code,'item_specifics' => $item_specifics,'shipping_id' => $request->shipping_id,'return_id' => $request->return_id,'payment_id' => $request->payment_id,
-            'template_id' => $request->template_id,'currency' => $request->currency,'product_type'=>'FixedPriceItem','paypal' => $request->paypal ?? null,'category_name' => isset($category) ? $category : $request->current_category,'sub_category_name' => $category2,'galleryPlus' => $request->galleryPlus,'eps' => $request->eps ?? '']);
+            'template_id' => $request->template_id,'currency' => $request->currency,'product_type'=>'FixedPriceItem','paypal' => $request->paypal ?? null,'category_name' => isset($category) ? $category : $request->current_category,'sub_category_name' => $category2,'galleryPlus' => $request->galleryPlus,'eps' => $request->eps ?? '','cross_border_trade' => $request->cross_border_trade ?? null,'private_listing' => isset($request->private_listing) ? 1 : 0]);
 
         return redirect('ebay-profile')->with('success','successfully created');
     }
@@ -348,27 +354,8 @@ class EbayProfileController extends Controller
 //        get store data ends
 
 //        item specifics start
-        $url = 'https://api.ebay.com/ws/api.dll';
-        $headers = [
-            'X-EBAY-API-SITEID:'.$result->site_id,
-            'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-            'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-            'X-EBAY-API-IAF-TOKEN:'.session('access_token'),
-        ];
-
-        $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>'.$result->category_id.'</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
-
-        $item_specifics = $this->curl($url,$headers,$body,'POST');
-        $item_specifics =simplexml_load_string($item_specifics);
-        $item_specifics = json_decode(json_encode($item_specifics),true);
+        $ebay_access_token = session('access_token');
+        $item_specifics= $this->getItemSpecifics($result->category_id,$ebay_access_token,$result->site_id);
 //        item specifics ends
 
         //                get condition data start
@@ -514,27 +501,9 @@ class EbayProfileController extends Controller
 //        get store data ends
 
 //        item specifics start
-        $url = 'https://api.ebay.com/ws/api.dll';
-        $headers = [
-            'X-EBAY-API-SITEID:'.$result->site_id,
-            'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-            'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-            'X-EBAY-API-IAF-TOKEN:'.session('access_token'),
-        ];
+        $ebay_access_token = session('access_token');
+        $item_specifics= $this->getItemSpecifics($result->category_id,$ebay_access_token,$result->site_id);
 
-        $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>'.$result->category_id.'</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
-
-        $item_specifics = $this->curl($url,$headers,$body,'POST');
-        $item_specifics =simplexml_load_string($item_specifics);
-        $item_specifics = json_decode(json_encode($item_specifics),true);
 //        item specifics ends
 
 //        echo "<pre>";
@@ -760,7 +729,7 @@ class EbayProfileController extends Controller
 
         $result = EbayProfile::find($id)->update(['account_id' => $request->account_id,'site_id' => $request->site_id,'profile_name' => $request->profile_name,'profile_description' => $request->profile_description,'product_type' => $request->product_type,'start_price' => $request->start_price,'condition_id' => $condition[0] ?? NULL,'condition_name' => $condition[1] ?? NULL,'condition_description' => $request->condition_description ?? NULL,
             'category_id' => $request->last_cat_id,'sub_category_id' => $request->last_cat2_id,'category_name' => isset($category) ? $category : $request->current_category,'sub_category_name' => isset($category2) ? $category2 : $request->current_category2,'store_id' => $store_one[0] ?? null,'store_name' => $store_one[1] ?? null,'store2_id' => $store_two[0] ?? null,'store2_name' => $store_two[1] ?? null,'duration' => $request->duration,'location' => $request->location,'country' => $request->country,'post_code' => $request->post_code,'item_specifics' => $item_specifics,'shipping_id' => $request->shipping_id,'return_id' => $request->return_id,'payment_id' => $request->payment_id,
-            'template_id' => $request->template_id,'currency' => $request->currency,'paypal' => $request->paypal ?? null,'galleryPlus' => $request->galleryPlus,'eps' => $request->eps ?? '']);
+            'template_id' => $request->template_id,'currency' => $request->currency,'paypal' => $request->paypal ?? null,'galleryPlus' => $request->galleryPlus,'eps' => $request->eps ?? '','cross_border_trade' => $request->cross_border_trade ?? null,'private_listing' => isset($request->private_listing) ? 1 : 0]);
 //        if ($item_specifics == $profile_result->item_specifics){
 //
 //        }
@@ -851,26 +820,11 @@ class EbayProfileController extends Controller
             }catch (Exception $exception){
                 echo $exception;
             }
-            $url = 'https://api.ebay.com/ws/api.dll';
-            $headers = [
-                'X-EBAY-API-SITEID:' . $siteId,
-                'X-EBAY-API-COMPATIBILITY-LEVEL:967',
-                'X-EBAY-API-CALL-NAME:GetCategorySpecifics',
-                'X-EBAY-API-IAF-TOKEN:' . $token,
-            ];
-            $body = '<?xml version="1.0" encoding="utf-8"?>
-                            <GetCategorySpecificsRequest xmlns="urn:ebay:apis:eBLBaseComponents">
 
-                              <WarningLevel>High</WarningLevel>
-                              <CategorySpecific>
-                                   <!--Enter the CategoryID for which you want the Specifics-->
-                                <CategoryID>' . $categoryId . '</CategoryID>
-                              </CategorySpecific>
-                            </GetCategorySpecificsRequest>';
+            $item_specifics= $this->getItemSpecifics($categoryId,$token,$siteId);
 
-            $item_specifics = $this->curl($url, $headers, $body, 'POST');
-            $item_specifics = simplexml_load_string($item_specifics);
-            $item_specifics = json_decode(json_encode($item_specifics), true);
+
+
             $url = 'https://api.ebay.com/ws/api.dll';
             $headers = [
                 'X-EBAY-API-SITEID:'.$siteId,

@@ -174,7 +174,7 @@
 
 
             <!--Card box start-->
-            <div class="row m-t-20">
+            <div class="row m-t-20 catalog">
                 <div class="col-md-12">
                     <div class="card-box table-responsive shadow supplier-card">
 
@@ -987,6 +987,14 @@
         var column = "table ." + $(this).attr("name");
         $(column).hide();
     });
+
+
+    var tr_length_supplier = $('.supplier-table tbody tr').length
+    if(tr_length_supplier == 0 || tr_length_supplier == 1 || tr_length_supplier == 2 || tr_length_supplier == 3){
+        $('.catalog .card-box').addClass('table-column-filter-issue')
+    }else if(tr_length_supplier > 3){
+        $('.catalog .card-box').addClass('table-column-filter-issue-pad')
+    }
 
 
 </script>

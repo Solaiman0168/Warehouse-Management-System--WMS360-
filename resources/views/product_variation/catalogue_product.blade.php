@@ -72,6 +72,12 @@
                             <strong>{{ $message }}</strong>
                         </div>
                     @endif
+
+                    {{-- DON'T REMOVE OR EDIT THIS new_product_success MESSAGE, BY USING THIS TEXT MESSAGE HAS CREATED RECEIVE INVOICE MODAL  --}}
+                    @if ($message = Session::get('new_product_success')) 
+                        <div id="new_product_success" style="display: none">{{$message}}</div>
+                    @endif
+
                     <form id="chargeForm" class="mobile-responsive" role="form" action="{{url('multiple-product-add')}}"  method="post" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="product_draft_id" id="product-dropdown" value="{{$product_draft_result->id ?? ''}}">
@@ -760,14 +766,19 @@
                                             <div>SKU<span class="ml-1" style="color: red">*</span></div>
                                         </th>
                                         <th class="ean" style="text-align: center!important;width:15%">EAN</th>
+                                        @if($woocommerceActive)
                                         <th class="regular-price" style="text-align: center!important;width:8%">
-                                            <div>Regular Price<span class="ml-1" style="color: red">*</span></div>
+                                            <div>Regular Price</div>
                                         </th>
+                                        @endif
                                         <th class="sale-price" style="text-align: center!important;width:8%">
                                             <div>Sale Price<span class="ml-1" style="color: red">*</span></div>
                                         </th>
                                         <th class="rrp" style="text-align: center!important;width:8%">RRP</th>
+                                        @if($onbuyActive)
                                         <th class="base-price" style="text-align: center!important;width:8%">Base Price</th>
+                                        <th class="max-price" style="text-align: center!important;width:8%">Max Price</th>
+                                        @endif
                                         <th class="cost-price" style="text-align: center!important;width:8%">Cost Price</th>
                                         {{-- <th class="product-code text-center">Product Code</th> --}}
                                         {{-- <th class="color-code" style="text-align: center!important;width:8%">Colour Code</th> --}}
@@ -1200,12 +1211,35 @@
                     var variationId = event.target.value
                     $('input.selectAllVariation, input.selectVariation').prop('checked', false)
                     $('tbody tr').hide()
-                    if(event.target.value == 'all'){$('tbody tr').removeAttr('style')}
+                    if(event.target.value == 'all'){
+                        $('tbody tr').removeAttr('style')
+                        $('tbody tr.input-checked:visible td input.selectVariation').each(function(){
+                            $(this).prop('checked', true)
+                        })
+                    }
                     $('tbody tr select option').each(function(k, elem){
                         var attributeId = elem.value
                         if(variationId == attributeId){
                             $(elem).closest('tr').removeAttr('style')
                             $(elem).closest('tr:visible').find('input.selectVariation').prop('checked', true)
+                            $(elem).closest('tr:visible').addClass('input-checked')
+                            $(elem).closest('tr:visible').find('td.sku input.ap-input-css').addClass('input-checked-sku')
+                            $(elem).closest('tr:visible').find('td input.created-product').addClass('checked-created-product')
+                        }
+                    })
+                    $('input.selectVariation').change(function(){
+                        if(this.checked){
+                            console.log('if')
+                            $(this).prop("checked", true);
+                            $(this).closest('tr').addClass('input-checked')
+                            $(this).closest('tr').find('td.sku input.ap-input-css').addClass('form-control-sku_class input-checked-sku')
+                            $(this).closest('tr').find('td input.created-product').addClass('checked-created-product')
+                        }else{
+                            console.log('else')
+                            $(this).prop("checked", false);
+                            $(this).closest('tr').removeClass('input-checked')
+                            $(this).closest('tr').find('td.sku input.ap-input-css').removeClass('form-control-sku_class input-checked-sku')
+                            $(this).closest('tr').find('td input.created-product').removeClass('checked-created-product') 
                         }
                     })
                 },
@@ -1263,16 +1297,18 @@
                             if(document.getElementById('sku'+index).value != ''){
                                 counter++;
                             }
-                            if(document.getElementById('regular_price'+index).value != ''){
-                                regularPriceCount++
-                            }
+                            // if(document.getElementById('regular_price'+index).value != ''){
+                            //     regularPriceCount++
+                            // }
                             if(document.getElementById('sale_price'+index).value != ''){
                                 salePriceCount++
                             }
                         })
 
 
-                        if(counter == temp_length && regularPriceCount == temp_length && salePriceCount == temp_length){
+                        if(counter == temp_length && 
+                        // regularPriceCount == temp_length && 
+                        salePriceCount == temp_length){
                             document.getElementById("chargeForm").submit();
                         }else{
                             if(counter != temp_length){
@@ -1281,12 +1317,12 @@
                                     title: 'Please fill in the required fields that are currently empty.'
                                 })
                             }
-                            if(regularPriceCount != temp_length){
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Please fill in the required fields that are currently empty.'
-                                })
-                            }
+                            // if(regularPriceCount != temp_length){
+                            //     Swal.fire({
+                            //         icon: 'error',
+                            //         title: 'Please fill in the required fields that are currently empty.'
+                            //     })
+                            // }
                             if(salePriceCount != temp_length){
                                 Swal.fire({
                                     icon: 'error',
@@ -1302,16 +1338,18 @@
                             if(document.getElementById('sku'+index).value != ''){
                                 counter++;
                             }
-                            if(document.getElementById('regular_price'+index).value != ''){
-                                regularPriceCount++
-                            }
+                            // if(document.getElementById('regular_price'+index).value != ''){
+                            //     regularPriceCount++
+                            // }
                             if(document.getElementById('sale_price'+index).value != ''){
                                 salePriceCount++
                             }
                         })
 
 
-                        if(counter == temp_length && regularPriceCount == temp_length && salePriceCount == temp_length){
+                        if(counter == temp_length && 
+                        // regularPriceCount == temp_length && 
+                        salePriceCount == temp_length){
                             document.getElementById("chargeForm").submit();
                         }else{
                             if(counter != temp_length){
@@ -1320,12 +1358,12 @@
                                     title: 'Please fill in the required fields that are currently empty.'
                                 })
                             }
-                            if(regularPriceCount != temp_length){
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Please fill in the required fields that are currently empty.'
-                                })
-                            }
+                            // if(regularPriceCount != temp_length){
+                            //     Swal.fire({
+                            //         icon: 'error',
+                            //         title: 'Please fill in the required fields that are currently empty.'
+                            //     })
+                            // }
                             if(salePriceCount != temp_length){
                                 Swal.fire({
                                     icon: 'error',
@@ -1364,20 +1402,6 @@
             var sku = document.getElementById('sku'+index).value;
             if (sku == ''){
                 generate_sku_from_vue(index);
-            }
-            var temp_length = cartesian_attributes.length - 1;
-            var value = document.getElementById('ean_no'+index).value;
-            // console.log(value);
-            var counter = 0;
-            cartesian_attributes.forEach(function(item,indexOfEan){
-                if($('#ean_no'+indexOfEan).val() == ''){
-                    counter++;
-                }
-            });
-            if (counter < 1 && document.getElementById('ean_no'+index).value != '' && value.length == 13){
-                document.getElementById("chargeForm").submit();
-            }else {
-
             }
 
             var old_value = $(e).attr('oldvalue')
@@ -1418,6 +1442,7 @@
             });
             attribute = attribute.replace(/_\s*$/, "");
             document.getElementById("sku" + card_id).value = attribute;
+            $(e).closest('tr').find('input.created-product').val(1)
         }
 
         // <!-- summernote--->
@@ -1445,34 +1470,66 @@
                         title: 'Oops... No variation found!'
                     })
                 }
-                $('table.product-draft-table .tr-variation').each(function(k, content){
-                    // console.log(content)
-                    var divCardId = content.id
-                    var result = divCardId.split('cardId');
-                    var card_id = parseInt(result[1]);
-                    var attribute = $('#generate_sku_name').val();
-                    $('.form-control-attribute'+card_id).each(function(i, obj) {
-                        // console.log(obj)
-                        if ( attribute == ''){
-                            attribute = $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
-                        }else{
-                            attribute = attribute + '_' + $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
+                var product_variation_count = $('tr.input-checked td input:checkbox:checked').length
+                // console.log(product_variation_count)
+                if(product_variation_count > 0){
+                    console.log('if')
+                    $('table.product-draft-table tr.input-checked:visible').each(function(k, content){
+                        // console.log(content)
+                        var divCardId = content.id
+                        var result = divCardId.split('cardId');
+                        var card_id = parseInt(result[1]);
+                        var attribute = $('#generate_sku_name').val();
+                        $('.form-control-attribute'+card_id).each(function(i, obj) {
+                            // console.log(obj)
+                            if ( attribute == ''){
+                                attribute = $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
+                            }else{
+                                attribute = attribute + '_' + $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
+                            }
+                        });
+                        attribute = attribute.replace(/_\s*$/, "");
+                        // console.log('attribute ' + attribute)
+                        if(document.getElementById("sku" + card_id).value == '' || document.getElementById("sku" + card_id).value){
+                            document.getElementById("sku" + card_id).value = attribute;
                         }
-                    });
-                    attribute = attribute.replace(/_\s*$/, "");
-                    // console.log('attribute ' + attribute)
-                    if(document.getElementById("sku" + card_id).value == ''){
-                        document.getElementById("sku" + card_id).value = attribute;
-                    }
-
-                })
-
-                // return false
+                        $('input.checked-created-product').val(1)
+                    })
+                }else{
+                    console.log('else')
+                    $('table.product-draft-table .tr-variation:visible').each(function(k, content){
+                        // console.log(content)
+                        var divCardId = content.id
+                        var result = divCardId.split('cardId');
+                        var card_id = parseInt(result[1]);
+                        var attribute = $('#generate_sku_name').val();
+                        $('.form-control-attribute'+card_id).each(function(i, obj) {
+                            // console.log(obj)
+                            if ( attribute == ''){
+                                attribute = $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
+                            }else{
+                                attribute = attribute + '_' + $('#'+obj.id + ' '+ 'option:selected').html().split(' ').join('_');
+                            }
+                        });
+                        attribute = attribute.replace(/_\s*$/, "");
+                        // console.log('attribute ' + attribute)
+                        if(document.getElementById("sku" + card_id).value == '' || document.getElementById("sku" + card_id).value){
+                            document.getElementById("sku" + card_id).value = attribute;
+                        }
+                        $('input.created-product').val(1)
+                    })
+                }
+                
                 var skuArr = []
-                $('table.product-draft-table tr:visible input.form-control-sku_class').each(function(){
-                    // console.log(this.value)
-                    skuArr.push($(this).val())
-                })
+                if(product_variation_count > 0){
+                    $('table.product-draft-table tr.input-checked:visible input.input-checked-sku').each(function(){
+                        skuArr.push($(this).val())
+                    })
+                }else{
+                    $('table.product-draft-table .tr-variation:visible input.form-control-sku_class').each(function(){
+                        skuArr.push($(this).val())
+                    })
+                }
                 // console.log('skuArr ' + skuArr)
 
                 $.ajax({
@@ -1493,7 +1550,7 @@
                                 var generate_sku_value = elem.value
                                 if(response_sku_value == generate_sku_value){
                                     // console.log('ok')
-                                    $(elem).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response_sku_value + ' is already exist!!')
+                                    $(elem).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response_sku_value + ' is already exists.')
                                     $('button.add-pro-btn').attr('disabled', 'disabled')
                                 }
                             })
@@ -1555,36 +1612,76 @@
             // }
         }
 
-        function nospaces(t){
+        function sku_validation(t){
+            var that = t
+            // No spaces validation
             if(t.value.match(/\s/g)){
                 t.value=t.value.replace(/\s/g,'');
             }
+
+            // update sku validation
             var old_value = $(t).attr('oldvalue')
             var get_changed_value = $(t).val()
             if(old_value != get_changed_value){
                 $(t).closest('tr').find('td input.created-product').val(1)
-                $.ajax({
-                    type: "POST",
-                    url: "{{asset('manage-variation-sku-validation')}}",
-                    data: {
-                        _token: "{{csrf_token()}}",
-                        sku: get_changed_value
-                    },
-                    success: function(response){
-                        // console.log(response.sku)
-                        if(response.sku == get_changed_value){
-                            $(t).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response.sku + ' is already exist!!').show()
-                            $('button.add-pro-btn').attr('disabled', 'disabled')
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "{{asset('manage-variation-sku-validation')}}",
+                data: {
+                    _token: "{{csrf_token()}}",
+                    sku: get_changed_value
+                },
+                success: function(response){
+                    // console.log(response.sku)
+                    if(response.sku == get_changed_value && old_value != get_changed_value){
+                        $(t).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response.sku + ' is already exists.').show()
+                        $('button.add-pro-btn').attr('disabled', 'disabled')
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    alert("Status: " + textStatus); alert("Error: " + errorThrown);
+                }
+            })
+
+            $(t).css('border-color', '#cccccc').next('span').removeClass('sku-validation-message').hide()
+            var validation_message = $('span.sku-validation-message').length
+            var validation_message_type = $('span.sku-validation-type-message').length
+            // console.log(validation_message)
+            if(validation_message == 0 && validation_message_type == 0){
+                $('button.add-pro-btn').removeAttr('disabled')
+            }
+
+        }
+
+        function uniqueSkuCheck(e){
+            var changed_value = $(e).val()
+            var old_value = $(e).attr('oldvalue')
+            console.log('old_value ' + old_value)
+            if(old_value == changed_value){
+                console.log('same')
+            }else{
+                console.log('not same')
+                $('input.form-control-sku_class').each(function(){
+                    if($(this).val().trim() == changed_value.trim() && e != this){
+                        console.log('if')
+                        $(e).css('border-color', 'red').next().next('span.text-typed').addClass('sku-validation-type-message').text(changed_value + ' is already Created.').show()
+                        $('button.add-pro-btn').attr('disabled', 'disabled')
+                        return false
+                    }
+                    else{
+                        console.log('else')
+                        $(e).css('border-color', '#cccccc').next().next('span.text-typed').removeClass('sku-validation-type-message').hide()
+                        var validation_message = $('span.sku-validation-message').length
+                        var validation_message_type = $('span.sku-validation-type-message').length
+                        // console.log(validation_message)
+                        if(validation_message == 0 && validation_message_type == 0){
+                            $('button.add-pro-btn').removeAttr('disabled')
                         }
                     }
                 })
 
-                $(t).css('border-color', '#cccccc').next('span').removeClass('sku-validation-message').hide()
-                var validation_message = $('span.sku-validation-message').length
-                // console.log(validation_message)
-                if(validation_message == 0){
-                    $('button.add-pro-btn').removeAttr('disabled')
-                }
             }
         }
 
@@ -2017,6 +2114,8 @@
                         // $('input.form-control-sku_class').val(master_sku)
                     })
 
+                    $(e).closest('tr').find('input.created-product').val(1)
+
                 })
 
 
@@ -2038,19 +2137,25 @@
                     },
                     success: function(response){
                         // console.log(response.sku_array)
-                        response.sku_array.forEach(function(item, index, arr){
-                            // console.log(item)
-                            var response_sku_value = item
-                            $('table.product-draft-table tr:visible input.form-control-sku_class').each(function(i, elem){
-                                // console.log(elem.value)
-                                var generate_sku_value = elem.value
-                                if(response_sku_value == generate_sku_value){
-                                    // console.log('ok')
-                                    $(elem).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response_sku_value + ' is already exist!!')
-                                    $('button.add-pro-btn').attr('disabled', 'disabled')
-                                }
-                            })
-                        })
+                        if(response.sku_array.length > 0){
+                            response.sku_array.forEach(function(item, index, arr){
+                                // console.log(item)
+                                var response_sku_value = item
+                                $('table.product-draft-table tr:visible input.form-control-sku_class').each(function(i, elem){
+                                    // console.log(elem.value)
+                                    var generate_sku_value = elem.value
+                                    if(response_sku_value == generate_sku_value){
+                                        // console.log('ok')
+                                        $(elem).css('border-color', 'red').next('span').addClass('sku-validation-message').text(response_sku_value + ' is already exists.')
+                                        $('button.add-pro-btn').attr('disabled', 'disabled')
+                                    }
+                                })
+                            }) 
+                        }else{
+                            $('input.blank_all').removeAttr('style')
+                            $('span.text-red').removeClass('sku-validation-message').text(null)
+                            $('button.add-pro-btn').removeAttr('disabled')
+                        }
                     }
                 })
 
@@ -2087,7 +2192,7 @@
             $('div.add-terms-catalog').show()
         }
 
-        function addVariationImage(){
+        function addVariationImage(){ 
             // console.log('variation')
             $('button#addVariationBtn').hide()
             $('select#selectVariation').show()
@@ -2833,6 +2938,8 @@
             })
         })
 
+        
+
         @if ($message = Session::get('updated_success'))
             swal("{{ $message }}", "", "success");
         @endif
@@ -2840,6 +2947,10 @@
         @if ($add_product_message = Session::get('add_product_success'))
             swal("{{ $add_product_message }}", "", "success");
         @endif
+
+        // @if ($message = Session::get('new_product_success'))
+        //     swal("{{ $message }}", "", "success");
+        // @endif
 
     </script>
 

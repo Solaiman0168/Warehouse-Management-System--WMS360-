@@ -1,37 +1,41 @@
 
     @foreach($woocommerce_list as $list)
         @if(is_numeric($date) == TRUE)
-        <tr class="hide-after-complete-{{$list->id}}">
-            @if($status == 'draft')
-                <td><input type="checkbox" class="checkBoxClass" id="customCheck{{$list->id}}" value="{{$list->id}}"></td>
-            @else
-            <td></td>
+        <tr class="hide-after-complete-{{$list->id}} search-tr">
+            @if($status == 'publish' || $status == 'draft')
+                <td style="width: 3%" attr><input type="checkbox" class="checkBoxClass" id="customCheck{{$list->id}}" value="{{$list->id}}"></td>
             @endif
-            <td class="image" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
 
-                <!--Start each row loader-->
-                <div id="product_variation_loading{{$list->id}}" class="variation_load" style="display: none;"></div>
-                <!--End each row loader-->
+                <td class="image @if(isset($setting['woocommerce']['woocommerce_active_product']['image']) && $setting['woocommerce']['woocommerce_active_product']['image'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['image']) && $setting['woocommerce']['woocommerce_active_product']['image'] == 1) @else @endif" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
+                    <!--Start each row loader-->
+                    <div id="product_variation_loading{{$list->id}}" class="variation_load" style="display: none;"></div>
+                    <!--End each row loader-->
 
-                @if(isset($list->single_image_info->image_url))
-                    <a href="{{$list->single_image_info->image_url}}"  title="Click to expand" target="_blank"><img src="{{$list->single_image_info->image_url}}" class="thumb-md zoom" alt="WooCommerce-active-image"></a>
-                @else
-                    <img src="{{asset('assets/common-assets/no_image.jpg')}}" class="thumb-md zoom" alt="WooCommerce-active-image">
-                @endif
+                    @if(isset($list->single_image_info->image_url))
+                        <a href="{{$list->single_image_info->image_url}}"  title="Click to expand" target="_blank"><img src="{{$list->single_image_info->image_url}}" class="thumb-md zoom" alt="WooCommerce-active-image"></a>
+                    @else
+                        <img src="{{asset('assets/common-assets/no_image.jpg')}}" class="thumb-md zoom" alt="WooCommerce-active-image">
+                    @endif
+                </td>
 
-            </td>
 {{--            <td class="id" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">--}}
-            <td class="id" style="width: 6%; text-align: center !important;">
+
+            <td class="id @if(isset($setting['woocommerce']['woocommerce_active_product']['id']) && $setting['woocommerce']['woocommerce_active_product']['id'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['id']) && $setting['woocommerce']['woocommerce_active_product']['id'] == 1) @else @endif" style="width: 6%; text-align: center !important;">
                 <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                     <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$list->id}}</span>
                     <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
                 </div>
             </td>
-            <td class="catalogue-name" style="width: 30%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
+
+
+
+            <td class="catalogue-name @if(isset($setting['woocommerce']['woocommerce_active_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_active_product']['catalogue-name'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_active_product']['catalogue-name'] == 1) @else @endif" style="width: 30%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
                 <a class="catalogue-link" href="https://www.topbrandoutlet.co.uk/wp-admin/post.php?post={{$list->id}}&action=edit" target="_blank" data-toggle="tooltip" data-placement="top" title="Edit On Woocommerce">
                     {!! Str::limit(strip_tags($list->name),$limit = 100, $end = '...') !!}
                 </a>
             </td>
+
+
             <?php
             $data = '';
             foreach ($list->all_category as $category){
@@ -44,12 +48,18 @@
                 }
             }
             ?>
-            <td class="category" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{rtrim($data,',')}}</td>
-            <td class="rrp" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->rrp ?? ''}}</td>
-            <td class="sold" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_sold ?? 0}}</td>
-            <td class="stock" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations[0]->stock ?? 0}}</td>
-            <td class="product" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations_count ?? 0}}</td>
-            <td class="creator" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
+
+            <td class="category @if(isset($setting['woocommerce']['woocommerce_active_product']['category']) && $setting['woocommerce']['woocommerce_active_product']['category'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['category']) && $setting['woocommerce']['woocommerce_active_product']['category'] == 1) @else @endif" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{rtrim($data,',')}}</td>
+
+            <td class="rrp @if(isset($setting['woocommerce']['woocommerce_active_product']['rrp']) && $setting['woocommerce']['woocommerce_active_product']['rrp'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['rrp']) && $setting['woocommerce']['woocommerce_active_product']['rrp'] == 1) @else @endif" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->rrp ?? ''}}</td>
+
+            <td class="sold @if(isset($setting['woocommerce']['woocommerce_active_product']['sold']) && $setting['woocommerce']['woocommerce_active_product']['sold'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['sold']) && $setting['woocommerce']['woocommerce_active_product']['sold'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$total_sold ?? 0}}</td>
+
+            <td class="stock @if(isset($setting['woocommerce']['woocommerce_active_product']['stock']) && $setting['woocommerce']['woocommerce_active_product']['stock'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['stock']) && $setting['woocommerce']['woocommerce_active_product']['stock'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations[0]->stock ?? 0}}</td>
+
+            <td class="product @if(isset($setting['woocommerce']['woocommerce_active_product']['product']) && $setting['woocommerce']['woocommerce_active_product']['product'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['product']) && $setting['woocommerce']['woocommerce_active_product']['product'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations_count ?? 0}}</td>
+
+            <td class="creator @if(isset($setting['woocommerce']['woocommerce_active_product']['creator']) && $setting['woocommerce']['woocommerce_active_product']['creator'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['creator']) && $setting['woocommerce']['woocommerce_active_product']['creator'] == 1) @else @endif" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
                 @if(isset($list->user_info->name))
                 <div class="wms-name-creator">
                     <div data-tip="on {{date('d-m-Y', strtotime($list->created_at))}}">
@@ -58,7 +68,8 @@
                 </div>
                 @endif
             </td>
-            <td class="modifier" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
+
+            <td class="modifier @if(isset($setting['woocommerce']['woocommerce_active_product']['modifier']) && $setting['woocommerce']['woocommerce_active_product']['modifier'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['modifier']) && $setting['woocommerce']['woocommerce_active_product']['modifier'] == 1) @else @endif" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
                 @if(isset($list->modifier_info->name))
                     <div class="wms-name-modifier1">
                         <div data-tip="on {{date('d-m-Y', strtotime($list->updated_at))}}">
@@ -73,6 +84,7 @@
                     </div>
                 @endif
             </td>
+
             <td class="actions" style="width: 6%">
                 <!--start manage button area-->
                 <div class="btn-group dropup">
@@ -123,31 +135,36 @@
 
         @else
             @if(isset($list->variations[0]->stock))
-                <tr class="hide-after-complete-{{$list->id}}">
-                    @if($status == 'draft')
+                <tr class="hide-after-complete-{{$list->id}} search-tr">
+
+                    @if($status == 'publish' || $status == 'draft')
                         <td><input type="checkbox" class="checkBoxClass" id="customCheck{{$list->id}}" value="{{$list->id}}"></td>
                     @endif
-                    <td class="image" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
 
+
+                    <td class="image @if(isset($setting['woocommerce']['woocommerce_active_product']['image']) && $setting['woocommerce']['woocommerce_active_product']['image'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['image']) && $setting['woocommerce']['woocommerce_active_product']['image'] == 1) @else @endif" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
                         <!--Start each row loader-->
                         <div id="product_variation_loading{{$list->id}}" class="variation_load" style="display: none;"></div>
                         <!--End each row loader-->
 
-                         @if(isset($list->single_image_info->image_url))
+                        @if(isset($list->single_image_info->image_url))
                             <a href="{{$list->single_image_info->image_url}}"  title="Click to expand" target="_blank"><img src="{{$list->single_image_info->image_url}}" class="thumb-md zoom" alt="WooCommerce-active-image"></a>
                         @else
                             <img src="{{asset('assets/common-assets/no_image.jpg')}}" class="thumb-md zoom" alt="WooCommerce-active-image">
                         @endif
-
                     </td>
+
+
 {{--                    <td class="id" style="width: 6%; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">--}}
-                    <td class="id" style="width: 6%; text-align: center !important;">
+
+                    <td class="id @if(isset($setting['woocommerce']['woocommerce_active_product']['id']) && $setting['woocommerce']['woocommerce_active_product']['id'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['id']) && $setting['woocommerce']['woocommerce_active_product']['id'] == 1) @else @endif" style="width: 6%; text-align: center !important;">
                         <div class="id_tooltip_container d-flex justify-content-center align-items-center">
                             <span title="Click to Copy" onclick="textCopiedID(this);" class="id_copy_button">{{$list->id}}</span>
                             <span class="wms__id__tooltip__message" id="wms__id__tooltip__message">Copied!</span>
                         </div>
                     </td>
-                    <td class="catalogue-name" style="width: 30%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
+
+                    <td class="catalogue-name @if(isset($setting['woocommerce']['woocommerce_active_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_active_product']['catalogue-name'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['catalogue-name']) && $setting['woocommerce']['woocommerce_active_product']['catalogue-name'] == 1) @else @endif" style="width: 30%; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">
                         <a class="catalogue-link" href="https://www.topbrandoutlet.co.uk/wp-admin/post.php?post={{$list->id}}&action=edit" target="_blank" data-toggle="tooltip" data-placement="top" title="Edit On Woocommerce">
                             {!! Str::limit(strip_tags($list->name),$limit = 100, $end = '...') !!}
                         </a>
@@ -165,19 +182,26 @@
                         }
                     }
                     ?>
-                    <td class="category" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{rtrim($data,',')}}</td>
-                    <td class="rrp" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$list->rrp ?? ''}}</td>
-                    <td class="sold" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$total_sold ?? 0}}</td>
-                    <td class="stock" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations[0]->stock ?? 0}}</td>
-                    <td class="product" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$list->variations_count ?? 0}}</td>
-                    <td class="creator" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">
+
+                    <td class="category @if(isset($setting['woocommerce']['woocommerce_active_product']['category']) && $setting['woocommerce']['woocommerce_active_product']['category'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['category']) && $setting['woocommerce']['woocommerce_active_product']['category'] == 1) @else @endif" style="cursor: pointer; text-align: center !important;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{rtrim($data,',')}}</td>
+
+                    <td class="rrp @if(isset($setting['woocommerce']['woocommerce_active_product']['rrp']) && $setting['woocommerce']['woocommerce_active_product']['rrp'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['rrp']) && $setting['woocommerce']['woocommerce_active_product']['rrp'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$list->rrp ?? ''}}</td>
+
+                    <td class="sold @if(isset($setting['woocommerce']['woocommerce_active_product']['sold']) && $setting['woocommerce']['woocommerce_active_product']['sold'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['sold']) && $setting['woocommerce']['woocommerce_active_product']['sold'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$total_sold ?? 0}}</td>
+
+                    <td class="stock @if(isset($setting['woocommerce']['woocommerce_active_product']['stock']) && $setting['woocommerce']['woocommerce_active_product']['stock'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['stock']) && $setting['woocommerce']['woocommerce_active_product']['stock'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" onclick="getVariation(this)" class="accordion-toggle">{{$list->variations[0]->stock ?? 0}}</td>
+
+                    <td class="product @if(isset($setting['woocommerce']['woocommerce_active_product']['product']) && $setting['woocommerce']['woocommerce_active_product']['product'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['product']) && $setting['woocommerce']['woocommerce_active_product']['product'] == 1) @else @endif" style="width: 10% !important; text-align: center !important; cursor: pointer;" data-target="#demo{{$list->id}}" id="mtr-{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">{{$list->variations_count ?? 0}}</td>
+
+                    <td class="creator @if(isset($setting['woocommerce']['woocommerce_active_product']['creator']) && $setting['woocommerce']['woocommerce_active_product']['creator'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['creator']) && $setting['woocommerce']['woocommerce_active_product']['creator'] == 1) @else @endif" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">
                         <div class="wms-name-creator">
                             <div data-tip="on {{date('d-m-Y', strtotime($list->created_at))}}">
                                 <strong class="text-success">{{$list->user_info->name ?? ''}}</strong>
                             </div>
                         </div>
                     </td>
-                    <td class="modifier" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">
+
+                    <td class="modifier @if(isset($setting['woocommerce']['woocommerce_active_product']['modifier']) && $setting['woocommerce']['woocommerce_active_product']['modifier'] == 0) hide @elseif(isset($setting['woocommerce']['woocommerce_active_product']['modifier']) && $setting['woocommerce']['woocommerce_active_product']['modifier'] == 1) @else @endif" style="width: 10% !important; cursor: pointer;" data-toggle="collapse" id="mtr-{{$list->id}}" data-target="#demo{{$list->id}}" class="accordion-toggle" onclick="getVariation(this)">
                         @if(isset($list->modifier_info->name))
                             <div class="wms-name-modifier1">
                                 <div data-tip="on {{date('d-m-Y', strtotime($list->updated_at))}}">
@@ -192,6 +216,8 @@
                             </div>
                         @endif
                     </td>
+
+
                     <td class="actions" style="width: 6%">
                         <!--start manage button area-->
                         <div class="btn-group dropup">
@@ -280,5 +306,11 @@
         });
     });
 
+    var tr_row = $('.draft_search_result #woocomtdody .search-tr').length
+    if(tr_row == 0 || tr_row == 1 || tr_row == 2 || tr_row == 3){
+        $('.catalog .card-box').attr('style', 'padding-bottom: 270px !important')
+    }else{
+        $('.catalog .card-box').removeAttr('style')
+    }
 
 </script>

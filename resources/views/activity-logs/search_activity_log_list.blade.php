@@ -143,3 +143,19 @@
     </tr>
     @endforeach
 
+    <script>
+
+        // table column hide and show toggle checkbox
+        $("input:checkbox").click(function(){
+            let column = "."+$(this).attr("name");
+            $(column).toggle();
+        });
+
+        //table column by default hide
+        $("input:checkbox:not(:checked)").each(function() {
+            var column = "table ." + $(this).attr("name");
+            $(column).hide();
+        });
+
+    </script>
+

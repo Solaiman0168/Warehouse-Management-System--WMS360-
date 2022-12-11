@@ -161,6 +161,7 @@ class DashboardController extends Controller
         $data ['manual_total_sell'] = round(Order::doesntHave('returnOrder')->where('status','!=','cancelled')->where(['created_via' =>'rest-api'])->sum('total_price'),2);
         $data ['onbuy_total_sell'] = $this->checkChannelActiveBySessionValue('onbuy') ? round(Order::doesntHave('returnOrder')->where('status','!=','cancelled')->where(['created_via' =>'onbuy'])->sum('total_price'),2) : 0.00;
         $data ['shopify_total_sell'] = $this->checkChannelActiveBySessionValue('shopify') ? round(Order::doesntHave('returnOrder')->where('status','!=','cancelled')->where(['created_via' =>'shopify'])->sum('total_price'),2) : 0.00;
+        $data ['total_cancelled_order'] = Order::where('status','=','cancelled')->count();
 
         $data['group_channel'] = Order::where(function($order){
             $this->channel_restriction_order_session($order);
@@ -351,6 +352,7 @@ class DashboardController extends Controller
             $data ['processing_order_sell'] = round(Order::where(function($order){
                 $this->channel_restriction_order_session($order);
             })->where(['status' =>'processing'])->sum('total_price'),2);
+            $data ['total_cancelled_order'] = Order::where('status','=','cancelled')->count();
         }elseif($request->day == 'custom'){
             $data ['total_sell'] = round(Order::where(function($order){
                 $this->channel_restriction_order_session($order);
@@ -382,6 +384,12 @@ class DashboardController extends Controller
             })->where(['status' =>'processing'])->where(function($date) use ($request){
                 $this->getBetweenTwoDateSale($date,$request);
             })->sum('total_price'),2);
+            $data ['total_cancelled_order'] = round(Order::where('status','=','cancelled')->where(function($date) use ($request){
+                $this->getBetweenTwoDateSale($date,$request);
+            })->sum('total_price'),2);
+            $data ['total_cancelled_order'] = Order::where('status','=','cancelled')->where(function($date) use ($request){
+                $this->getBetweenTwoDateSale($date,$request);
+            })->count();
         }
         else{
             if($request->day == '-1'){
@@ -406,8 +414,91 @@ class DashboardController extends Controller
             $data ['processing_order_sell'] = round(Order::where(function($order){
                 $this->channel_restriction_order_session($order);
             })->where(['status' =>'processing'])->whereDate('date_created', $operator, Carbon::now()->subDays($search_day))->sum('total_price'),2);
+            $data ['total_cancelled_order'] = Order::where('status','=','cancelled')->whereDate('date_created', $operator, Carbon::now()->subDays($search_day))->count();
         }
-        return response()->json($data);
+
+        $channel_sales_card_array = [];
+        if(Session::get('ebay') == 1){
+            $channel_sales_card_array[] = [
+                'channel_session' => 1,
+                'channel_name' => 'ebay',
+                'channel_card_bg_class' => 'l-bg-cherry',
+                'channel_sales_name' => 'eBay Sales',
+                'channel_name_class' => 'ebay',
+                'channel_sales_value' => $data['ebay_total_sell'],
+                'checked_channel_name' => 'eBay',
+                'channel_term_slug' => 'ebay',
+                'channel_logo' => 'fab fa-ebay'
+            ];
+        }
+        if(Session::get('amazon') == 1){
+             $channel_sales_card_array[] = [
+                'channel_session' => 1,
+                'channel_name' => 'amazon',
+                'channel_card_bg_class' => 'l-bg-blue-dark',
+                'channel_sales_name' => 'Amazon Sales',
+                'channel_name_class' => 'amazon',
+                'channel_sales_value' => $data['amazon_total_sell'],
+                'checked_channel_name' => 'Amazon',
+                'channel_term_slug' => 'amazon',
+                'channel_logo' => 'fab fa-amazon'
+            ];
+        }
+        if(Session::get('woocommerce') == 1){
+            $channel_sales_card_array[] = [
+                'channel_session' => 1,
+                'channel_name' => 'woocommerce',
+                'channel_card_bg_class' => 'l-bg-green-dark',
+                'channel_sales_name' => 'WooCommerce Sales',
+                'channel_name_class' => 'website',
+                'channel_sales_value' => $data['tbo_total_sell'],
+                'checked_channel_name' => 'Woocommerce',
+                'channel_term_slug' => 'woocommerce',
+                'channel_logo' => 'fab fa-wordpress'
+            ];
+        }
+        if(Session::get('onbuy') == 1){
+            $channel_sales_card_array[] = [
+                'channel_session' => 1,
+                'channel_name' => 'onbuy',
+                'channel_card_bg_class' => 'l-bg-orange-dark',
+                'channel_sales_name' => 'OnBuy Sales',
+                'channel_name_class' => 'onbuy',
+                'channel_sales_value' => $data['onbuy_total_sell'],
+                'checked_channel_name' => 'OnBuy',
+                'channel_term_slug' => 'onbuy',
+                'channel_logo' => 'fa fa-shopping-cart'
+            ];
+        }
+        if(Session::get('shopify') == 1){
+            $channel_sales_card_array[] = [
+                'channel_session' => 1,
+                'channel_name' => 'shopify',
+                'channel_card_bg_class' => 'l-bg-light-green-orange',
+                'channel_sales_name' => 'Shopify Sales',
+                'channel_name_class' => 'shopify',
+                'channel_sales_value' => $data['shopify_total_sell'],
+                'checked_channel_name' => 'Shopify',
+                'channel_term_slug' => 'shopify',
+                'channel_logo' => 'fab fa-shopify'
+            ];
+        }
+        $channel_sales_card_array[] = [
+            'channel_session' => 1,
+            'channel_name' => 'manual_order',
+            'channel_card_bg_class' => 'l-bg-ash-dark',
+            'channel_sales_name' => 'ePOS Sales',
+            'channel_name_class' => 'manual-order',
+            'channel_sales_value' => $data['manual_total_sell'],
+            'checked_channel_name' => 'ePOS',
+            'channel_term_slug' => 'manual_order',
+            'channel_logo' => 'fa fa-usd'
+        ];
+        
+        array_multisort( array_column( $channel_sales_card_array, 'channel_sales_value' ), SORT_DESC, $channel_sales_card_array);
+        
+        // return response()->json($data);
+        return response()->json(['data' => $data, 'channel_sales_card_array' => $channel_sales_card_array]);
     }
     /*
      * Function : salesByChannel

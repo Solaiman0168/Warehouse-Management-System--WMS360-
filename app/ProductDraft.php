@@ -16,7 +16,7 @@ class ProductDraft extends Model
         'user_id', 'modifier_id','woowms_category','condition',
         'regular_price',
         'sale_price','rrp',
-        'cost_price','base_price','vat','product_code','color','color_code','attribute','sku_short_code',
+        'cost_price','base_price','max_price','vat','product_code','color','color_code','attribute','sku_short_code',
         'low_quantity',
         'name',
         'type',

@@ -200,7 +200,7 @@ class TestController extends Controller
     }
     public function migrate(){
 //        Log::info("migration started");
-        $migration1 = new Process("php artisan migrate");
+        $migration1 = new Process("php artisan migrate --force");
         $migration1->run();
         $migration2 = new Process("php artisan passport:client --personal --no-interaction");
         $migration2->run();

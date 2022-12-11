@@ -95,7 +95,8 @@ class VariationController extends Controller
 
     public function variationDetails($id=null){
         if($id != null){
-            $id = Crypt::decrypt($id);
+            // $id = Crypt::decrypt($id);
+            $id = $id;
         }else{
             $id = null;
         }

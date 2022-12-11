@@ -15,6 +15,9 @@ class WooWmsCategory extends Model
     public function genders(){
         return $this->belongsToMany('App\Gender','gender_wms_categories','wms_category_id','gender_id');
     }
+        // public function categoryAttribute(){
+        //     return $this->hasManyThrough('App\ItemAttribute','App\CategoryItemAttribute','item_attribute_id','id','id','id');
+        // }
         public function categoryAttribute(){
             return $this->hasMany('App\CategoryItemAttribute','category_id','id');
         }

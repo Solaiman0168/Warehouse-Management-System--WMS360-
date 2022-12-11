@@ -20,13 +20,17 @@ use App\DeveloperAccount;
 use Illuminate\Support\Facades\Session;
 
 use App\ProductDraft;
+use App\WoocommerceAccount;
 
 use App\ProductVariation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use DB;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 class WoocomOrderSyncController extends Controller
 {
+    use BundleSKUTrait;
     public function __construct()
     {
         $consumer_key = Session::get('consumer_key');
@@ -216,13 +220,17 @@ class WoocomOrderSyncController extends Controller
             $order_channel = $order->created_via;
             if($order_channel != 'ebay'){
                 $order_exist = Order::where('order_number',$order->id)->first();
-                if(!isset($order_exist)) {
+                $isExistInAnotherChannel = $order_exist ? ($order_exist->created_via != 'checkout' ? true : false) : true;
+                if(!isset($order_exist) || $isExistInAnotherChannel) {
                     $orderPrimaryExistCheck = Order::find($order->id);
                     if($orderPrimaryExistCheck){
                         $lastOrderInfo = Order::orderByDesc('id')->first();
                         $orderId = $lastOrderInfo->id + 1;
+                        $accoutName = WoocommerceAccount::first()->account_name ?? $orderId;
+                        $orderNumber = $accoutName.':'.$order->number;
                     }else{
                         $orderId = $order->id;
+                        $orderNumber = $order->number;
                     }
                     $shipping = '<div class="d-flex justify-content-start mb-1"><div class="content-left"><h7> Name  </h7></div><div class="content-right"><h7> : ' . $order->shipping->first_name . ' ' . $order->shipping->last_name . '</h7></div></div>';
                     //        $shipping .= '<div class="row"><div class="col-4"><h7> Company  </h7></div><div class="col-8"><h7> : '.$order->shipping->company.'</h7></div></div>';
@@ -235,7 +243,7 @@ class WoocomOrderSyncController extends Controller
                         // DB::transaction(function () use ($order,$shipping) {
                         $data = Order::create([
                             'id' => $orderId,
-                            'order_number' => $order->number,
+                            'order_number' => $orderNumber,
                             'status' => $order->status,
                             'created_via' => $order->created_via,
                             'account_id' => 1,
@@ -277,6 +285,12 @@ class WoocomOrderSyncController extends Controller
                             //            $datas['variation_id'] = $product->variation_id;
                             $woo_product_variation_find = WoocommerceVariation::find($product->variation_id);
                             if(isset($woo_product_variation_find->woocom_variation_id)) {
+                                $bundleInfo = BundleSku::where('parent_variation_id',$woo_product_variation_find->woocom_variation_id)->get();
+                                if(count($bundleInfo) > 0) {
+                                    $catalogueName = $product->name;
+                                    $masterVariation = $this->masterVariationInfo($woo_product_variation_find->woocom_variation_id);
+                                    $this->insertOrderedProduct($bundleInfo,$single_order->id,$masterVariation->sku ?? $woo_product_variation_find->sku,$product->quantity,$product->price,'Auto Sync',null,$catalogueName);
+                                }else {
                                 $datas['variation_id'] = $woo_product_variation_find->woocom_variation_id;
                                 $datas['name'] = $product->name;
                                 $datas['quantity'] = $product->quantity;
@@ -357,6 +371,8 @@ class WoocomOrderSyncController extends Controller
 //                                }
                                 $check_quantity = new CheckQuantity();
                                 $check_quantity->checkQuantity($woo_product_variation_find->sku,null,null,'Auto Sync');
+                                $this->bundleSKUSyncQuantity($woo_product_variation_find->woocom_variation_id);
+                                }
 
                                 $count++;
                             }

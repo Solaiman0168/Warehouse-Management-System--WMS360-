@@ -11,10 +11,13 @@ use App\shopify\ShopifyAccount;
 use App\Traits\Shopify;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use App\BundleSku;
+use App\Traits\BundleSKUTrait;
 
 class OrderController extends Controller
 {
     use Shopify;
+    use BundleSKUTrait;
     public function __construct(){
 //        $this->middleware('auth');
     }
@@ -120,6 +123,11 @@ class OrderController extends Controller
 //                                print_r($variation_id['sku']);
 //                                print_r($product_order['sku']);
                                     if($product_order['sku'] == $variation_id['sku']){
+                                        $bundleInfo = BundleSku::where('parent_variation_id',$variation_id->id)->get();
+                                        if(count($bundleInfo) > 0) {
+                                            $catalogueName = $product_order['name'];
+                                            $this->insertOrderedProduct($bundleInfo,$order_id,$variation_id->sku ?? $product_order['sku'],$product_order['quantity'],$product_order['price'],'Auto Sync',null,$catalogueName);
+                                        }else {
                                         $productOrder = new ProductOrder();
                                         $productOrder->order_id = $order_id;
                                         $productOrder->variation_id = $variation_id['id'];
@@ -130,9 +138,11 @@ class OrderController extends Controller
                                         $productOrder->status = 0;
                                         $save_product_order = $productOrder->save();
 
-                                        if(isset($save_product_order)){
-                                            $check_quantity = new CheckQuantity();
-                                            $check_quantity->checkQuantity($product_order['sku'],null,null,'Auto Sync');
+                                            if(isset($save_product_order)){
+                                                $check_quantity = new CheckQuantity();
+                                                $check_quantity->checkQuantity($product_order['sku'],null,null,'Auto Sync');
+                                                $this->bundleSKUSyncQuantity($variation_id['id']);
+                                            }
                                         }
                                     }
 

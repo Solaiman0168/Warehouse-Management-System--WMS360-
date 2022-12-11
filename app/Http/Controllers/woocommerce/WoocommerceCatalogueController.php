@@ -150,8 +150,10 @@ class WoocommerceCatalogueController extends Controller
         if($request->has('is_clear_filter')){
             $woocommerce_list = $woocommerce_list;
             $status = $status_type;
+            $settingData = $this->paginationSetting('', '');
+            $setting = $settingData['setting'];
             $date = '12345';
-            $view = view('woocommerce.search_catalogue_list',compact('woocommerce_list','shelfUse', 'status', 'date'))->render();
+            $view = view('woocommerce.search_catalogue_list',compact('woocommerce_list','shelfUse', 'status', 'date', 'setting'))->render();
             return response()->json(['html' => $view]);
         }
             // ->orderBy('id','DESC')->paginate($pagination);
@@ -875,6 +877,9 @@ class WoocommerceCatalogueController extends Controller
 //            $data_arr = $request->status;
 //        }
 
+        $settingData = $this->paginationSetting('', '');
+        $setting = $settingData['setting'];
+
         if (is_numeric($search_keyword)) {
             if (strlen($search_keyword) == 13) {
                 $find_variation = ProductVariation::where('ean_no', '=', $search_keyword)->get()->first();
@@ -883,7 +888,7 @@ class WoocommerceCatalogueController extends Controller
                     $search_woocom_result = $this->getWoocomMasterProduct('id', $matched_product_array, $status, $take, $skip, $ids);
                     $woocommerce_list = $search_woocom_result['search'];
                     $ids = $search_woocom_result['ids'];
-                    return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids]);
+                    return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date','setting'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids, 'setting' => $setting]);
                 }else{
                     $search_woocom_result = $this->searchByWord($search_keyword,$status,$search_priority,$take,$skip,$ids);
                     $woocommerce_list = $search_woocom_result['search'];
@@ -895,7 +900,7 @@ class WoocommerceCatalogueController extends Controller
                         $woocommerce_list = $search_woocom_result['search'];
                         $ids = $search_woocom_result['ids'];
                     }
-                    return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids]);
+                    return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date','setting'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids, 'setting' => $setting]);
                 }
             }else{
                 $search_woocom_result = $this->searchAsId($search_keyword,$status,$take,$skip,$ids);
@@ -914,7 +919,7 @@ class WoocommerceCatalogueController extends Controller
                         $ids = $search_woocom_result['ids'];
                     }
                 }
-                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids]);
+                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date','setting'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids, 'setting' => $setting]);
             }
         }else {
             if (strpos($search_keyword, " ") != null) {
@@ -923,7 +928,7 @@ class WoocommerceCatalogueController extends Controller
                 $woocommerce_list = $search_woocom_result['search'];
                 $search_priority = $search_woocom_result["search_priority"];
                 $ids = $search_woocom_result["ids"];
-                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids]);
+                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date','setting'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids, 'setting' => $setting]);
 
             }
             else{
@@ -938,7 +943,7 @@ class WoocommerceCatalogueController extends Controller
                     $ids = $search_woocom_result["ids"];
                 }
 
-                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids]);
+                return response()->json(['html' => view('woocommerce.search_catalogue_list', compact('woocommerce_list', 'status', 'date','setting'))->render(), 'search_priority' => $search_priority, 'skip' => $skip, 'ids' => $ids, 'setting' => $setting]);
             }
         }
 
@@ -1388,7 +1393,7 @@ class WoocommerceCatalogueController extends Controller
                 $search_result = $product_drafts;
                 $status = 'woocom_pending';
                 $date = '12345';
-                $view = view('product_draft.search_product_list',compact('search_result', 'status', 'shelf_use', 'date'))->render();
+                $view = view('product_draft.search_product_list',compact('search_result', 'status', 'shelf_use', 'date','setting'))->render();
                 return response()->json(['html' => $view]);
             }
 
@@ -1476,14 +1481,16 @@ class WoocommerceCatalogueController extends Controller
         try {
             $valildation = $request->validate([
                 'consumer_key' => 'required|unique:woocommerce_accounts,consumer_key,'.$id.'|max:255',
-                'secret_key' => 'required|unique:woocommerce_accounts,secret_key,'.$id.'|max:255'
+                'secret_key' => 'required|unique:woocommerce_accounts,secret_key,'.$id.'|max:255',
+                'account_name' => 'required|unique:woocommerce_accounts,account_name,'.$id.'|max:255'
             ]);
             $update_info = WoocommerceAccount::find($id)->update([
                 'consumer_key' => $request->consumer_key,
                 'secret_key' => $request->secret_key,
                 'site_url' => $request->site_url ?? null,
                 'status' => $request->status,
-                'modifier' => Auth::id()
+                'modifier' => Auth::id(),
+                'account_name' => $request->account_name,
             ]);
             return back()->with('success','Account credentials update successfully');
         }catch (\Exception $exception){
